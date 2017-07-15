@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.*;
 import com.google.common.collect.ImmutableMap;
+import io.axway.iron.error.StoreException;
 
 import static io.axway.iron.core.internal.utils.proxy.DefaultMethodCallHandler.createDefaultMethodCallHandler;
 
@@ -110,7 +111,7 @@ public class ProxyFactoryBuilder<C> {
             try {
                 return m_proxyConstructor.newInstance(h);
             } catch (ReflectiveOperationException e) {
-                throw new RuntimeException(e);
+                throw new StoreException(e);
             }
         }
     }

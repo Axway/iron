@@ -2,7 +2,6 @@ package io.axway.iron.core.internal.definition.entity;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import com.google.common.collect.ImmutableList;
@@ -19,6 +18,7 @@ import io.axway.iron.description.Id;
 import io.axway.iron.description.Unique;
 import io.axway.iron.description.hook.DSLHelper;
 import io.axway.iron.error.InvalidModelException;
+import io.axway.iron.error.StoreException;
 
 import static com.google.common.base.Preconditions.checkState;
 import static io.axway.iron.core.internal.definition.entity.RelationCardinality.*;
@@ -215,8 +215,8 @@ public class EntityDefinitionBuilder {
         DSLHelper.THREAD_LOCAL_DSL_HELPER.set(dslHelper);
         try {
             defaultMethod.invoke(proxy);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+        } catch (ReflectiveOperationException e) {
+            throw new StoreException(e);
         } finally {
             DSLHelper.THREAD_LOCAL_DSL_HELPER.set(null);
         }
@@ -239,7 +239,7 @@ public class EntityDefinitionBuilder {
             tailMethod = tailEntityClass.getMethod(tailMethodName);
         } catch (NoSuchMethodException e) {
             // should not happen since we retrieve the method name from the method reference
-            throw new RuntimeException(e);
+            throw new StoreException(e);
         }
 
         Class<?> resolvedHeadEntityClass = tailMethod.getReturnType();

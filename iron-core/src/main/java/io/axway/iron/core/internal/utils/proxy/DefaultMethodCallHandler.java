@@ -4,6 +4,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import io.axway.iron.error.StoreException;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -33,7 +34,7 @@ class DefaultMethodCallHandler {
             methodHandle = METHOD_HANDLES_LOOKUP_CONSTRUCTOR.newInstance(declaringClass, MethodHandles.Lookup.PRIVATE)
                     .unreflectSpecial(defaultMethod, declaringClass);
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
+            throw new StoreException(e);
         }
         return (ctx, proxy, method, args) -> methodHandle.bindTo(proxy).invokeWithArguments(args);
     }

@@ -29,5 +29,6 @@ class TransientSnapshotStore implements SnapshotStore {
 
     @Override
     public void deleteSnapshot(long transactionId) {
+        // nothing to do
     }
 }

@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import com.google.common.collect.ImmutableMap;
 import io.axway.iron.core.internal.utils.proxy.ProxyFactoryBuilder;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.functional.Accessor;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -35,11 +36,11 @@ public class IntrospectionHelper {
                 }
             }
         }
-        throw new RuntimeException("Unable to retrieve the parametrized class at index " + index + " for " + genericReturnType);
+        throw new StoreException("Unable to retrieve the parametrized class", args -> args.add("type", genericReturnType).add("index", index));
     }
 
     public <T> String getMethodName(Class<T> clazz, Accessor<T, ?> accessor) {
-        return m_methodReferenceNames.computeIfAbsent(accessor, _ignored -> retrieveMethod(clazz, accessor).getName());
+        return m_methodReferenceNames.computeIfAbsent(accessor, ignored -> retrieveMethod(clazz, accessor).getName());
     }
 
     /**

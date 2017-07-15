@@ -20,6 +20,7 @@ import io.axway.iron.core.internal.entity.EntityStoreManager;
 import io.axway.iron.core.internal.transaction.ReadOnlyTransactionImpl;
 import io.axway.iron.core.internal.transaction.ReadWriteTransactionImpl;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.functional.Accessor;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -55,6 +56,7 @@ class StoreManagerImpl implements StoreManager {
         m_onClose = onClose;
         m_readOnlyTransaction = new ReadOnlyTransactionImpl(m_introspectionHelper, m_entityStoreManager);
         m_thread = new Thread(this::consumerLoop, "IronConsumer-" + storeName);
+        m_thread.setUncaughtExceptionHandler((t, e) -> LOG.error("Transaction consumer thread failure", t));
     }
 
     void open() {
@@ -70,9 +72,9 @@ class StoreManagerImpl implements StoreManager {
                 m_store.begin().submit().get();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
+                throw new StoreException(e);
             } catch (ExecutionException e) {
-                throw new RuntimeException(e);
+                throw new StoreException(e);
             }
             snapshot();
         }
@@ -81,7 +83,7 @@ class StoreManagerImpl implements StoreManager {
             m_transactionRecoveryDone.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw new StoreException(e);
         }
     }
 
@@ -131,56 +133,52 @@ class StoreManagerImpl implements StoreManager {
     }
 
     private void consumerLoop() {
-        try {
-            boolean shouldNotifyTransactionDone = true;
-            while (!m_closed) {
-                StorePersistence.TransactionToExecute transactionToExecute = m_storePersistence.pollNextTransaction(10);
-                if (transactionToExecute != null) {
-                    long txId = transactionToExecute.getTxId();
-                    List<Command<?>> commands = transactionToExecute.getCommands();
-                    Object[] results = new Object[commands.size()];
-                    Throwable error = null;
-                    ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, m_entityStoreManager);
-                    m_writeLock.lock();
-                    try {
-                        for (int i = 0; i < commands.size(); i++) {
-                            Command<?> command = commands.get(i);
-                            results[i] = command.execute(tx);
-                            int activeObjectUpdaterCount = tx.getActiveObjectUpdaterCount();
-                            if (activeObjectUpdaterCount > 0) {
-                                String commandName = m_commandProxyFactory.getCommandName(command);
-                                throw new IllegalStateException("Command '" + commandName + "' leaves " + activeObjectUpdaterCount
-                                                                        + " active ObjectUpdater. Command need to be fixed, transaction rollback");
-                            }
-                        }
-                    } catch (Throwable t) {
-                        error = t;
-                        tx.rollback();
-                    } finally {
-                        m_currentTxId = txId;
-                        m_writeLock.unlock();
-                    }
-
-                    if (error != null) {
-                        LOG.info("Transaction failed and rollbacked {transactionId={}}", txId, error);
-                    }
-
-                    String synchronizationId = transactionToExecute.getSynchronizationId();
-                    CompletableFuture<List<?>> transactionFuture = m_futuresBySynchronizationId.getIfPresent(synchronizationId);
-                    if (transactionFuture != null) {
-                        if (error != null) {
-                            transactionFuture.completeExceptionally(error);
-                        } else {
-                            transactionFuture.complete(Arrays.asList(results));
+        boolean shouldNotifyTransactionDone = true;
+        while (!m_closed) {
+            StorePersistence.TransactionToExecute transactionToExecute = m_storePersistence.pollNextTransaction(10);
+            if (transactionToExecute != null) {
+                long txId = transactionToExecute.getTxId();
+                List<Command<?>> commands = transactionToExecute.getCommands();
+                Object[] results = new Object[commands.size()];
+                Throwable error = null;
+                ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, m_entityStoreManager);
+                m_writeLock.lock();
+                try {
+                    for (int i = 0; i < commands.size(); i++) {
+                        Command<?> command = commands.get(i);
+                        results[i] = command.execute(tx);
+                        int activeObjectUpdaterCount = tx.getActiveObjectUpdaterCount();
+                        if (activeObjectUpdaterCount > 0) {
+                            String commandName = m_commandProxyFactory.getCommandName(command);
+                            throw new IllegalStateException("Command '" + commandName + "' leaves " + activeObjectUpdaterCount
+                                                                    + " active ObjectUpdater. Command need to be fixed, transaction rollback");
                         }
                     }
-                } else if (shouldNotifyTransactionDone) {
-                    shouldNotifyTransactionDone = false;
-                    m_transactionRecoveryDone.countDown();
+                } catch (Exception e) {
+                    error = e;
+                    tx.rollback();
+                } finally {
+                    m_currentTxId = txId;
+                    m_writeLock.unlock();
                 }
+
+                if (error != null) {
+                    LOG.info("Transaction failed and rollbacked {transactionId={}}", txId, error);
+                }
+
+                String synchronizationId = transactionToExecute.getSynchronizationId();
+                CompletableFuture<List<?>> transactionFuture = m_futuresBySynchronizationId.getIfPresent(synchronizationId);
+                if (transactionFuture != null) {
+                    if (error != null) {
+                        transactionFuture.completeExceptionally(error);
+                    } else {
+                        transactionFuture.complete(Arrays.asList(results));
+                    }
+                }
+            } else if (shouldNotifyTransactionDone) {
+                shouldNotifyTransactionDone = false;
+                m_transactionRecoveryDone.countDown();
             }
-        } catch (Throwable t) {
-            LOG.error("Transaction consumer thread failure", t);
         }
     }
 

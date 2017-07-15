@@ -11,6 +11,7 @@ import io.axway.iron.Command;
 import io.axway.iron.core.internal.command.CommandProxyFactory;
 import io.axway.iron.core.internal.definition.command.CommandDefinition;
 import io.axway.iron.core.internal.entity.EntityStore;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.model.snapshot.SerializableSnapshot;
 import io.axway.iron.spi.model.transaction.SerializableCommand;
 import io.axway.iron.spi.model.transaction.SerializableTransaction;
@@ -109,21 +110,21 @@ class StorePersistence {
         serializableTransaction.setSynchronizationId(synchronizationId);
         serializableTransaction.setCommands(serializableCommands);
 
-        try {
-            try (OutputStream out = m_transactionStore.createTransactionOutput()) {
-                m_transactionSerializer.serializeTransaction(out, serializableTransaction);
-            }
+        try (OutputStream out = m_transactionStore.createTransactionOutput()) {
+            m_transactionSerializer.serializeTransaction(out, serializableTransaction);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new StoreException(e);
         }
     }
 
-    TransactionToExecute pollNextTransaction(int timeoutMs) throws IOException {
+    TransactionToExecute pollNextTransaction(int timeoutMs) {
         TransactionStore.TransactionInput transactionInput = m_transactionStore.pollNextTransaction(timeoutMs, MILLISECONDS);
         if (transactionInput != null) {
             SerializableTransaction serializableTransaction;
             try (InputStream in = transactionInput.getInputStream()) {
                 serializableTransaction = m_transactionSerializer.deserializeTransaction(in);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
 
             if (serializableTransaction.getTransactionModelVersion() != TRANSACTION_MODEL_VERSION) {

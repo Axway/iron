@@ -10,6 +10,7 @@ import io.axway.iron.core.internal.definition.command.ParameterDefinition;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.core.internal.utils.proxy.ProxyFactory;
 import io.axway.iron.core.internal.utils.proxy.ProxyFactoryBuilder;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.model.transaction.SerializableCommand;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -38,7 +39,7 @@ public class CommandProxyFactory {
         try {
             executeMethod = commandClass.getDeclaredMethod(COMMAND_EXECUTE_METHOD, ReadWriteTransaction.class);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            throw new StoreException(e);
         }
 
         checkArgument(executeMethod.isDefault(), "Command %s execute(ReadWriteTransaction) method has no default implementation", commandClass.getName());

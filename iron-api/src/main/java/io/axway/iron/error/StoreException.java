@@ -1,5 +1,6 @@
 package io.axway.iron.error;
 
+import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
@@ -8,7 +9,7 @@ import java.util.function.*;
  */
 public class StoreException extends RuntimeException {
     @FunctionalInterface
-    public interface Arguments {
+    public interface Arguments extends Serializable {
         Arguments add(String key, Object value);
     }
 

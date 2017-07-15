@@ -64,11 +64,9 @@ class FileSnapshotStore implements SnapshotStore {
     @Override
     public void deleteSnapshot(long transactionId) {
         File snapshotFile = new File(m_snapshotDir, getSnapshotFileName(transactionId));
-        if (snapshotFile.exists()) {
-            if (!snapshotFile.delete()) {
-                throw new UncheckedIOException(
-                        new IOException("Cannot delete snapshot file '" + snapshotFile.getAbsolutePath() + "' for transaction id " + transactionId));
-            }
+        if (snapshotFile.exists() && !snapshotFile.delete()) {
+            throw new UncheckedIOException(
+                    new IOException("Cannot delete snapshot file '" + snapshotFile.getAbsolutePath() + "' for transaction id " + transactionId));
         }
         // ignore case when the snapshot to delete doesn't exist
     }

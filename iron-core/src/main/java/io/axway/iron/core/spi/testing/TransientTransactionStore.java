@@ -3,6 +3,7 @@ package io.axway.iron.core.spi.testing;
 import java.io.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.storage.TransactionStore;
 
 class TransientTransactionStore implements TransactionStore {
@@ -22,7 +23,7 @@ class TransientTransactionStore implements TransactionStore {
                     m_transactions.put(bytes);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
+                    throw new StoreException(e);
                 }
             }
         };
@@ -42,7 +43,7 @@ class TransientTransactionStore implements TransactionStore {
             bytes = m_transactions.poll(timeout, unit);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw new StoreException(e);
         }
 
         if (bytes != null) {

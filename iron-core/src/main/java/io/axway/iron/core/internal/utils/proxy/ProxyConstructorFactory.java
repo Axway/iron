@@ -10,6 +10,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import io.axway.iron.core.internal.utils.CompositeClassLoader;
+import io.axway.iron.error.StoreException;
 
 public class ProxyConstructorFactory {
     // cache to avoid to create to many composite class loaders
@@ -53,7 +54,7 @@ public class ProxyConstructorFactory {
         try {
             return proxyClass.getConstructor(InvocationHandler.class);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            throw new StoreException(e);
         }
     }
 
@@ -67,7 +68,7 @@ public class ProxyConstructorFactory {
         return new CompositeClassLoader(classLoaders);
     }
 
-    private final static class CacheKey {
+    private static final class CacheKey {
         private final List<ClassLoader> m_classLoaders;
 
         CacheKey(List<ClassLoader> classLoaders) {
