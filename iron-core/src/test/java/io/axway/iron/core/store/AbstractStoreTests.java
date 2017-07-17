@@ -52,7 +52,7 @@ public abstract class AbstractStoreTests {
         return result;
     }
 
-    @Test(dataProvider = "succeedingStoreTests")
+    @Test(dataProvider = "succeedingStoreTests", timeOut = 30_000)
     public void succeedingStoreTests(SucceedingStoreTest storeTest) throws Exception {
         String storeNamePrefix = storeTest.getClass().getSimpleName() + "-";
 
@@ -86,7 +86,7 @@ public abstract class AbstractStoreTests {
         }
     }
 
-    @Test(dataProvider = "failingStoreTests")
+    @Test(dataProvider = "failingStoreTests", timeOut = 30_000)
     public void failingStoreTests(FailingStoreTest storeTest) throws Exception {
         String storeName = storeTest.getClass().getSimpleName();
 
