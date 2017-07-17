@@ -8,8 +8,8 @@ addons:
     organization: "axway"
 
 script:
-  # the following command line builds the project, runs the tests with coverage and then execute the SonarCloud analysis
-  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
+   - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then mvn test -B; fi'
+   - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar; fi'
 
 cache:
   directories:
