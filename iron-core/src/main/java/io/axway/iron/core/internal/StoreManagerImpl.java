@@ -56,7 +56,7 @@ class StoreManagerImpl implements StoreManager {
         m_onClose = onClose;
         m_readOnlyTransaction = new ReadOnlyTransactionImpl(m_introspectionHelper, m_entityStoreManager);
         m_thread = new Thread(this::consumerLoop, "IronConsumer-" + storeName);
-        m_thread.setUncaughtExceptionHandler((t, e) -> LOG.error("Transaction consumer thread failure", t));
+        m_thread.setUncaughtExceptionHandler((t, e) -> LOG.error("Transaction consumer thread failure", e));
     }
 
     void open() {
