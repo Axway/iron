@@ -12,8 +12,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import io.axway.iron.spi.storage.TransactionStore;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 /**
  * TODO check if commit is needed or not<br/>
  * TODO check why sometimes polling returns nothing (for a long time) when it shouldn't<br/>
@@ -33,11 +31,11 @@ class KafkaTransactionStore implements TransactionStore {
     private final TopicPartition m_topicPartition;
 
     KafkaTransactionStore(Properties kafkaProperties, String topicName) {
-        if (isNullOrEmpty(topicName)) {
+        m_topicName = topicName.trim();
+        if (m_topicName.isEmpty()) {
             throw new IllegalArgumentException("Topic name can't be null");
         }
-        m_topicName = topicName;
-        m_topicPartition = new TopicPartition(topicName, PARTITION);
+        m_topicPartition = new TopicPartition(m_topicName, PARTITION);
 
         UUID uuid = UUID.randomUUID();
 

@@ -218,7 +218,7 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <Import-Package>javax.annotation.*;version="0.0.0",*</Import-Package>
+                                <Import-Package>javax.annotation.*;version="0.0.0",com.google.common.*;version="15.0",*</Import-Package>
                             </instructions>
                         </configuration>
                     </execution>
