@@ -29,6 +29,7 @@
         <module>iron-spi</module>
         <module>iron-spi-chronicle</module>
         <module>iron-spi-jackson</module>
+        <module>iron-spi-kafka</module>
     </modules>
 
     <dependencyManagement>
@@ -60,6 +61,11 @@
                 <version>4.5.27</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>0.11.0.0</version>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>1.7.25</version>
@@ -83,6 +89,7 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- own modules -->
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-api</artifactId>
@@ -126,7 +133,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-
 
         <!-- test dependencies -->
         <dependency>
