@@ -1,15 +1,13 @@
 dist: trusty
-sudo: false
 language: java
 jdk: oraclejdk8
+
+install: true
+script: ci/travis-script.sh
 
 addons:
   sonarcloud:
     organization: "axway"
-
-script:
-   - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then mvn test -B; fi'
-   - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar; fi'
 
 cache:
   directories:
