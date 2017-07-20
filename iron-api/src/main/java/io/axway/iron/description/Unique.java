@@ -9,8 +9,8 @@ import io.axway.iron.error.UniqueConstraintViolationException;
 
 /**
  * This annotation can be used on entity members to declare a unique constraint. So two distinct entity instances cannot have the same value for the member
- * declared as a unique constraint.<br/>
- * For {@link Nullable} members, the {@code null} value is not considered for the unique constraint, so many entity instance can have a {@code null} value for this member.<br/>
+ * declared as a unique constraint.<br>
+ * For {@link Nullable} members, the {@code null} value is not considered for the unique constraint, so many entity instance can have a {@code null} value for this member.<br>
  * Unique constraints are enforced at modification time, in case of unique constraint violation a {@link UniqueConstraintViolationException} is thrown.
  */
 @Retention(RetentionPolicy.RUNTIME)

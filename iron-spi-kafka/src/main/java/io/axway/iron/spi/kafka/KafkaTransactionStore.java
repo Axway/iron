@@ -13,10 +13,10 @@ import org.apache.kafka.common.TopicPartition;
 import io.axway.iron.spi.storage.TransactionStore;
 
 /**
- * TODO check if commit is needed or not<br/>
- * TODO check why sometimes polling returns nothing (for a long time) when it shouldn't<br/>
- * TODO write tests with embedded kafka<br/>
- * TODO add Logging<br/>
+ * TODO check if commit is needed or not<br>
+ * TODO check why sometimes polling returns nothing (for a long time) when it shouldn't<br>
+ * TODO write tests with embedded kafka<br>
+ * TODO add Logging<br>
  */
 class KafkaTransactionStore implements TransactionStore {
     private static final int PARTITION = 0;

@@ -6,7 +6,7 @@ import io.axway.iron.error.ObjectNotFoundException;
 import io.axway.iron.functional.Accessor;
 
 /**
- * The read only transaction permit to read the store model through the {{@link #select(Class)} method.<br/>
+ * The read only transaction permit to read the store model through the {{@link #select(Class)} method.<br>
  * Many read only transaction can be performed simultaneously but no command execution is performed at the same.
  */
 public interface ReadOnlyTransaction {

@@ -12,10 +12,10 @@ import io.axway.iron.spi.storage.SnapshotStore;
 import static java.lang.String.format;
 
 /**
- * TODO write a few unit tests of this class methods<br/>
- * TODO write tests with embedded consul<br/>
- * TODO handle connection timeouts  : try another time before throwing error<br/>
- * TODO add logging<br/>
+ * TODO write a few unit tests of this class methods<br>
+ * TODO write tests with embedded consul<br>
+ * TODO handle connection timeouts  : try another time before throwing error<br>
+ * TODO add logging<br>
  */
 class ConsulSnapshotStore implements SnapshotStore {
 

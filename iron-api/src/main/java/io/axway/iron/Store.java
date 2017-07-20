@@ -27,7 +27,7 @@ public interface Store {
     <C extends Command<T>, T> CommandBuilder<C, T> createCommand(Class<C> commandClass);
 
     /**
-     * Begin a transaction that can be then populated with one or many command.<br/>
+     * Begin a transaction that can be then populated with one or many command.<br>
      * A transaction is atomic, so if one the command fails, all the command of the transaction won't be executed, the updates until the failure will be rollbacked.
      *
      * @return a fluent interface to continue the call
@@ -46,7 +46,7 @@ public interface Store {
         <C extends Command<T>, T> CommandBuilder<C, T> addCommand(Class<C> commandClass);
 
         /**
-         * Submit the transaction.<br/>
+         * Submit the transaction.<br>
          * The transaction commands are executed asynchronously. If the commands results are needed, they can be accessed through the returned {@code Future} object.
          *
          * @return a {@code Future} that gives access to the result of all the command, in the same order they have been added in the transaction.
@@ -67,7 +67,7 @@ public interface Store {
         CommandBuilder<C, T> map(Object parameters);
 
         /**
-         * Add the command to the transaction, or if it's a single command transaction submit the transaction with this command.<br/>
+         * Add the command to the transaction, or if it's a single command transaction submit the transaction with this command.<br>
          * The transaction commands are executed asynchronously. If the command result is needed, it can be accessed through the returned {@code Future} object.
          *
          * @return a {@code Future} that gives access to the result of the command

@@ -14,7 +14,7 @@ public final class DSL {
      * <li>the reverse relation is defined from the {@code HEAD} entity to the {@code TAIL} entity. It must have a default implementation that call this method</li>
      * </ul>
      * <p>
-     * At runtime this call is only issued during the model analysis. The entity instances proxies overrides this default implementation to return the needed information.<br/>
+     * At runtime this call is only issued during the model analysis. The entity instances proxies overrides this default implementation to return the needed information.<br>
      *
      * @param tailEntityClass the {@code TAIL} entity class
      * @param relationAccessor the accessor on the {@code TAIL} entity class that correspond to the straight relation.

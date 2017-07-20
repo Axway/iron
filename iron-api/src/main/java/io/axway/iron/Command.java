@@ -1,7 +1,7 @@
 package io.axway.iron;
 
 /**
- * The parent interface that must be extended by any command.<br/>
+ * The parent interface that must be extended by any command.<br>
  *
  * @param <T> the type of the command return value. If no return value is expected, use {@code Void}
  */

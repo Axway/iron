@@ -4,7 +4,7 @@ import java.io.*;
 import io.axway.iron.spi.model.snapshot.SerializableSnapshot;
 
 /**
- * Snapshot serialization interface.<br/>
+ * Snapshot serialization interface.<br>
  * It reads/writes model entities instances data.
  */
 public interface SnapshotSerializer {

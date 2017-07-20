@@ -4,7 +4,7 @@ import java.io.*;
 import io.axway.iron.spi.model.transaction.SerializableTransaction;
 
 /**
- * Transaction serialization interface.<br/>
+ * Transaction serialization interface.<br>
  * It reads/writes transaction's commands with theirs parameters.
  */
 public interface TransactionSerializer {
