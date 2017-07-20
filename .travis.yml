@@ -7,9 +7,12 @@ script: ci/travis-script.sh
 
 addons:
   sonarcloud:
-    organization: "axway"
+    organization: 'axway'
 
 cache:
   directories:
     - '$HOME/.m2/repository'
     - '$HOME/.sonar/cache'
+
+before_cache:
+  - rm -rf "$HOME/.m2/repository/io/axway/iron"
