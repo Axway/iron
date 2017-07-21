@@ -12,6 +12,10 @@
 
     <artifactId>iron-core</artifactId>
 
+    <properties>
+        <bnd.Import-Package>com.google.common.*;version="15.0",*</bnd.Import-Package>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.axway.iron</groupId>

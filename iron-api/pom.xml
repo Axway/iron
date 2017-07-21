@@ -13,6 +13,7 @@
     <artifactId>iron-api</artifactId>
 
     <properties>
-        <bnd.Import-Package>javax.annotation.*;version="0.0.0"</bnd.Import-Package>
+        <bnd.Import-Package/>
     </properties>
+
 </project>

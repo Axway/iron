@@ -37,7 +37,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
-        <bnd.Import-Package>javax.annotation.*;version="0.0.0",com.google.common.*;version="15.0",*</bnd.Import-Package>
+        <bnd.Import-Package>*</bnd.Import-Package>
     </properties>
 
     <modules>
@@ -238,7 +238,7 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <Import-Package>${bnd.Import-Package}</Import-Package>
+                                <Import-Package>javax.annotation.*;version="0.0.0",${bnd.Import-Package}</Import-Package>
                             </instructions>
                         </configuration>
                     </execution>
