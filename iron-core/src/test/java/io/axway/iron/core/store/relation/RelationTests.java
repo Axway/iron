@@ -7,7 +7,8 @@ public class RelationTests extends AbstractStoreTests {
     public RelationTests() {
         super( //
                new ShouldDeleteRelationTailTest(), //
-               new ShouldUpdateSimpleRelationHeadTest() //
+               new ShouldUpdateSimpleRelationHeadTest(), //
+               new ShouldRollbackRelationTest() //
         );
     }
 }

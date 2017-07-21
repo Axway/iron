@@ -126,8 +126,8 @@ public class EntityStore<E> {
             if (relationStore instanceof RelationSimpleStore) {
                 RelationSimpleStore relationSimpleStore = (RelationSimpleStore) relationStore;
                 if (value != null) {
-                    InstanceProxy headInstanceProxy = InstanceProxy.class.cast(value);
-                    oldValue = relationSimpleStore.set(instance.__id(), headInstanceProxy.__id());
+                    long headInstanceId = value instanceof Long ? (long) value : InstanceProxy.class.cast(value).__id();
+                    oldValue = relationSimpleStore.set(instance.__id(), headInstanceId);
                 } else {
                     oldValue = relationSimpleStore.remove(instance.__id());
                 }
@@ -135,7 +135,8 @@ public class EntityStore<E> {
                 RelationMultipleStore relationMultipleStore = (RelationMultipleStore) relationStore;
                 if (value != null) {
                     Collection<?> collection = (Collection<?>) value;
-                    Collection<Long> idCollection = collection.stream().map(o -> InstanceProxy.class.cast(o).__id()).collect(Collectors.toList());
+                    Collection<Long> idCollection = collection.stream().map(o -> o instanceof Long ? (Long) o : InstanceProxy.class.cast(o).__id())
+                            .collect(Collectors.toList());
                     oldValue = relationMultipleStore.set(instance.__id(), idCollection);
                 } else {
                     oldValue = relationMultipleStore.clear(instance.__id());
