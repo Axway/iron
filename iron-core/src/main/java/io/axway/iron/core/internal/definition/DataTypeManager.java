@@ -4,6 +4,7 @@ import java.util.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.axway.iron.core.internal.utils.TypeConverter;
+import io.axway.iron.error.StoreException;
 
 public class DataTypeManager {
     private static final Set<Class<?>> JDK_DATA_TYPES = ImmutableSet.of(boolean.class, Boolean.class, //
@@ -50,7 +51,10 @@ public class DataTypeManager {
                     return s.charAt(0);
                 }
             }
-            throw new UnsupportedOperationException();
+            throw new StoreException("Unable to convert type", arguments -> //
+                    arguments.add("source", value.getClass().getName()) //
+                            .add("target", Character.class.getName()) //
+                            .add("value", value));
         });
         converters.put(char.class, converters.get(Character.class));
 
@@ -98,6 +102,18 @@ public class DataTypeManager {
             }
         });
         converters.put(double.class, converters.get(Double.class));
+
+        converters.put(Date.class, value -> {
+            if (value == null || value instanceof Date) {
+                return value;
+            } else if (value instanceof Long) {
+                return new Date((long) value);
+            }
+            throw new StoreException("Unable to convert type", arguments -> //
+                    arguments.add("source", value.getClass().getName()) //
+                            .add("target", Date.class.getName()) //
+                            .add("value", value));
+        });
 
         TYPE_CONVERTERS = ImmutableMap.copyOf(converters);
     }

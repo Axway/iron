@@ -1,6 +1,7 @@
 package io.axway.iron.sample;
 
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -31,6 +32,8 @@ import static io.axway.iron.core.StoreManagerFactoryBuilder.newStoreManagerBuild
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SampleTest {
+
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/mm/yyyy");
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
@@ -92,6 +95,7 @@ public class SampleTest {
             Person bill = tx.select(Person.class).where(Person::id).equalsTo("123");
             Company billCompany = bill.worksAt();
             assertThat(billCompany).isNotNull();
+            assertThat(bill.birthDate()).isNotNull().isEqualToIgnoringHours("1990-01-01");
             System.out.printf("Query6: %s%n", billCompany.name() + " @ " + billCompany.address());
         };
 
@@ -151,6 +155,7 @@ public class SampleTest {
                     .set(CreatePerson::id).to("123") //
                     .set(CreatePerson::name).to("bill") //
                     .set(CreatePerson::previousCompanyNames).to(ImmutableList.of("Google", "Axway")) //
+                    .set(CreatePerson::birthDate).to(DATE_FORMAT.parse("01/01/1990")) //
                     .submit();
 
             tx8.addCommand(CreatePerson.class) //
