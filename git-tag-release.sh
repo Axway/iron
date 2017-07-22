@@ -47,7 +47,7 @@ echo "Creating tag $TAG_NAME"
 git tag -a -m "Release $TAG_NAME" $TAG_NAME
 echo
 
-echo "Updating pom.xml revision to $RELEASE_VERSION"
+echo "Updating pom.xml revision to $NEXT_VERSION"
 sed -i -b -E "s/(<revision>).*(<\/revision>)/\1$NEXT_VERSION\2/" pom.xml
 echo
 
