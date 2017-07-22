@@ -7,10 +7,12 @@
     <parent>
         <groupId>io.axway.iron</groupId>
         <artifactId>iron</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>iron-core</artifactId>
+    <name>${project.artifactId}</name>
+    <description>Iron implementation</description>
 
     <properties>
         <bnd.Import-Package>com.google.common.*;version="15.0",*</bnd.Import-Package>

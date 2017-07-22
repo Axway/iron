@@ -6,10 +6,21 @@
 
     <groupId>io.axway.iron</groupId>
     <artifactId>iron</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
+    <name>${project.artifactId}</name>
+    <description>Iron parent POM</description>
 
     <url>https://axway.github.io/iron</url>
+
+    <properties>
+        <revision>0.1.0-SNAPSHOT</revision>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
+        <bnd.Import-Package>*</bnd.Import-Package>
+    </properties>
 
     <licenses>
         <license>
@@ -19,11 +30,41 @@
         </license>
     </licenses>
 
+    <organization>
+        <name>Axway Software</name>
+        <url>http://www.axway.com</url>
+    </organization>
+
+    <developers>
+        <developer>
+            <name>Xavier Fournet</name>
+            <url>https://github.com/xfournet</url>
+        </developer>
+        <developer>
+            <name>Mathieu Sebire</name>
+            <url>https://github.com/msebire</url>
+        </developer>
+        <developer>
+            <name>Philippe Laplanche</name>
+            <url>https://github.com/plaplanche</url>
+        </developer>
+    </developers>
+
     <scm>
-        <connection>scm:git:git://github.com/Axway/iron.git</connection>
-        <developerConnection>scm:git:ssh://github.com:Axway/iron.git</developerConnection>
+        <connection>scm:git:https://github.com/Axway/iron.git</connection>
+        <developerConnection>scm:git:https://github.com/Axway/iron.git</developerConnection>
         <url>https://github.com/Axway/iron</url>
     </scm>
+
+    <issueManagement>
+        <url>https://github.com/Axway/iron/issues</url>
+        <system>GitHub</system>
+    </issueManagement>
+
+    <ciManagement>
+        <url>https://travis-ci.org/Axway/iron</url>
+        <system>Travis CI</system>
+    </ciManagement>
 
     <distributionManagement>
         <snapshotRepository>
@@ -31,14 +72,6 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
-        <bnd.Import-Package>*</bnd.Import-Package>
-    </properties>
 
     <modules>
         <module>iron-api</module>
@@ -112,32 +145,32 @@
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-api</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-core</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-sample</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-chronicle</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-jackson</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -175,12 +208,32 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>3.0.0</version>
+                </plugin>
+                <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.6.1</version>
                 </plugin>
                 <plugin>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.0.1</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>2.8.2</version>
+                </plugin>
+                <plugin>
                     <artifactId>maven-gpg-plugin</artifactId>
-                    <version>1.5</version>
+                    <version>1.6</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-help-plugin</artifactId>
+                    <version>2.2</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>2.5.2</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
@@ -189,6 +242,10 @@
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>2.10.4</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.0.2</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-source-plugin</artifactId>
@@ -202,6 +259,21 @@
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
                     <version>3.3.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>1.0.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>3.3.0.603</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>0.7.9</version>
                 </plugin>
                 <plugin>
                     <groupId>org.sonatype.plugins</groupId>
@@ -238,6 +310,7 @@
                         </goals>
                         <configuration>
                             <instructions>
+                                <Bundle-DocURL>${project.url}</Bundle-DocURL>
                                 <Import-Package>javax.annotation.*;version="0.0.0",${bnd.Import-Package}</Import-Package>
                             </instructions>
                         </configuration>
@@ -268,9 +341,31 @@
 
     <profiles>
         <profile>
-            <id>publish</id>
+            <id>release</id>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>flatten-maven-plugin</artifactId>
+                        <configuration>
+                            <flattenMode>ossrh</flattenMode>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <pomElements>
+                                <organization/>
+                                <issueManagement/>
+                                <ciManagement/>
+                            </pomElements>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>flatten</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>flatten</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <executions>

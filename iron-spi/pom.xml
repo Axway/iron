@@ -7,10 +7,12 @@
     <parent>
         <groupId>io.axway.iron</groupId>
         <artifactId>iron</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>iron-spi</artifactId>
+    <name>${project.artifactId}</name>
+    <description>Iron Service Provider Interfaces</description>
 
     <properties>
         <bnd.Import-Package/>
