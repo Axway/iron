@@ -1,0 +1,5 @@
+# Default behavior
+* text=auto
+
+# Unix shell script
+*.sh text eol=lf
