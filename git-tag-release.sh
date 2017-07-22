@@ -39,6 +39,10 @@ echo "Updating pom.xml revision to $RELEASE_VERSION"
 sed -i -b -E "s/(<revision>).*(<\/revision>)/\1$RELEASE_VERSION\2/" pom.xml
 echo
 
+echo "Verifying build"
+mvn -B -P release clean verify
+echo
+
 echo "Committing pom.xml"
 git commit -m "Release $TAG_NAME" pom.xml
 echo
