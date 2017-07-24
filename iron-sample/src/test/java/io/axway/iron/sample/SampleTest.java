@@ -1,6 +1,6 @@
 package io.axway.iron.sample;
 
-import java.io.*;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
@@ -37,8 +37,8 @@ public class SampleTest {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(new File("iron"));
-        ChronicleTransactionStoreFactory chronicleTransactionStoreFactory = new ChronicleTransactionStoreFactory(new File("iron"));
+        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"));
+        ChronicleTransactionStoreFactory chronicleTransactionStoreFactory = new ChronicleTransactionStoreFactory(Paths.get("iron"));
 
         String storeBaseName = "irontest-" + System.getProperty("user.name");
 
@@ -74,20 +74,14 @@ public class SampleTest {
             tx.select(Person.class).all().forEach(person -> {
                 Company company = person.worksAt();
                 System.out.printf("  %s currently works in %s%n", person, company != null ? company.name() : "<unemployed>");
-                person.previousCompanies().forEach(previousCompany -> {
-                    System.out.printf("     previously works in %s%n", previousCompany.name());
-                });
+                person.previousCompanies().forEach(previousCompany -> System.out.printf("     previously works in %s%n", previousCompany.name()));
             });
             System.out.printf("%n");
 
             tx.select(Company.class).all().forEach(company -> {
                 System.out.printf("Company %s%n", company.name());
-                company.employees().forEach(person -> {
-                    System.out.printf("    employee %s%n", person.name());
-                });
-                company.previousEmployees().forEach(person -> {
-                    System.out.printf("    previous employee %s%n", person.name());
-                });
+                company.employees().forEach(person -> System.out.printf("    employee %s%n", person.name()));
+                company.previousEmployees().forEach(person -> System.out.printf("    previous employee %s%n", person.name()));
             });
         };
 

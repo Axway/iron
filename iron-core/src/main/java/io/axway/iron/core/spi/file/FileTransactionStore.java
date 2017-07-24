@@ -1,10 +1,12 @@
 package io.axway.iron.core.spi.file;
 
 import java.io.*;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.regex.*;
+import java.util.stream.*;
 import io.axway.iron.spi.storage.TransactionStore;
 
 class FileTransactionStore implements TransactionStore {
@@ -12,8 +14,8 @@ class FileTransactionStore implements TransactionStore {
     private static final String FILENAME_FORMAT = "%020d.%s";
     private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]{20}).([a-z]+)");
 
-    private final File m_transactionDir;
-    private final File m_transactionTmpDir;
+    private final Path m_transactionDir;
+    private final Path m_transactionTmpDir;
 
     private final AtomicLong m_tmpCounter = new AtomicLong();
     private final Object m_commitLock = new Object();
@@ -21,35 +23,30 @@ class FileTransactionStore implements TransactionStore {
 
     private long m_consumerNextTxId = 0;
 
-    FileTransactionStore(File transactionDir) {
-        m_transactionDir = Util.ensureDirectoryExists(transactionDir);
-        m_transactionTmpDir = Util.ensureDirectoryExists(new File(m_transactionDir, ".tmp"));
+    FileTransactionStore(Path transactionDir, Path transactionStoreTmpDir) {
+        m_transactionDir = transactionDir;
+        m_transactionTmpDir = transactionStoreTmpDir;
 
         m_nextTxId = retrieveNextTxId();
     }
 
     @Override
     public OutputStream createTransactionOutput() throws IOException {
-        File tmpFile = new File(m_transactionTmpDir, getFileName(m_tmpCounter.getAndIncrement(), TX_EXT));
+        Path tmpFile = m_transactionTmpDir.resolve(getFileName(m_tmpCounter.getAndIncrement(), TX_EXT));
 
-        return new BufferedOutputStream(new FileOutputStream(tmpFile) {
-            private volatile boolean m_closed = false;
-
+        return new BufferedOutputStream(Files.newOutputStream(tmpFile)) {
             @Override
             public void close() throws IOException {
                 super.close();
                 synchronized (m_commitLock) {
-                    // in case of multiple call to close() (eg due to FileOutputStream finalizer) the commit logic must not be performed again
-                    if (!m_closed) {
-                        m_closed = true;
-                        long transactionId = m_nextTxId++;
-                        File txFile = getTxFile(transactionId);
-                        Util.rename(tmpFile, txFile);
-                        m_commitLock.notifyAll();
-                    }
+                    long transactionId = m_nextTxId++;
+                    Path txFile = getTxFile(transactionId);
+
+                    Files.move(tmpFile, txFile);
+                    m_commitLock.notifyAll();
                 }
             }
-        });
+        };
     }
 
     @Override
@@ -61,8 +58,8 @@ class FileTransactionStore implements TransactionStore {
     public TransactionInput pollNextTransaction(long timeout, TimeUnit unit) {
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
         long txId = m_consumerNextTxId;
-        File nextFile = getTxFile(txId);
-        while (!nextFile.exists()) {
+        Path nextFile = getTxFile(txId);
+        while (!Files.exists(nextFile)) {
             long waitTimeout = deadline - System.currentTimeMillis();
             if (waitTimeout > 0) {
                 try {
@@ -82,7 +79,7 @@ class FileTransactionStore implements TransactionStore {
         return new TransactionInput() {
             @Override
             public InputStream getInputStream() throws IOException {
-                return new BufferedInputStream(new FileInputStream(nextFile));
+                return new BufferedInputStream(Files.newInputStream(nextFile));
             }
 
             @Override
@@ -93,25 +90,22 @@ class FileTransactionStore implements TransactionStore {
     }
 
     private long retrieveNextTxId() {
-        long nextTxId = 0;
-
-        String[] list = m_transactionDir.list();
-        if (list != null) {
-            OptionalLong max = Arrays.stream(list) //
+        try (Stream<Path> dirList = Files.list(m_transactionDir)) {
+            return dirList //
+                    .map(path -> path.getFileName().toString()) //
                     .map(FILENAME_PATTERN::matcher) //
                     .filter(matcher -> matcher.matches() && TX_EXT.equals(matcher.group(2))) //
                     .mapToLong(matcher -> Long.valueOf(matcher.group(1))) //
-                    .max();
-            if (max.isPresent()) {
-                nextTxId = max.getAsLong() + 1;
-            }
+                    .max() //
+                    .orElse(-1L) // in case no file exists we want nextTxId=0
+                    + 1;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-
-        return nextTxId;
     }
 
-    private File getTxFile(long id) {
-        return new File(m_transactionDir, getFileName(id, TX_EXT));
+    private Path getTxFile(long id) {
+        return m_transactionDir.resolve(getFileName(id, TX_EXT));
     }
 
     private String getFileName(long id, String ext) {
