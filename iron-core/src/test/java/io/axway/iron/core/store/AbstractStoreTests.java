@@ -1,6 +1,6 @@
 package io.axway.iron.core.store;
 
-import java.io.*;
+import java.nio.file.Paths;
 import java.util.*;
 import org.assertj.core.api.Assertions;
 import org.testng.annotations.DataProvider;
@@ -107,7 +107,7 @@ public abstract class AbstractStoreTests {
 
     private StoreManager createStoreManager(StoreTest storeTest, String storeName) throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(new File("iron_tests-" + EXECUTION_ID));
+        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron_tests-" + EXECUTION_ID));
         StoreManagerFactoryBuilder builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
                 .withSnapshotSerializer(jacksonSerializer) //
                 .withTransactionSerializer(jacksonSerializer) //

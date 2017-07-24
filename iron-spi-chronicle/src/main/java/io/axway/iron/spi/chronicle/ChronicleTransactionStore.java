@@ -1,6 +1,7 @@
 package io.axway.iron.spi.chronicle;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import io.axway.iron.spi.storage.TransactionStore;
@@ -15,8 +16,7 @@ class ChronicleTransactionStore implements TransactionStore {
     private final ExcerptAppender m_appender;
     private final ExcerptTailer m_tailer;
 
-    ChronicleTransactionStore(File transactionDir) {
-        Util.ensureDirectoryExists(transactionDir);
+    ChronicleTransactionStore(Path transactionDir) {
         ChronicleQueue chronicleQueue = SingleChronicleQueueBuilder.binary(transactionDir).build();
         m_appender = chronicleQueue.acquireAppender();
         m_tailer = chronicleQueue.createTailer();

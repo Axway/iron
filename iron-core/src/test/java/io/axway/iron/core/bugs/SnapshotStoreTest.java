@@ -1,6 +1,10 @@
 package io.axway.iron.core.bugs;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -10,22 +14,29 @@ import io.axway.iron.core.StoreManagerFactoryBuilder;
 import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
-import static com.google.common.io.Files.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SnapshotStoreTest {
     private static final String MY_STORE = "my-store";
-    private File m_tempDir;
+    private Path m_tempDir;
 
     @BeforeMethod
-    public void setUpClass() {
-        m_tempDir = createTempDir();
+    public void setUp() throws Exception {
+        m_tempDir = Paths.get("iron-" + getClass().getSimpleName() + "-" + UUID.randomUUID());
     }
 
     @AfterMethod
-    public void tearDownClass() {
-        if (m_tempDir.isDirectory()) {
-            fileTreeTraverser().postOrderTraversal(m_tempDir).forEach(File::delete);
+    public void tearDown() throws Exception {
+        if (Files.isDirectory(m_tempDir)) {
+            Files.walk(m_tempDir) //
+                    .sorted(Comparator.reverseOrder()) //
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
         }
     }
 
@@ -35,8 +46,9 @@ public class SnapshotStoreTest {
         // When: creating a snapshot while store is still empty
         // Then: creating a snapshot should not fail
 
-        StoreManager storeManager = createOpenStoreManager(MY_STORE);
-        storeManager.snapshot();
+        try (StoreManager storeManager = createOpenStoreManager(MY_STORE)) {
+            storeManager.snapshot();
+        }
     }
 
     @Test
@@ -46,23 +58,24 @@ public class SnapshotStoreTest {
         // Then: new snapshot should be created with transaction ID >= TxID
         int transactionCount = 10;
 
-        StoreManager storeManager = createOpenStoreManager(MY_STORE);
-        Store store = storeManager.getStore();
-        for (int i = 0; i < transactionCount; i++) {
-            store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value-" + i).submit().get();
+        try (StoreManager storeManager = createOpenStoreManager(MY_STORE)) {
+            Store store = storeManager.getStore();
+            for (int i = 0; i < transactionCount; i++) {
+                store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value-" + i).submit().get();
+            }
+
+            // Create snapshot and close
+            assertThat(storeManager.snapshot()).isEqualTo(transactionCount);
         }
 
-        // Create snapshot and close
-        assertThat(storeManager.snapshot()).isEqualTo(transactionCount);
-        storeManager.close();
+        try (StoreManager storeManager = createOpenStoreManager(MY_STORE)) {
 
-        storeManager = createOpenStoreManager(MY_STORE);
+            // Should return the proper transaction ID
+            assertThat(storeManager.lastSnapshotTransactionId()).isEqualTo(transactionCount);
 
-        // Should return the proper transaction ID
-        assertThat(storeManager.lastSnapshotTransactionId()).isEqualTo(transactionCount);
-
-        // Should not create another snapshot, since current snapshot is already the latest
-        assertThat(storeManager.snapshot()).isNull();
+            // Should not create another snapshot, since current snapshot is already the latest
+            assertThat(storeManager.snapshot()).isNull();
+        }
     }
 
     @Test
@@ -71,15 +84,16 @@ public class SnapshotStoreTest {
         // When: creating another snapshot
         // Then: no snapshot should be created since no modification since the last snapshot call
 
-        StoreManager storeManager = createOpenStoreManager(MY_STORE);
-        Store store = storeManager.getStore();
-        store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value").submit().get();
+        try (StoreManager storeManager = createOpenStoreManager(MY_STORE)) {
+            Store store = storeManager.getStore();
+            store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value").submit().get();
 
-        // Should create snapshot 1
-        assertThat(storeManager.snapshot()).isEqualTo(1);
+            // Should create snapshot 1
+            assertThat(storeManager.snapshot()).isEqualTo(1);
 
-        // Should not create another snapshot, since snapshot 1 is already the latest
-        assertThat(storeManager.snapshot()).isNull();
+            // Should not create another snapshot, since snapshot 1 is already the latest
+            assertThat(storeManager.snapshot()).isNull();
+        }
     }
 
     private StoreManager createOpenStoreManager(String storeName) throws Exception {
