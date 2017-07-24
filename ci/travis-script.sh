@@ -5,7 +5,7 @@ echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
 echo "TRAVIS_TAG = $TRAVIS_TAG"
 echo "TRAVIS_PULL_REQUEST = $TRAVIS_PULL_REQUEST"
 
-if [ "$TRAVIS_SECURE_ENV_VARS" = "true" -a "$TRAVIS_PULL_REQUEST" = "false" ]; then
+if [ "$TRAVIS_SECURE_ENV_VARS" = "true" -a "$TRAVIS_PULL_REQUEST" = "false" -a "$SONAR_TOKEN" != "" -a "$GPG_KEYNAME" != "" ]; then
     echo
     echo "Build, test and generate Sonar report"
     mvn -B clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
