@@ -1,12 +1,33 @@
 #!/bin/sh
 set -e
 
-GIT_BRANCH="$(git symbolic-ref --short HEAD)"
-if [ "$GIT_BRANCH" != "master" ]; then
-    echo "Not on master branch, aborting" && false
+GIT_URL=https://github.com/Axway/iron.git
+
+(git diff-index --quiet HEAD --) || (echo "There are uncommitted changes in the Git working directory, aborting)" && false)
+(git symbolic-ref --short HEAD)  || (echo "The working copy is in a detached HEAD state, aborting)" && false)
+
+GIT_LOCAL_BRANCH="$(git symbolic-ref --short HEAD)"
+
+echo "Local branch is $GIT_LOCAL_BRANCH"
+
+GIT_REMOTE_NAME=origin
+GIT_REMOTE_URL="$(git remote get-url $GIT_REMOTE_NAME)"
+if [ "$GIT_REMOTE_URL" != "$GIT_URL" ]; then
+    GIT_REMOTE_NAME=upstream
+    GIT_REMOTE_URL="$(git remote get-url $GIT_REMOTE_NAME)"
+    if [ "$GIT_REMOTE_URL" != "$GIT_URL" ]; then
+        echo "No remote match URL $GIT_URL"
+        exit 1
+    fi
 fi
 
-$(git diff-index --quiet HEAD --) || (echo "There are uncommitted changes in the Git working directory, aborting)" && false)
+echo "Found URL $GIT_URL on remote $GIT_REMOTE_NAME"
+
+echo "Fetch $GIT_REMOTE_NAME"
+git fetch $GIT_REMOTE_NAME
+
+echo "Checkout $GIT_REMOTE_NAME/master"
+git checkout $GIT_REMOTE_NAME/master
 
 ARTIFACT_ID="$(cat pom.xml | sed -n -E "s/.*<artifactId>(.*)<\/artifactId>.*/\1/p" | head -1)"
 echo "Artifact id is    : $ARTIFACT_ID"
@@ -39,12 +60,12 @@ echo "Updating pom.xml revision to $RELEASE_VERSION"
 sed -i -b -E "s/(<revision>).*(<\/revision>)/\1$RELEASE_VERSION\2/" pom.xml
 echo
 
-echo "Verifying build"
-mvn -B -P release clean verify
-echo
-
 echo "Committing pom.xml"
 git commit -m "Release $TAG_NAME" pom.xml
+echo
+
+echo "Verifying build"
+mvn -B -P release clean verify
 echo
 
 echo "Creating tag $TAG_NAME"
@@ -60,7 +81,10 @@ git commit -m "Start next development cycle on version $NEXT_VERSION" pom.xml
 echo
 
 echo "Pushing to Git repository"
-git push --follow-tags
+git push --follow-tags upstream HEAD:master
+
+echo "Going back to local branch $GIT_LOCAL_BRANCH"
+git checkout $GIT_LOCAL_BRANCH
 
 echo
 echo "SUCCESS!"
