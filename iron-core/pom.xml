@@ -15,7 +15,7 @@
     <description>Iron implementation</description>
 
     <properties>
-        <bnd.Import-Package>com.google.common.*;version="15.0",*</bnd.Import-Package>
+        <bnd.Import-Package>com.google.common.*;version="12.0",*</bnd.Import-Package>
     </properties>
 
     <dependencies>

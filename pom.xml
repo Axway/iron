@@ -95,7 +95,9 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>22.0</version>
+                <!-- This is not the latest Guava version, but since we don't need the latest features of Guava this allows us to be compatible with more versions of Guava -->
+                <!-- Iron users can freely overrides that version (with a more recent one) in their pom.xml by declaring Guava with their desired version -->
+                <version>12.0</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
