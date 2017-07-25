@@ -318,7 +318,7 @@
                             <instructions>
                                 <Bundle-DocURL>${project.url}</Bundle-DocURL>
                                 <Import-Package>javax.annotation.*;version="0.0.0",${bnd.Import-Package}</Import-Package>
-                                <SCM-Revision>${bnd.SCM-Revision}</SCM-Revision>
+                                <SCM-Revision>${buildNumber}</SCM-Revision>
                             </instructions>
                         </configuration>
                     </execution>
@@ -349,9 +349,6 @@
     <profiles>
         <profile>
             <id>release</id>
-            <properties>
-                <bnd.SCM-Revision>${scmBranch}@${buildNumber}</bnd.SCM-Revision>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
