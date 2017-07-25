@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.util.concurrent.ForwardingFuture;
 import io.axway.iron.Command;
 import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
@@ -316,10 +315,19 @@ class StoreManagerImpl implements StoreManager {
         }
     }
 
-    private static final class CommandFutureWrapper<T> extends ForwardingFuture<T> {
-        // this is needed to force to keep a strong reference to the transaction future that is enlisted in m_futuresBySynchronizationId weak cache
+    /**
+     * Directly send every calls to the wrapped {@code Future}. This class is needed to retain a strong reference to the underlying transaction {@code Future}.<br>
+     * So it prevents the transaction {@code Future} to be evicted from the {@link #m_futuresBySynchronizationId} weak cache, giving the opportunity to the
+     * transaction {@code Future} to be completed, and so the command {@code Future} can complete also.
+     *
+     * @param <T> the wrapper future type
+     */
+    private static final class CommandFutureWrapper<T> implements Future<T> {
+        /**
+         * Strong reference to the transaction {@code Future}. Not need to be used.
+         */
         @SuppressWarnings("unused")
-        private final Future<?> m_txFuture;
+        private final Object m_txFuture;
         private final Future<T> m_commandFuture;
 
         CommandFutureWrapper(CompletableFuture<List<?>> txFuture, int commandIndex) {
@@ -329,8 +337,28 @@ class StoreManagerImpl implements StoreManager {
         }
 
         @Override
-        protected Future<T> delegate() {
-            return m_commandFuture;
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return m_commandFuture.cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return m_commandFuture.isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            return m_commandFuture.isDone();
+        }
+
+        @Override
+        public T get() throws InterruptedException, ExecutionException {
+            return m_commandFuture.get();
+        }
+
+        @Override
+        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return m_commandFuture.get(timeout, unit);
         }
     }
 }
