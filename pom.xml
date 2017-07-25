@@ -262,6 +262,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>buildnumber-maven-plugin</artifactId>
+                    <version>1.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
                     <artifactId>flatten-maven-plugin</artifactId>
                     <version>1.0.0</version>
                 </plugin>
@@ -304,7 +309,6 @@
                 <executions>
                     <execution>
                         <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
                         <goals>
                             <goal>manifest</goal>
                         </goals>
@@ -312,6 +316,7 @@
                             <instructions>
                                 <Bundle-DocURL>${project.url}</Bundle-DocURL>
                                 <Import-Package>javax.annotation.*;version="0.0.0",${bnd.Import-Package}</Import-Package>
+                                <SCM-Revision>${bnd.SCM-Revision}</SCM-Revision>
                             </instructions>
                         </configuration>
                     </execution>
@@ -342,8 +347,26 @@
     <profiles>
         <profile>
             <id>release</id>
+            <properties>
+                <bnd.SCM-Revision>${scmBranch}@${buildNumber}</bnd.SCM-Revision>
+            </properties>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>buildnumber-maven-plugin</artifactId>
+                        <configuration>
+                            <doCheck>true</doCheck>
+                            <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>create</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>flatten-maven-plugin</artifactId>
