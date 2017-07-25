@@ -16,3 +16,7 @@ cache:
 
 before_cache:
   - rm -rf "$HOME/.m2/repository/io/axway/iron"
+
+notifications:
+  webhooks:
+    - secure: "tZRUI7fdt6ZTxjuEDMtf//51BcYEeeTZ0MX2uXuIvDL0iTKkmaW89iWauHtjbH+48oHoeph8AvXKRds7CFeV6TXlZbZ+xNO550ADdwDPvaZyNQDBqpr64ZwylAvl+xIIQseHXSFHy4lHloCiWedHEmRJbFC5nxT6aMTDP5bvFLURj5/0fZB1d6wzy2AhzXsjaqF/rbkz7y3tEZPylWW7zeffptbLMZWZ1ZbDmlALSRiBDpm+4CIe3+KjBY8m/IVPpbYOETIn1fS7ao40eqQhjeA53jqAUQv6IRxu2jXCpZAFxFZtuuOgAw8lNWfXI9/CO9xeM9vWub/gSsIRL+7pBhv2TwnG3hNtZYCzDToDUIQ4NWgBGdotALJ2Ee/koUWDJm5lwh5knen4SuDSFbUZTB+Bs0Qxmzh9225e9lo0kUJOqbm3ofrjDzzt3uDBduhfmq3X97QWY0VbiS1xEne7WutX8jnrq0gQl9a1k2GOXEp4aAOcZGe124+LzHjmN0z41EEMS3omzu/ge2DxGD19pf9clGNQkeWD4n0n2FZdQ1Ra0EbN/aFQjM+p/Z5FsjQkJGze84IBeDLkz+oKqplfga0C9V67L4CyDOzUH/IUMqpJqxqBHytQrIxs02IsqN4sGIip7BiKdWxQ2dMZXppLuzzHuEVnn+TdEXiuWOzGBUA="
