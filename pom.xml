@@ -78,6 +78,7 @@
         <module>iron-core</module>
         <module>iron-sample</module>
         <module>iron-spi</module>
+        <module>iron-spi-amazon</module>
         <module>iron-spi-chronicle</module>
         <module>iron-spi-jackson</module>
         <module>iron-spi-kafka</module>
