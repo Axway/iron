@@ -229,6 +229,17 @@ class StoreManagerImpl implements StoreManager {
                 m_readLock.unlock();
             }
         }
+
+        @Override
+        public <T> T query(Function<ReadOnlyTransaction, T> storeQuery) {
+            ensureOpen();
+            m_readLock.lock();
+            try {
+                return storeQuery.apply(m_readOnlyTransaction);
+            } finally {
+                m_readLock.unlock();
+            }
+        }
     }
 
     private class TransactionBuilderImpl implements Store.TransactionBuilder {
