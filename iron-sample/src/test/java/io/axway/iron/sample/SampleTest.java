@@ -118,12 +118,16 @@ public class SampleTest {
                     .submit();
             awaitAllAndDiscardErrors(c1);
 
-            store.query(tx -> System.out.printf("Batch1: %s%n", tx.select(Company.class).all()));
+            store.query(tx -> {
+                System.out.printf("Batch1: %s%n", tx.select(Company.class).all());
+            });
 
             Future<Void> c4 = store.createCommand(DeleteCompany.class).set(DeleteCompany::name).to("Apple").submit();
             awaitAll(c4);
 
-            store.query(tx -> System.out.printf("Batch2: %s%n", tx.select(Company.class).all()));
+            store.query(tx -> {
+                System.out.printf("Batch2: %s%n", tx.select(Company.class).all());
+            });
 
             Future<Void> c5 = store.createCommand(ChangeCompanyAddress.class) //
                     .set(ChangeCompanyAddress::name).to("Google") //
@@ -142,7 +146,9 @@ public class SampleTest {
 
             awaitAllAndDiscardErrors(c5, c6, c7);
 
-            store.query(tx -> System.out.printf("Batch3: %s%n", tx.select(Company.class).all()));
+            store.query(tx -> {
+                System.out.printf("Batch3: %s%n", tx.select(Company.class).all());
+            });
 
             Store.TransactionBuilder tx8 = store.begin();
             tx8.addCommand(CreatePerson.class) //
@@ -164,7 +170,9 @@ public class SampleTest {
 
             awaitAll(tx8.submit());
 
-            store.query(tx -> System.out.printf("Batch4: %s%n", tx.select(Person.class).all()));
+            store.query(tx -> {
+                System.out.printf("Batch4: %s%n", tx.select(Person.class).all());
+            });
 
             Store.TransactionBuilder tx9 = store.begin();
             tx9.addCommand(PersonJoinCompany.class) //

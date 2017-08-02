@@ -17,6 +17,15 @@ public interface Store {
     void query(Consumer<ReadOnlyTransaction> storeQuery);
 
     /**
+     * Query the store data thanks a {@link ReadOnlyTransaction} and return a result.
+     *
+     * @param storeQuery the store query. The provided {@link ReadOnlyTransaction} must not be used outside the scope of the query method.
+     * @param <T> the return type of the query
+     * @return the result of the {@code storeQuery} function
+     */
+    <T> T query(Function<ReadOnlyTransaction, T> storeQuery);
+
+    /**
      * Issue a transaction composed of a single command.
      *
      * @param commandClass the class of the command
