@@ -9,6 +9,7 @@
 [![Sonarcloud Tech Debt](https://sonarcloud.io/api/badges/measure?key=io.axway.iron:iron&metric=sqale_debt_ratio)](https://sonarcloud.io/project/issues?facetMode=effort&id=io.axway.iron:iron&resolved=false&types=CODE_SMELL)
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/2b62f004dbb84af98f47360f964ea3a6)](https://www.codacy.com/app/xfournet/iron)
+[![BCH compliance](https://bettercodehub.com/edge/badge/Axway/iron?branch=master)](https://bettercodehub.com/results/Axway/iron)
 
 # Iron
 
