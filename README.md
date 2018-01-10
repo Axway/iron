@@ -8,6 +8,7 @@
 [![Sonarcloud Coverage](https://sonarcloud.io/api/badges/measure?key=io.axway.iron:iron&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=io.axway.iron:iron)
 [![Sonarcloud Tech Debt](https://sonarcloud.io/api/badges/measure?key=io.axway.iron:iron&metric=sqale_debt_ratio)](https://sonarcloud.io/project/issues?facetMode=effort&id=io.axway.iron:iron&resolved=false&types=CODE_SMELL)
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2b62f004dbb84af98f47360f964ea3a6)](https://www.codacy.com/app/xfournet/iron)
 
 # Iron
 
