@@ -17,11 +17,6 @@ public class ShouldAutoGenerateIdTest implements SucceedingStoreTest {
     }
 
     @Override
-    public void provision(Store store) throws Exception {
-
-    }
-
-    @Override
     public void execute(Store store) throws Exception {
         Long key1 = store.createCommand(CommandCreateSimpleEntityWithId.class).set(CommandCreateSimpleEntityWithId::value).to(VAL1).submit().get();
         Long key2 = store.createCommand(CommandCreateSimpleEntityWithId.class).set(CommandCreateSimpleEntityWithId::value).to(VAL2).submit().get();

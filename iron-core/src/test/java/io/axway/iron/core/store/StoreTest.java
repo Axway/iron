@@ -6,7 +6,9 @@ import io.axway.iron.core.StoreManagerFactoryBuilder;
 public interface StoreTest {
     void configure(StoreManagerFactoryBuilder builder) throws Exception;
 
-    void provision(Store store) throws Exception;
+    default void provision(Store store) throws Exception {
+        // by default, do nothing
+    }
 
     void execute(Store store) throws Exception;
 }

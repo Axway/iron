@@ -29,10 +29,10 @@ git fetch $GIT_REMOTE_NAME
 echo "Checkout $GIT_REMOTE_NAME/master"
 git checkout $GIT_REMOTE_NAME/master
 
-ARTIFACT_ID="$(cat pom.xml | sed -n -E "s/.*<artifactId>(.*)<\/artifactId>.*/\1/p" | head -1)"
+ARTIFACT_ID="$(sed -n -E "s/.*<artifactId>(.*)<\/artifactId>.*/\1/p" pom.xml | head -1)"
 echo "Artifact id is    : $ARTIFACT_ID"
 
-CURRENT_VERSION="$(cat pom.xml | sed -n -E "s/.*<revision>(.*)<\/revision>.*/\1/p")"
+CURRENT_VERSION="$(sed -n -E "s/.*<revision>(.*)<\/revision>.*/\1/p" pom.xml)"
 echo "Current version is: $CURRENT_VERSION"
 
 (echo $CURRENT_VERSION | grep -Eq "^[0-9\.]+-SNAPSHOT$") || (echo "Not a SNAPSHOT version" && false)
