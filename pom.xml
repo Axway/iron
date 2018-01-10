@@ -79,7 +79,6 @@
         <module>iron-sample</module>
         <module>iron-spi</module>
         <module>iron-spi-chronicle</module>
-        <module>iron-spi-consul</module>
         <module>iron-spi-jackson</module>
         <module>iron-spi-kafka</module>
     </modules>
