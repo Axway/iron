@@ -13,6 +13,7 @@ import io.axway.iron.core.store.relation.command.CarCreateCommand;
 import io.axway.iron.core.store.relation.command.CarSetAuthorizedDriversCommand;
 import io.axway.iron.core.store.relation.model.Car;
 import io.axway.iron.core.store.relation.model.Person;
+import io.axway.iron.error.StoreException;
 
 class ShouldRollbackRelationTest extends AbstractRelationTest implements FailingStoreTest {
     @Override
@@ -39,7 +40,7 @@ class ShouldRollbackRelationTest extends AbstractRelationTest implements Failing
                     .set(Car::previousOwner).to(previousOwner) //
                     .done();
 
-            throw new RuntimeException("Kaboom");
+            throw new StoreException("Kaboom");
         }
     }
 

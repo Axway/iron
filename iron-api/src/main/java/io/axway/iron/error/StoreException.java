@@ -106,6 +106,7 @@ public class StoreException extends RuntimeException {
                     default:
                         String codePoint = "000" + Integer.toHexString(c);
                         sb.append("\\u").append(codePoint, codePoint.length() - 4, 4);
+                        break;
                 }
             } else if (c == '"' || c == '\\' || c == '/') {
                 sb.append('\\').append(c);

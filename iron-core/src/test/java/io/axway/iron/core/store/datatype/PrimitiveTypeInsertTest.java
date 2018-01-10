@@ -18,10 +18,6 @@ class PrimitiveTypeInsertTest implements SucceedingStoreTest {
     }
 
     @Override
-    public void provision(Store store) throws Exception {
-    }
-
-    @Override
     public void execute(Store store) throws Exception {
         store.createCommand(PrimitiveTypeInsertCommand.class) //
                 .set(PrimitiveTypeInsertCommand::booleanValue).to(true) //

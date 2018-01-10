@@ -7,7 +7,6 @@ import java.util.function.*;
 import javax.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.axway.iron.Command;
@@ -128,7 +127,7 @@ class StoreManagerImpl implements StoreManager {
     }
 
     private void ensureOpen() {
-        Preconditions.checkState(!m_closed, "Store has been closed");
+        checkState(!m_closed, "Store has been closed");
     }
 
     private void consumerLoop() {
