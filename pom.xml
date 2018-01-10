@@ -170,11 +170,6 @@
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
-                <artifactId>iron-spi-consul</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-jackson</artifactId>
                 <version>${revision}</version>
             </dependency>
