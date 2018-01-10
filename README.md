@@ -3,6 +3,8 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.axway.iron/iron.svg)](https://search.maven.org/#search|ga|1|g:"io.axway.iron")
 [![Javadoc](https://javadoc.io/badge/io.axway.iron/iron-api.svg)](https://javadoc.io/doc/io.axway.iron/iron-api)
 
+[![Dependency Status](https://www.versioneye.com/user/projects/5a561c790fb24f68c9948d98/badge.svg?style=flat-square)](https://www.versioneye.com/user/projects/5a561c790fb24f68c9948d98)
+
 [![Sonarcloud quality gate](https://sonarcloud.io/api/badges/gate?key=io.axway.iron:iron)](https://sonarcloud.io/dashboard?id=io.axway.iron:iron)
 [![Sonarcloud lines](https://sonarcloud.io/api/badges/measure?key=io.axway.iron:iron&metric=ncloc)](https://sonarcloud.io/component_measures/domain/Size?id=io.axway.iron:iron)
 [![Sonarcloud Coverage](https://sonarcloud.io/api/badges/measure?key=io.axway.iron:iron&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=io.axway.iron:iron)
