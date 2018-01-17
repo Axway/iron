@@ -1,6 +1,7 @@
 package io.axway.iron.core.spi.file;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.*;
@@ -17,11 +18,11 @@ class FileTransactionStore implements TransactionStore {
     private final Path m_transactionDir;
     private final Path m_transactionTmpDir;
 
-    private final AtomicLong m_tmpCounter = new AtomicLong();
+    private final AtomicBigInteger m_tmpCounter = new AtomicBigInteger(BigInteger.ZERO);
     private final Object m_commitLock = new Object();
-    private long m_nextTxId = 0;
+    private BigInteger m_nextTxId = BigInteger.ZERO;
 
-    private long m_consumerNextTxId = 0;
+    private BigInteger m_consumerNextTxId = BigInteger.ZERO;
 
     FileTransactionStore(Path transactionDir, Path transactionStoreTmpDir) {
         m_transactionDir = transactionDir;
@@ -39,7 +40,8 @@ class FileTransactionStore implements TransactionStore {
             public void close() throws IOException {
                 super.close();
                 synchronized (m_commitLock) {
-                    long transactionId = m_nextTxId++;
+                    BigInteger transactionId = m_nextTxId;
+                    m_nextTxId = m_nextTxId.add(BigInteger.ONE);
                     Path txFile = getTxFile(transactionId);
 
                     Files.move(tmpFile, txFile);
@@ -50,14 +52,14 @@ class FileTransactionStore implements TransactionStore {
     }
 
     @Override
-    public void seekTransactionPoll(long latestProcessedTransactionId) {
-        m_consumerNextTxId = latestProcessedTransactionId + 1;
+    public void seekTransactionPoll(BigInteger latestProcessedTransactionId) {
+        m_consumerNextTxId = latestProcessedTransactionId.add(BigInteger.ONE);
     }
 
     @Override
     public TransactionInput pollNextTransaction(long timeout, TimeUnit unit) {
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-        long txId = m_consumerNextTxId;
+        BigInteger txId = m_consumerNextTxId;
         Path nextFile = getTxFile(txId);
         while (!Files.exists(nextFile)) {
             long waitTimeout = deadline - System.currentTimeMillis();
@@ -75,7 +77,7 @@ class FileTransactionStore implements TransactionStore {
             }
         }
 
-        m_consumerNextTxId++;
+        m_consumerNextTxId = m_consumerNextTxId.add(BigInteger.ONE);
         return new TransactionInput() {
             @Override
             public InputStream getInputStream() throws IOException {
@@ -83,32 +85,32 @@ class FileTransactionStore implements TransactionStore {
             }
 
             @Override
-            public long getTransactionId() {
+            public BigInteger getTransactionId() {
                 return txId;
             }
         };
     }
 
-    private long retrieveNextTxId() {
+    private BigInteger retrieveNextTxId() {
         try (Stream<Path> dirList = Files.list(m_transactionDir)) {
             return dirList //
                     .map(path -> path.getFileName().toString()) //
                     .map(FILENAME_PATTERN::matcher) //
                     .filter(matcher -> matcher.matches() && TX_EXT.equals(matcher.group(2))) //
-                    .mapToLong(matcher -> Long.valueOf(matcher.group(1))) //
-                    .max() //
-                    .orElse(-1L) // in case no file exists we want nextTxId=0
-                    + 1;
+                    .map(matcher -> new BigInteger(matcher.group(1))) //
+                    .max(BigInteger::compareTo) //
+                    .orElse(BigInteger.ONE.negate()) // in case no file exists we want nextTxId=0
+                    .add(BigInteger.ONE);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private Path getTxFile(long id) {
+    private Path getTxFile(BigInteger id) {
         return m_transactionDir.resolve(getFileName(id, TX_EXT));
     }
 
-    private String getFileName(long id, String ext) {
+    private String getFileName(BigInteger id, String ext) {
         return String.format(FILENAME_FORMAT, id, ext);
     }
 }

@@ -1,6 +1,7 @@
 package io.axway.iron.core.internal;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -49,7 +50,7 @@ class StorePersistence {
         m_commandDefinitions = commandDefinitionsBuilder.build();
     }
 
-    void persistSnapshot(long txId, Collection<EntityStore<?>> entityStores) {
+    void persistSnapshot(BigInteger txId, Collection<EntityStore<?>> entityStores) {
         SerializableSnapshot serializableSnapshot = new SerializableSnapshot();
         serializableSnapshot.setSnapshotModelVersion(SNAPSHOT_MODEL_VERSION);
         serializableSnapshot.setTransactionId(txId);
@@ -62,10 +63,10 @@ class StorePersistence {
         }
     }
 
-    Long recover(Function<String, EntityStore<?>> entityStoreByName) {
-        OptionalLong latestSnapshotTxId = m_snapshotStore.listSnapshots().stream().mapToLong(value -> value).max();
+    BigInteger recover(Function<String, EntityStore<?>> entityStoreByName) {
+        Optional<BigInteger> latestSnapshotTxId = m_snapshotStore.listSnapshots().stream().max(BigInteger::compareTo);
         if (latestSnapshotTxId.isPresent()) {
-            long latestTxId = latestSnapshotTxId.getAsLong();
+            BigInteger latestTxId = latestSnapshotTxId.get();
             LOG.info("Recovering store from snapshot {transactionId={}}", latestTxId);
 
             SerializableSnapshot serializableSnapshot;
@@ -81,7 +82,7 @@ class StorePersistence {
                                 + SNAPSHOT_MODEL_VERSION + " is expected");
             }
 
-            if (latestTxId != serializableSnapshot.getTransactionId()) {
+            if (latestTxId.compareTo(serializableSnapshot.getTransactionId()) != 0) {
                 throw new IllegalStateException(
                         "Snapshot transaction id " + serializableSnapshot.getTransactionId() + " mismatch with request transaction id " + latestTxId);
             }
@@ -149,17 +150,17 @@ class StorePersistence {
     }
 
     static class TransactionToExecute {
-        private final long m_txId;
+        private final BigInteger m_txId;
         private final String m_synchronizationId;
         private final List<Command<?>> m_commands;
 
-        private TransactionToExecute(long txId, String synchronizationId, List<Command<?>> commands) {
+        private TransactionToExecute(BigInteger txId, String synchronizationId, List<Command<?>> commands) {
             m_txId = txId;
             m_synchronizationId = synchronizationId;
             m_commands = commands;
         }
 
-        long getTxId() {
+        BigInteger getTxId() {
             return m_txId;
         }
 

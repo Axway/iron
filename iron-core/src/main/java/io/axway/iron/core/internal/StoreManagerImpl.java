@@ -1,5 +1,6 @@
 package io.axway.iron.core.internal;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
@@ -40,8 +41,8 @@ class StoreManagerImpl implements StoreManager {
     private final ReadWriteLock m_readWriteLock = new ReentrantReadWriteLock();
     private final Lock m_readLock = m_readWriteLock.readLock();
     private final Lock m_writeLock = m_readWriteLock.writeLock();
-    private long m_currentTxId = 0;
-    private long m_lastSnapshotTxId = -1;
+    private BigInteger m_currentTxId = BigInteger.ZERO;
+    private BigInteger m_lastSnapshotTxId = BigInteger.ONE.negate();
 
     private volatile boolean m_closed = false;
 
@@ -59,7 +60,7 @@ class StoreManagerImpl implements StoreManager {
 
     void open() {
         ensureOpen();
-        Long recoveredSnapshotTxId = m_storePersistence.recover(m_entityStoreManager::getEntityStore);
+        BigInteger recoveredSnapshotTxId = m_storePersistence.recover(m_entityStoreManager::getEntityStore);
         m_thread.start();
         if (recoveredSnapshotTxId != null) {
             m_currentTxId = recoveredSnapshotTxId;
@@ -93,11 +94,11 @@ class StoreManagerImpl implements StoreManager {
 
     @Nullable
     @Override
-    public Long snapshot() {
+    public BigInteger snapshot() {
         ensureOpen();
         m_readLock.lock();
         try {
-            if (m_currentTxId > m_lastSnapshotTxId) {
+            if (m_currentTxId.compareTo(m_lastSnapshotTxId) > 0) {
                 m_storePersistence.persistSnapshot(m_currentTxId, m_entityStoreManager.getEntityStores());
                 m_lastSnapshotTxId = m_currentTxId;
                 return m_lastSnapshotTxId;
@@ -122,7 +123,7 @@ class StoreManagerImpl implements StoreManager {
     }
 
     @Override
-    public long lastSnapshotTransactionId() {
+    public BigInteger lastSnapshotTransactionId() {
         return m_lastSnapshotTxId;
     }
 
@@ -135,7 +136,7 @@ class StoreManagerImpl implements StoreManager {
         while (!m_closed) {
             StorePersistence.TransactionToExecute transactionToExecute = m_storePersistence.pollNextTransaction(10);
             if (transactionToExecute != null) {
-                long txId = transactionToExecute.getTxId();
+                BigInteger txId = transactionToExecute.getTxId();
                 List<Command<?>> commands = transactionToExecute.getCommands();
                 Object[] results = new Object[commands.size()];
                 Throwable error = null;
