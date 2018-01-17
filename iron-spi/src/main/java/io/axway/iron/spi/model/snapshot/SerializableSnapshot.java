@@ -1,5 +1,6 @@
 package io.axway.iron.spi.model.snapshot;
 
+import java.math.BigInteger;
 import java.util.*;
 import javax.xml.bind.annotation.*;
 
@@ -8,7 +9,7 @@ public class SerializableSnapshot {
     public static final long SNAPSHOT_MODEL_VERSION = 1;
 
     private long m_snapshotModelVersion;
-    private long m_transactionId;
+    private BigInteger m_transactionId;
     private Collection<SerializableEntity> m_entities;
 
     public long getSnapshotModelVersion() {
@@ -19,11 +20,11 @@ public class SerializableSnapshot {
         m_snapshotModelVersion = snapshotModelVersion;
     }
 
-    public long getTransactionId() {
+    public BigInteger getTransactionId() {
         return m_transactionId;
     }
 
-    public void setTransactionId(long transactionId) {
+    public void setTransactionId(BigInteger transactionId) {
         m_transactionId = transactionId;
     }
 

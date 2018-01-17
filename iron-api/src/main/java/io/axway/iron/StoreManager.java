@@ -1,5 +1,6 @@
 package io.axway.iron;
 
+import java.math.BigInteger;
 import javax.annotation.*;
 
 /**
@@ -21,7 +22,7 @@ public interface StoreManager extends AutoCloseable {
      * @return the transaction ID of the snapshot or {@code null} if no new snapshot was created
      */
     @Nullable
-    Long snapshot();
+    BigInteger snapshot();
 
     /**
      * Close the store, mainly stop the redolog processing thread.
@@ -33,5 +34,5 @@ public interface StoreManager extends AutoCloseable {
      *
      * @return the transaction ID of the last created snapshot
      */
-    long lastSnapshotTransactionId();
+    BigInteger lastSnapshotTransactionId();
 }

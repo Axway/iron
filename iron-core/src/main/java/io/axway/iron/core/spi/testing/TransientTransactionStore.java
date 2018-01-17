@@ -1,15 +1,17 @@
 package io.axway.iron.core.spi.testing;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import io.axway.iron.core.spi.file.AtomicBigInteger;
 import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.storage.TransactionStore;
 
 class TransientTransactionStore implements TransactionStore {
     private final BlockingQueue<byte[]> m_transactions = new LinkedBlockingDeque<>();
 
-    private final AtomicLong m_consumerNextTxId = new AtomicLong();
+    private final AtomicBigInteger m_consumerNextTxId = new AtomicBigInteger(BigInteger.ZERO);
 
     @Override
     public OutputStream createTransactionOutput() throws IOException {
@@ -30,8 +32,8 @@ class TransientTransactionStore implements TransactionStore {
     }
 
     @Override
-    public void seekTransactionPoll(long latestProcessedTransactionId) {
-        if (latestProcessedTransactionId != 0) {
+    public void seekTransactionPoll(BigInteger latestProcessedTransactionId) {
+        if (!latestProcessedTransactionId.equals(BigInteger.ZERO)) {
             throw new UnsupportedOperationException("Transient store doesn't support transaction store consumer seek");
         }
     }
@@ -47,7 +49,7 @@ class TransientTransactionStore implements TransactionStore {
         }
 
         if (bytes != null) {
-            long transactionId = m_consumerNextTxId.getAndIncrement();
+            BigInteger transactionId = m_consumerNextTxId.getAndIncrement();
             return new TransactionInput() {
                 @Override
                 public InputStream getInputStream() throws IOException {
@@ -55,7 +57,7 @@ class TransientTransactionStore implements TransactionStore {
                 }
 
                 @Override
-                public long getTransactionId() {
+                public BigInteger getTransactionId() {
                     return transactionId;
                 }
             };

@@ -1,6 +1,7 @@
 package io.axway.iron.core.bugs;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,11 +57,11 @@ public class SnapshotStoreTest {
         // Given: a store and a snapshot which transaction ID is TxID (TxID >= 4)
         // When: opening the store from that snapshot and creating a new snapshot without changing content of store
         // Then: new snapshot should be created with transaction ID >= TxID
-        int transactionCount = 10;
+        BigInteger transactionCount = BigInteger.TEN;
 
         try (StoreManager storeManager = createOpenStoreManager(MY_STORE)) {
             Store store = storeManager.getStore();
-            for (int i = 0; i < transactionCount; i++) {
+            for (int i = 0; i < transactionCount.longValueExact(); i++) {
                 store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value-" + i).submit().get();
             }
 
@@ -89,7 +90,7 @@ public class SnapshotStoreTest {
             store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value").submit().get();
 
             // Should create snapshot 1
-            assertThat(storeManager.snapshot()).isEqualTo(1);
+            assertThat(storeManager.snapshot()).isEqualTo(BigInteger.ONE);
 
             // Should not create another snapshot, since snapshot 1 is already the latest
             assertThat(storeManager.snapshot()).isNull();
