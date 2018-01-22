@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.axway.iron</groupId>
+        <artifactId>iron</artifactId>
+        <version>0.1.3-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>iron-spi-test</artifactId>
+    <version>0.1.3-SNAPSHOT</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.axway.iron</groupId>
+            <artifactId>iron-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.axway.iron</groupId>
+            <artifactId>iron-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.axway.iron</groupId>
+            <artifactId>iron-sample</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.axway.iron</groupId>
+            <artifactId>iron-spi</artifactId>
+        </dependency>
+    </dependencies>
+</project>

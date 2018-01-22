@@ -81,6 +81,8 @@
         <module>iron-spi-chronicle</module>
         <module>iron-spi-jackson</module>
         <module>iron-spi-kafka</module>
+        <module>iron-spi-aws</module>
+        <module>iron-spi-test</module>
     </modules>
 
     <dependencyManagement>
@@ -117,6 +119,21 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>1.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>amazon-kinesis-producer</artifactId>
+                <version>0.12.8</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>amazon-kinesis-client</artifactId>
+                <version>1.8.9</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-cbor</artifactId>
+                <version>2.9.3</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -176,6 +193,16 @@
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-kafka</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.axway.iron</groupId>
+                <artifactId>iron-spi-aws</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.axway.iron</groupId>
+                <artifactId>iron-spi-test</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>
