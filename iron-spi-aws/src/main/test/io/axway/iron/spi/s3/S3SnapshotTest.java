@@ -1,4 +1,4 @@
-package io.axway.iron.spi.kinesis;
+package io.axway.iron.spi.s3;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -10,20 +10,20 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static io.axway.iron.spi.kinesis.AwsKinesisTestUtils.buildTestAwsKinesisTransactionStoreFactory;
+import static io.axway.iron.spi.s3.AwsS3TestUtils.buildTestAwsS3SnapshotStoreFactory;
 
-public class KinesisTransactionTest {
+public class S3SnapshotTest {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"));
+        AmazonS3SnapshotStoreFactory amazonS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();
 
-        KinesisTransactionStoreFactory kinesisTransactionStoreFactory = buildTestAwsKinesisTransactionStoreFactory();
+        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"));
 
         String storeBaseName = "irontest-" + System.getProperty("user.name");
 
         return new Object[][]{ //
-                {kinesisTransactionStoreFactory, fileStoreFactory, storeBaseName + "-" + UUID.randomUUID()}, //
+                {fileStoreFactory, amazonS3SnapshotStoreFactory, storeBaseName + "-" + UUID.randomUUID()}, //
         };
     }
 

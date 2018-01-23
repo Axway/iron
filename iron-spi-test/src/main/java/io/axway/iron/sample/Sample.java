@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
+import javax.annotation.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.axway.iron.ReadOnlyTransaction;
@@ -24,8 +25,10 @@ import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
+import static com.google.common.collect.ImmutableMap.*;
 import static io.axway.iron.core.StoreManagerFactoryBuilder.newStoreManagerBuilderFactory;
-import static org.assertj.core.api.Assertions.assertThat;
+import static java.util.stream.Collectors.*;
+import static org.assertj.core.api.Assertions.*;
 
 public class Sample {
 
@@ -83,7 +86,7 @@ public class Sample {
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
-            tx1.addCommand(CreateCompany.class).map(ImmutableMap.of("name", "Apple", "address", "Cupertino")).submit();
+            tx1.addCommand(CreateCompany.class).map(of("name", "Apple", "address", "Cupertino")).submit();
             List<?> result = tx1.submit().get();
             assertThat(result.size()).isEqualTo(4);
             assertThat(result.get(0)).isEqualTo(0L);
@@ -98,16 +101,21 @@ public class Sample {
                     .submit();
             awaitAllAndDiscardErrors(c1);
 
-            store.query(tx -> {
-                System.out.printf("Batch1: %s%n", tx.select(Company.class).all());
-            });
+            checkCompanies("Batch1", store,//
+                           of("name", "Google", "address", "Palo Alto"),//
+                           of("name", "Microsoft", "address", "Seattle"),//
+                           of("name", "Axway", "address", "Phoenix"),//
+                           of("name", "Apple", "address", "Cupertino", "country", "USA")//
+            );
 
             Future<Void> c4 = store.createCommand(DeleteCompany.class).set(DeleteCompany::name).to("Apple").submit();
             awaitAll(c4);
 
-            store.query(tx -> {
-                System.out.printf("Batch2: %s%n", tx.select(Company.class).all());
-            });
+            checkCompanies("Batch2", store,//
+                           of("name", "Google", "address", "Palo Alto"),//
+                           of("name", "Microsoft", "address", "Seattle"),//
+                           of("name", "Axway", "address", "Phoenix")//
+            );
 
             Future<Void> c5 = store.createCommand(ChangeCompanyAddress.class) //
                     .set(ChangeCompanyAddress::name).to("Google") //
@@ -124,11 +132,15 @@ public class Sample {
                     .set(DeleteCompany::name).to("Google") //
                     .submit();
 
-            awaitAllAndDiscardErrors(c5, c6, c7);
+            awaitAndCheckMessage(c5, "New country must be null or not empty");
+            awaitAndCheckMessage(c6, "New address must be null or not empty");
+            awaitAndCheckMessage(c7, "You cannot delete Google!");
 
-            store.query(tx -> {
-                System.out.printf("Batch3: %s%n", tx.select(Company.class).all());
-            });
+            checkCompanies("Batch3", store,//
+                           of("name", "Google", "address", "Palo Alto"),//
+                           of("name", "Microsoft", "address", "Seattle"),//
+                           of("name", "Axway", "address", "Phoenix")//
+            );
 
             Store.TransactionBuilder tx8 = store.begin();
             tx8.addCommand(CreatePerson.class) //
@@ -148,11 +160,12 @@ public class Sample {
                     .set(CreatePerson::name).to("mark") //
                     .submit();
 
-            awaitAll(tx8.submit());
+            awaitAndCheckMessage(tx8.submit(), null);
 
-            store.query(tx -> {
-                System.out.printf("Batch4: %s%n", tx.select(Person.class).all());
-            });
+            checkPersons("Batch4", store, of("name", "bill", "id", "123", "birthDate", DATE_FORMAT.parse("01/01/1990")),//
+                         of("name", "john", "id", "456"),//
+                         of("name", "mark", "id", "789")//
+            );
 
             Store.TransactionBuilder tx9 = store.begin();
             tx9.addCommand(PersonJoinCompany.class) //
@@ -171,12 +184,12 @@ public class Sample {
                     .set(PersonJoinCompany::salary).to(123456.0) //
                     .submit();
 
-            awaitAll(tx9.submit());
+            awaitAndCheckMessage(tx9.submit(), null);
 
-            store.query(tx -> {
-                Collection<Person> persons = tx.select(Person.class).all();
-                System.out.printf("Batch5: %s%n", persons);
-            });
+            checkPersons("Batch5", store, of("name", "bill", "id", "123", "salary", 111_111., "birthDate", DATE_FORMAT.parse("01/01/1990")),//
+                         of("name", "john", "id", "456", "salary", 100_000.),//
+                         of("name", "mark", "id", "789", "salary", 123_456.)//
+            );
 
             store.query(checkData);
 
@@ -188,6 +201,39 @@ public class Sample {
             store.query(listInstances);
             store.query(checkData);
         }
+    }
+
+    private static void checkCompanies(String title, Store store, ImmutableMap<Object, Object>... expectedCompanies) {
+        store.query(tx -> {
+            Collection<Company> companies = tx.select(Company.class).all();
+            System.out.printf(title + ": %s%n", companies);
+            assertThat(companies.stream()//
+                               .map(company -> {
+                                   Builder<Object, Object> map = builder().put("name", company.name()).put("address", company.address());
+                                   if (company.country() != null) {
+                                       map.put("country", company.country());
+                                   }
+                                   return map.build();
+                               }).collect(toList())).containsExactlyInAnyOrder(expectedCompanies);
+        });
+    }
+
+    private static void checkPersons(String title, Store store, ImmutableMap<Object, Object>... expectedPersons) {
+        store.query(tx -> {
+            Collection<Person> persons = tx.select(Person.class).all();
+            System.out.printf(title + ": %s%n", persons);
+            assertThat(persons.stream()//
+                               .map(person -> {
+                                   Builder<Object, Object> map = builder().put("name", person.name()).put("id", person.id());
+                                   if (person.birthDate() != null) {
+                                       map.put("birthDate", person.birthDate());
+                                   }
+                                   if (person.salary() != null) {
+                                       map.put("salary", person.salary());
+                                   }
+                                   return map.build();
+                               }).collect(toList())).containsExactlyInAnyOrder(expectedPersons);
+        });
     }
 
     private static void awaitAll(Future<?>... futures) throws ExecutionException, InterruptedException {
@@ -204,6 +250,21 @@ public class Sample {
                 // discarded
                 System.out.printf("%s%n", e.getCause().getMessage());
             }
+        }
+    }
+
+    private static void awaitAndCheckMessage(Future<?> future, @Nullable String expectedMessage) throws InterruptedException, ExecutionException {
+        if (expectedMessage == null) {
+            future.get();
+        } else {
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                // discarded
+                assertThat(e.getCause().getMessage()).as("An exception has corretly been thrown, but the message was not correct.").isEqualTo(expectedMessage);
+                return;
+            }
+            fail("No exception has been thrown, while exception with message [" + expectedMessage + "] was expected.");
         }
     }
 }

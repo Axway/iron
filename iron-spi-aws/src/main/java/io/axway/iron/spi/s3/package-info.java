@@ -1,4 +1,4 @@
 @ParametersAreNonnullByDefault
-package io.axway.iron.spi.amazon.snapshot;
+package io.axway.iron.spi.s3;
 
 import javax.annotation.*;
