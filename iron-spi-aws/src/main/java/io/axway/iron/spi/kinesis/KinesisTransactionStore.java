@@ -5,16 +5,9 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
-import javax.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.kinesis.AmazonKinesis;
-import com.amazonaws.services.kinesis.AmazonKinesisClient;
-import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
 import com.amazonaws.services.kinesis.model.DescribeStreamResult;
 import com.amazonaws.services.kinesis.model.GetRecordsRequest;
@@ -27,7 +20,6 @@ import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import io.axway.iron.spi.storage.TransactionStore;
 
@@ -53,16 +45,11 @@ class KinesisTransactionStore implements TransactionStore {
 
     private BigInteger m_seekTransactionId = null;
 
-    KinesisTransactionStore(String accessKey, String secretKey, String streamName, @Nullable String region, @Nullable String kinesisEndpoint,
-                            @Nullable Long kinesisPort, @Nullable String cloudwatchEndpoint, @Nullable Long cloudwatchPort,
-                            @Nullable Boolean isVerifyCertificate) {
+    public KinesisTransactionStore(KinesisProducer producer, AmazonKinesis consumer, String streamName) {
         checkArgument(!(m_streamName = streamName.trim()).isEmpty(), "Topic name can't be null");
 
-        AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
-
-        m_producer = buildKinesisProducer(credentialsProvider, region, kinesisEndpoint, kinesisPort, cloudwatchEndpoint, cloudwatchPort, isVerifyCertificate);
-
-        m_consumer = buildKinesisConsumer(credentialsProvider, region, kinesisEndpoint, kinesisPort);
+        m_producer = producer;
+        m_consumer = consumer;
 
         createStreamIfNotExists(m_streamName);
 
@@ -81,23 +68,6 @@ class KinesisTransactionStore implements TransactionStore {
         } catch (ResourceNotFoundException e) {
             m_consumer.createStream(streamName, SHARD_COUNT);
         }
-    }
-
-    /**
-     * Build a kinesis provider.
-     */
-    private static AmazonKinesis buildKinesisConsumer(AWSStaticCredentialsProvider credentialsProvider, @Nullable String region,
-                                                      @Nullable String kinesisEndpoint, @Nullable Long kinesisPort) {
-        checkArgument((region == null && kinesisEndpoint == null && kinesisPort == null) || (region != null && kinesisEndpoint != null && kinesisPort != null),
-                      "region, kinesisEndpoint and kinesisPort must all be null or all not null");
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        final AmazonKinesisClientBuilder builder = AmazonKinesisClient.builder().withClientConfiguration(clientConfiguration)
-                .withCredentials(credentialsProvider);
-        if (region != null && kinesisEndpoint != null && kinesisPort != null) {
-            String kinesisEndpointFull = "https://" + kinesisEndpoint + ":" + kinesisPort;
-            builder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(kinesisEndpointFull, region));
-        }
-        return builder.build();
     }
 
     /**
@@ -127,45 +97,6 @@ class KinesisTransactionStore implements TransactionStore {
         }
 
         return describeStreamResult.getStreamDescription().getShards().get(0);
-    }
-
-    /**
-     * Here'll walk through some of the config options and create an instance of
-     * KinesisProducer, which will be used to put records.
-     *
-     * @return KinesisProducer instance used to put records.
-     */
-    private static KinesisProducer buildKinesisProducer(AWSStaticCredentialsProvider credentialsProvider, @Nullable String region,
-                                                        @Nullable String kinesisEndpoint, @Nullable Long kinesisPort, @Nullable String cloudwatchEndpoint,
-                                                        @Nullable Long cloudwatchPort, @Nullable Boolean isVerifyCertificate) {
-        KinesisProducerConfiguration config = new KinesisProducerConfiguration()
-                //@formatter:off
-                .setCredentialsProvider(credentialsProvider)
-                // FIXME US CND-XXX this version of KinesisProducer does not support aggregation
-                .setAggregationEnabled(false)
-                //.setRecordMaxBufferedTime(15_000)
-                ;
-                //@formatter:on
-        if (region != null) {
-            config.setRegion(region);
-        }
-        if (kinesisEndpoint != null) {
-            config.setKinesisEndpoint(kinesisEndpoint);
-        }
-        if (kinesisPort != null) {
-            config.setKinesisPort(kinesisPort);
-        }
-        if (cloudwatchEndpoint != null) {
-            config.setCloudwatchEndpoint(cloudwatchEndpoint);
-        }
-        if (cloudwatchPort != null) {
-            config.setCloudwatchPort(cloudwatchPort);
-        }
-        if (isVerifyCertificate != null) {
-            config.setVerifyCertificate(isVerifyCertificate);
-        }
-        KinesisProducer producer = new KinesisProducer(config);
-        return producer;
     }
 
     @Override

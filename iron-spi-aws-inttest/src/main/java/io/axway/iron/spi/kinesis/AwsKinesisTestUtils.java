@@ -1,6 +1,10 @@
 package io.axway.iron.spi.kinesis;
 
 import javax.annotation.*;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.kinesis.AmazonKinesis;
+import com.amazonaws.services.kinesis.producer.KinesisProducer;
 
 public class AwsKinesisTestUtils {
 
@@ -20,7 +24,14 @@ public class AwsKinesisTestUtils {
         Long cloudwatchPort = 4582L;
         // Disable certificate verification for testing purpose
         Boolean isVerifyCertificate = false;
-        return new KinesisTransactionStoreFactory(accessKey, secretKey, region, kinesisEndpoint, kinesisPort, cloudwatchEndpoint, cloudwatchPort,
-                                                  isVerifyCertificate);
+
+        AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
+
+        KinesisProducer producer = AwsKinesisUtils
+                .buildKinesisProducer(credentialsProvider, region, kinesisEndpoint, kinesisPort, cloudwatchEndpoint, cloudwatchPort, isVerifyCertificate);
+
+        AmazonKinesis consumer = AwsKinesisUtils.buildKinesisConsumer(credentialsProvider, region, kinesisEndpoint, kinesisPort);
+
+        return new KinesisTransactionStoreFactory(producer, consumer);
     }
 }

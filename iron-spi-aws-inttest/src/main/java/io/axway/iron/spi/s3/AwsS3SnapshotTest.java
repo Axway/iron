@@ -16,6 +16,7 @@ public class AwsS3SnapshotTest {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
+
         AmazonS3SnapshotStoreFactory amazonS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();
 
         FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"));

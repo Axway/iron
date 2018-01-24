@@ -174,7 +174,12 @@
                 <version>3.9.0</version>
                 <scope>test</scope>
             </dependency>
-
+            <dependency>
+                <groupId>org.jmockit</groupId>
+                <artifactId>jmockit</artifactId>
+                <version>1.22</version>
+                <scope>test</scope>
+            </dependency>
             <!-- own modules -->
             <dependency>
                 <groupId>io.axway.iron</groupId>
@@ -254,6 +259,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
