@@ -99,7 +99,8 @@ public class Sample {
                     .set(ChangeCompanyAddress::newAddress).to("Cupertino") //
                     .set(ChangeCompanyAddress::newCountry).to("USA") //
                     .submit();
-            awaitAllAndDiscardErrors(c1);
+
+            awaitAndCheckMessage(c1, null);
 
             checkCompanies("Batch1", store,//
                            of("name", "Google", "address", "Palo Alto"),//
@@ -109,7 +110,8 @@ public class Sample {
             );
 
             Future<Void> c4 = store.createCommand(DeleteCompany.class).set(DeleteCompany::name).to("Apple").submit();
-            awaitAll(c4);
+
+            awaitAndCheckMessage(c4, null);
 
             checkCompanies("Batch2", store,//
                            of("name", "Google", "address", "Palo Alto"),//
@@ -234,23 +236,6 @@ public class Sample {
                                    return map.build();
                                }).collect(toList())).containsExactlyInAnyOrder(expectedPersons);
         });
-    }
-
-    private static void awaitAll(Future<?>... futures) throws ExecutionException, InterruptedException {
-        for (Future<?> future : futures) {
-            future.get();
-        }
-    }
-
-    private static void awaitAllAndDiscardErrors(Future<?>... futures) throws InterruptedException {
-        for (Future<?> future : futures) {
-            try {
-                future.get();
-            } catch (ExecutionException e) {
-                // discarded
-                System.out.printf("%s%n", e.getCause().getMessage());
-            }
-        }
     }
 
     private static void awaitAndCheckMessage(Future<?> future, @Nullable String expectedMessage) throws InterruptedException, ExecutionException {
