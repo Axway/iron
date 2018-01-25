@@ -16,7 +16,6 @@ import com.amazonaws.services.kinesis.model.GetShardIteratorRequest;
 import com.amazonaws.services.kinesis.model.GetShardIteratorResult;
 import com.amazonaws.services.kinesis.model.ProvisionedThroughputExceededException;
 import com.amazonaws.services.kinesis.model.Record;
-import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
@@ -24,6 +23,7 @@ import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import io.axway.iron.spi.storage.TransactionStore;
 
 import static com.google.common.base.Preconditions.*;
+import static io.axway.iron.spi.kinesis.AwsKinesisUtils.doesStreamExist;
 
 /**
  * Kinesis implementation of the TransactionStore.
@@ -33,11 +33,6 @@ class KinesisTransactionStore implements TransactionStore {
 
     private static final Logger LOG = LoggerFactory.getLogger(KinesisTransactionStore.class);
 
-    private static final int SHARD_COUNT = 1;// multi shard is not supported by this implementation
-    private static final int STREAM_CREATION_DELAY = 60_000;// 1 minute
-    private static final int DELAY_BETWEEN_STREAM_CREATION_REQUESTS = 100;// 100 ms
-    private static final String ACTIVE_STREAM_STATUS = "ACTIVE";
-
     private final String m_streamName;
     private final Shard m_shard;
     private final KinesisProducer m_producer;
@@ -45,29 +40,23 @@ class KinesisTransactionStore implements TransactionStore {
 
     private BigInteger m_seekTransactionId = null;
 
+    /**
+     * Create a KinesisTransactionStore based on an already active Kinesis Stream.
+     * That is not the responsibility of this constructor to create the Kinesis Stream nor to wait that the Kinesis Stream reaches the 'ACTIVE" status.
+     *
+     * @param producer
+     * @param consumer
+     * @param streamName
+     */
     public KinesisTransactionStore(KinesisProducer producer, AmazonKinesis consumer, String streamName) {
         checkArgument(!(m_streamName = streamName.trim()).isEmpty(), "Topic name can't be null");
 
         m_producer = producer;
         m_consumer = consumer;
 
-        createStreamIfNotExists(m_streamName);
+        checkState(doesStreamExist(m_consumer, m_streamName), "The Kinesis Stream %s should already exist.", m_streamName);
 
         m_shard = getUniqueShard();
-    }
-
-    /**
-     * Create a stream if it does not already exist.
-     *
-     * @param streamName the name of the stream
-     */
-    private void createStreamIfNotExists(String streamName) {
-        DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest().withStreamName(m_streamName).withLimit(1);
-        try {
-            m_consumer.describeStream(describeStreamRequest);
-        } catch (ResourceNotFoundException e) {
-            m_consumer.createStream(streamName, SHARD_COUNT);
-        }
     }
 
     /**
@@ -75,28 +64,16 @@ class KinesisTransactionStore implements TransactionStore {
      */
     private Shard getUniqueShard() {
         DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest().withStreamName(m_streamName).withLimit(1);
-        DescribeStreamResult describeStreamResult = null;
-        String streamStatus = null;
-        long endTime = System.currentTimeMillis() + STREAM_CREATION_DELAY;
-        while (System.currentTimeMillis() < endTime) {
-            try {
-                describeStreamResult = m_consumer.describeStream(describeStreamRequest);
-                streamStatus = describeStreamResult.getStreamDescription().getStreamStatus();
-                if (streamStatus.equals(ACTIVE_STREAM_STATUS)) {
-                    break;
-                }
-                try {
-                    Thread.sleep(DELAY_BETWEEN_STREAM_CREATION_REQUESTS);
-                } catch (Exception ignored) {
-                }
-            } catch (ResourceNotFoundException ignored) {
-            }
+        DescribeStreamResult describeStreamResult = m_consumer.describeStream(describeStreamRequest);
+        String streamStatus = describeStreamResult.getStreamDescription().getStreamStatus();
+        if (streamStatus == null || !streamStatus.equals(AwsKinesisUtils.ACTIVE_STREAM_STATUS)) {
+            throw new RuntimeException("Stream " + m_streamName + " does not exist.");
         }
-        if (describeStreamResult == null || streamStatus == null || !streamStatus.equals(ACTIVE_STREAM_STATUS)) {
-            throw new RuntimeException("Stream " + m_streamName + " never went " + ACTIVE_STREAM_STATUS);
-        }
+        List<Shard> shards = describeStreamResult.getStreamDescription().getShards();
 
-        return describeStreamResult.getStreamDescription().getShards().get(0);
+        checkState(shards.size() == 1, "This Kinesis Stream %s should contain a single Shard, but it contains %d shards.", m_streamName, shards.size());
+
+        return shards.get(0);
     }
 
     @Override

@@ -4,7 +4,6 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.regex.*;
-import java.util.stream.*;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
@@ -13,12 +12,13 @@ import io.axway.iron.spi.storage.SnapshotStore;
 
 import static com.google.common.base.Preconditions.checkState;
 import static io.axway.iron.spi.s3.AwsS3Utils.doesBucketExist;
+import static java.util.stream.Collectors.*;
 
 class AmazonS3SnapshotStore implements SnapshotStore {
 
     private static final String DIRNAME_FORMAT = "%s/tx";
-    private static final String FILENAME_FORMAT = DIRNAME_FORMAT + "/%020d.tx";
-    private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]{20})\\.tx");
+    private static final String FILENAME_FORMAT = DIRNAME_FORMAT + "/%d.tx";
+    private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]+)\\.tx");
     private final AmazonS3 m_amazonS3;
     private final String m_bucketName;
     private String m_storeName;
@@ -56,12 +56,14 @@ class AmazonS3SnapshotStore implements SnapshotStore {
 
     @Override
     public List<BigInteger> listSnapshots() {
-        return m_amazonS3.listObjectsV2(m_bucketName, getSnapshotDirName()).getObjectSummaries().stream() //
-                .map(S3ObjectSummary::getKey).map(FILENAME_PATTERN::matcher) //
+        List<S3ObjectSummary> objectSummaries = m_amazonS3.listObjectsV2(m_bucketName, getSnapshotDirName()).getObjectSummaries();
+        return objectSummaries.stream() //
+                .map(S3ObjectSummary::getKey) //
+                .map(key -> key.replace(getSnapshotDirName() + "/", "")).map(FILENAME_PATTERN::matcher) //
                 .filter(Matcher::matches) //
                 .map(matcher -> matcher.group(1)) //
                 .map(BigInteger::new) //
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     @Override

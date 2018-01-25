@@ -205,6 +205,100 @@ public class Sample {
         }
     }
 
+    public static void testStore(TransactionStoreFactory transactionStoreFactory, TransactionSerializer transactionSerializer,
+                                 SnapshotStoreFactory snapshotStoreFactory, SnapshotSerializer snapshotSerializer, String storeName) throws Exception {
+        System.out.println("storeManagerFactory1");
+
+        StoreManagerFactory storeManagerFactory1 = newStoreManagerBuilderFactory() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withEntityClass(Company.class) //
+                .withEntityClass(Person.class) //
+                .withCommandClass(ChangeCompanyAddress.class) //
+                .withCommandClass(CreateCompany.class) //
+                .withCommandClass(CreatePerson.class) //
+                .withCommandClass(DeleteCompany.class) //
+                .withCommandClass(PersonJoinCompany.class) //
+                .withCommandClass(PersonLeaveCompany.class) //
+                .withCommandClass(PersonRaiseSalary.class) //
+                .build();
+
+        try (StoreManager storeManager1 = storeManagerFactory1.openStore(storeName)) {
+            Store store1 = storeManager1.getStore();
+            Store.TransactionBuilder tx1 = store1.begin();
+            tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("MyCompany1").submit();
+            List<?> result1 = tx1.submit().get();
+            storeManager1.snapshot();
+            Store.TransactionBuilder tx2 = store1.begin();
+            tx2.addCommand(CreateCompany.class).set(CreateCompany::name).to("MyCompany2").submit();
+            List<?> result2 = tx2.submit().get();
+        }
+
+        System.out.println("storeManagerFactory2");
+
+        StoreManagerFactory storeManagerFactory2 = newStoreManagerBuilderFactory() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withEntityClass(Company.class) //
+                .withEntityClass(Person.class) //
+                .withCommandClass(ChangeCompanyAddress.class) //
+                .withCommandClass(CreateCompany.class) //
+                .withCommandClass(CreatePerson.class) //
+                .withCommandClass(DeleteCompany.class) //
+                .withCommandClass(PersonJoinCompany.class) //
+                .withCommandClass(PersonLeaveCompany.class) //
+                .withCommandClass(PersonRaiseSalary.class) //
+                .build();
+
+        Consumer<ReadOnlyTransaction> listCompanys = tx -> {
+            tx.select(Company.class).all().forEach(company -> {
+                System.out.printf("Company %s%n", company.name());
+            });
+        };
+        try (StoreManager storeManager2 = storeManagerFactory2.openStore(storeName)) {
+            Store store2 = storeManager2.getStore();
+            store2.query(listCompanys);
+        }
+    }
+
+    public static void testSnapshotStore(TransactionStoreFactory transactionStoreFactory, TransactionSerializer transactionSerializer,
+                                         SnapshotStoreFactory snapshotStoreFactory, SnapshotSerializer snapshotSerializer, String storeName) throws Exception {
+        System.out.println("storeManagerFactory1");
+
+        StoreManagerFactory storeManagerFactory1 = newStoreManagerBuilderFactory() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withEntityClass(Company.class) //
+                .withEntityClass(Person.class) //
+                .withCommandClass(ChangeCompanyAddress.class) //
+                .withCommandClass(CreateCompany.class) //
+                .withCommandClass(CreatePerson.class) //
+                .withCommandClass(DeleteCompany.class) //
+                .withCommandClass(PersonJoinCompany.class) //
+                .withCommandClass(PersonLeaveCompany.class) //
+                .withCommandClass(PersonRaiseSalary.class) //
+                .build();
+
+        try (StoreManager storeManager1 = storeManagerFactory1.openStore(storeName)) {
+            assertThat(snapshotStoreFactory.createSnapshotStore(storeName).listSnapshots()).hasSize(1);
+            Store store1 = storeManager1.getStore();
+            Store.TransactionBuilder tx1 = store1.begin();
+            tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("MyCompany1").submit();
+            List<?> result1 = tx1.submit().get();
+            assertThat(snapshotStoreFactory.createSnapshotStore(storeName).listSnapshots()).hasSize(1);
+            storeManager1.snapshot();
+            assertThat(snapshotStoreFactory.createSnapshotStore(storeName).listSnapshots()).hasSize(2);
+        }
+    }
+
+    //region Tools
+
     private static void checkCompanies(String title, Store store, ImmutableMap<Object, Object>... expectedCompanies) {
         store.query(tx -> {
             Collection<Company> companies = tx.select(Company.class).all();
@@ -252,4 +346,6 @@ public class Sample {
             fail("No exception has been thrown, while exception with message [" + expectedMessage + "] was expected.");
         }
     }
+
+    //endregion
 }
