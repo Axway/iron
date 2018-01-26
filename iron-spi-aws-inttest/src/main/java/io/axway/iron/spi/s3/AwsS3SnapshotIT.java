@@ -12,7 +12,7 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 import static io.axway.iron.spi.kinesis.AwsKinesisTestUtils.*;
 import static io.axway.iron.spi.s3.AwsS3TestUtils.buildTestAwsS3SnapshotStoreFactory;
 
-public class AwsS3SnapshotTest {
+public class AwsS3SnapshotIT {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {

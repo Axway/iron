@@ -11,7 +11,7 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 
 import static io.axway.iron.spi.kinesis.AwsKinesisTestUtils.*;
 
-public class AwsKinesisTransactionTest {
+public class AwsKinesisTransactionIT {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
