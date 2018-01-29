@@ -31,13 +31,15 @@ public class AwsS3SnapshotIT {
     public void test(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory) throws Exception {
         String storeName = createStreamAndWaitActivationWithRandomName();
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.testCreateCompany(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);
+        Sample.checkThatCreateCompanySequenceIsRight(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);
     }
 
     @Test(dataProvider = "stores")
-    public void testSnapshotStore(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory) throws Exception {
+    public void shouldListSnapshotsReturnTheRightNumberOfSnapshots(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory)
+            throws Exception {
         String storeName = createStreamAndWaitActivationWithRandomName();
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.testSnapshotStore(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);
+        Sample.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer,
+                                                                     storeName);
     }
 }

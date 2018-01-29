@@ -7,7 +7,9 @@ import java.util.function.*;
 import javax.annotation.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.axway.iron.Command;
 import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.StoreManagerFactory;
@@ -34,8 +36,9 @@ public class Sample {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/mm/yyyy");
 
-    public static void testCreateCompany(TransactionStoreFactory transactionStoreFactory, TransactionSerializer transactionSerializer,
-                                         SnapshotStoreFactory snapshotStoreFactory, SnapshotSerializer snapshotSerializer, String storeName) throws Exception {
+    public static void checkThatCreateCompanySequenceIsRight(TransactionStoreFactory transactionStoreFactory, TransactionSerializer transactionSerializer,
+                                                             SnapshotStoreFactory snapshotStoreFactory, SnapshotSerializer snapshotSerializer, String storeName)
+            throws Exception {
         StoreManagerFactory storeManagerFactory = newStoreManagerBuilderFactory() //
                 .withTransactionSerializer(transactionSerializer) //
                 .withTransactionStoreFactory(transactionStoreFactory) //
@@ -205,68 +208,10 @@ public class Sample {
         }
     }
 
-    public static void testStore(TransactionStoreFactory transactionStoreFactory, TransactionSerializer transactionSerializer,
-                                 SnapshotStoreFactory snapshotStoreFactory, SnapshotSerializer snapshotSerializer, String storeName) throws Exception {
-        System.out.println("storeManagerFactory1");
-
-        StoreManagerFactory storeManagerFactory1 = newStoreManagerBuilderFactory() //
-                .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStoreFactory(transactionStoreFactory) //
-                .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
-                .withEntityClass(Company.class) //
-                .withEntityClass(Person.class) //
-                .withCommandClass(ChangeCompanyAddress.class) //
-                .withCommandClass(CreateCompany.class) //
-                .withCommandClass(CreatePerson.class) //
-                .withCommandClass(DeleteCompany.class) //
-                .withCommandClass(PersonJoinCompany.class) //
-                .withCommandClass(PersonLeaveCompany.class) //
-                .withCommandClass(PersonRaiseSalary.class) //
-                .build();
-
-        try (StoreManager storeManager1 = storeManagerFactory1.openStore(storeName)) {
-            Store store1 = storeManager1.getStore();
-            Store.TransactionBuilder tx1 = store1.begin();
-            tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("MyCompany1").submit();
-            List<?> result1 = tx1.submit().get();
-            storeManager1.snapshot();
-            Store.TransactionBuilder tx2 = store1.begin();
-            tx2.addCommand(CreateCompany.class).set(CreateCompany::name).to("MyCompany2").submit();
-            List<?> result2 = tx2.submit().get();
-        }
-
-        System.out.println("storeManagerFactory2");
-
-        StoreManagerFactory storeManagerFactory2 = newStoreManagerBuilderFactory() //
-                .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStoreFactory(transactionStoreFactory) //
-                .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
-                .withEntityClass(Company.class) //
-                .withEntityClass(Person.class) //
-                .withCommandClass(ChangeCompanyAddress.class) //
-                .withCommandClass(CreateCompany.class) //
-                .withCommandClass(CreatePerson.class) //
-                .withCommandClass(DeleteCompany.class) //
-                .withCommandClass(PersonJoinCompany.class) //
-                .withCommandClass(PersonLeaveCompany.class) //
-                .withCommandClass(PersonRaiseSalary.class) //
-                .build();
-
-        Consumer<ReadOnlyTransaction> listCompanys = tx -> {
-            tx.select(Company.class).all().forEach(company -> {
-                System.out.printf("Company %s%n", company.name());
-            });
-        };
-        try (StoreManager storeManager2 = storeManagerFactory2.openStore(storeName)) {
-            Store store2 = storeManager2.getStore();
-            store2.query(listCompanys);
-        }
-    }
-
-    public static void testSnapshotStore(TransactionStoreFactory transactionStoreFactory, TransactionSerializer transactionSerializer,
-                                         SnapshotStoreFactory snapshotStoreFactory, SnapshotSerializer snapshotSerializer, String storeName) throws Exception {
+    public static void checkThatListSnapshotsReturnTheRightNumberOfSnapshots(TransactionStoreFactory transactionStoreFactory,
+                                                                             TransactionSerializer transactionSerializer,
+                                                                             SnapshotStoreFactory snapshotStoreFactory, SnapshotSerializer snapshotSerializer,
+                                                                             String storeName) throws Exception {
         System.out.println("storeManagerFactory1");
 
         StoreManagerFactory storeManagerFactory1 = newStoreManagerBuilderFactory() //
@@ -295,6 +240,66 @@ public class Sample {
             storeManager1.snapshot();
             assertThat(snapshotStoreFactory.createSnapshotStore(storeName).listSnapshots()).hasSize(2);
         }
+    }
+
+    public interface ExecutionCountCommand extends Command<Void> {
+
+        int[] s_executionCount = new int[]{0};
+
+        @Override
+        default Void execute(ReadWriteTransaction tx) {
+            s_executionCount[0] = s_executionCount[0] + 1;
+            return null;
+        }
+    }
+
+    public static void checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(TransactionStoreFactory transactionStoreFactory,
+                                                                                          TransactionSerializer transactionSerializer,
+                                                                                          SnapshotStoreFactory snapshotStoreFactory,
+                                                                                          SnapshotSerializer snapshotSerializer, String storeName)
+            throws Exception {
+        ExecutionCountCommand.s_executionCount[0] = 0;
+
+        StoreManagerFactory storeManagerFactory1 = newStoreManagerBuilderFactory() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withCommandClass(ExecutionCountCommand.class) //
+                .build();
+
+        try (StoreManager storeManager1 = storeManagerFactory1.openStore(storeName)) {
+            Store store1 = storeManager1.getStore();
+            Store.TransactionBuilder tx1 = store1.begin();
+            tx1.addCommand(ExecutionCountCommand.class).submit();
+            tx1.addCommand(ExecutionCountCommand.class).submit();
+            assertThat(ExecutionCountCommand.s_executionCount[0]).as("The store is empty, no command execution should have occurred.").isEqualTo(0);
+            tx1.submit().get();
+            assertThat(ExecutionCountCommand.s_executionCount[0]).as("Two commands execution should have occurred : 0 + 2 = 2").isEqualTo(2);
+            storeManager1.snapshot();
+            Store.TransactionBuilder tx2 = store1.begin();
+            tx2.addCommand(ExecutionCountCommand.class).submit();
+            tx2.addCommand(ExecutionCountCommand.class).submit();
+            tx2.addCommand(ExecutionCountCommand.class).submit();
+            assertThat(ExecutionCountCommand.s_executionCount[0]).as("No command execution should have occurred since the last check.").isEqualTo(2);
+            tx2.submit().get();
+            assertThat(ExecutionCountCommand.s_executionCount[0]).as("Three additional commands execution should have occurred : 2 + 3 = 5.").isEqualTo(5);
+        }
+
+        StoreManagerFactory storeManagerFactory2 = newStoreManagerBuilderFactory() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withCommandClass(ExecutionCountCommand.class) //
+                .build();
+
+        assertThat(ExecutionCountCommand.s_executionCount[0]).as("No command execution should have occurred since the last check.").isEqualTo(5);
+        try (StoreManager storeManager2 = storeManagerFactory2.openStore(storeName)) {
+        }
+        assertThat(ExecutionCountCommand.s_executionCount[0])
+                .as("Starting from the Snapshot, only the three commands execution of the Transaction should have occurred : 5 + 3 = 8."
+                            + " Result value 10 means that all Transactions (even before Snapshot) have been processed.").isEqualTo(8);
     }
 
     //region Tools

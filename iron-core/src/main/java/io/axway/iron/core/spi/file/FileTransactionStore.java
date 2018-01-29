@@ -5,15 +5,15 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 import java.util.regex.*;
 import java.util.stream.*;
+import javax.annotation.*;
 import io.axway.iron.spi.storage.TransactionStore;
 
 class FileTransactionStore implements TransactionStore {
     private static final String TX_EXT = "tx";
-    private static final String FILENAME_FORMAT = "%020d.%s";
-    private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]{20}).([a-z]+)");
+    private final String m_filenameFormat;
+    private final Pattern m_filenamePattern;
 
     private final Path m_transactionDir;
     private final Path m_transactionTmpDir;
@@ -24,9 +24,12 @@ class FileTransactionStore implements TransactionStore {
 
     private BigInteger m_consumerNextTxId = BigInteger.ZERO;
 
-    FileTransactionStore(Path transactionDir, Path transactionStoreTmpDir) {
+    FileTransactionStore(Path transactionDir, Path transactionStoreTmpDir, @Nullable Integer limitedSize) {
         m_transactionDir = transactionDir;
         m_transactionTmpDir = transactionStoreTmpDir;
+
+        m_filenameFormat = FilenameUtils.buildFilenameFormat(limitedSize);
+        m_filenamePattern = FilenameUtils.buildFilenamePattern(limitedSize);
 
         m_nextTxId = retrieveNextTxId();
     }
@@ -95,7 +98,7 @@ class FileTransactionStore implements TransactionStore {
         try (Stream<Path> dirList = Files.list(m_transactionDir)) {
             return dirList //
                     .map(path -> path.getFileName().toString()) //
-                    .map(FILENAME_PATTERN::matcher) //
+                    .map(m_filenamePattern::matcher) //
                     .filter(matcher -> matcher.matches() && TX_EXT.equals(matcher.group(2))) //
                     .map(matcher -> new BigInteger(matcher.group(1))) //
                     .max(BigInteger::compareTo) //
@@ -111,6 +114,6 @@ class FileTransactionStore implements TransactionStore {
     }
 
     private String getFileName(BigInteger id, String ext) {
-        return String.format(FILENAME_FORMAT, id, ext);
+        return String.format(m_filenameFormat, id, ext);
     }
 }

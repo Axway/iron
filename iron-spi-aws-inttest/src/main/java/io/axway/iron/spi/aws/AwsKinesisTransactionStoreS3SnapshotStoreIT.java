@@ -13,7 +13,7 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 import static io.axway.iron.spi.kinesis.AwsKinesisTestUtils.*;
 import static io.axway.iron.spi.s3.AwsS3TestUtils.buildTestAwsS3SnapshotStoreFactory;
 
-public class AwsStoreIT {
+public class AwsKinesisTransactionStoreS3SnapshotStoreIT {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
@@ -32,13 +32,24 @@ public class AwsStoreIT {
     public void test(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory) throws Exception {
         String storeName = AwsKinesisTestUtils.createStreamAndWaitActivationWithRandomName();
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.testCreateCompany(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);
+        Sample.checkThatCreateCompanySequenceIsRight(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);
     }
 
     @Test(dataProvider = "stores")
     public void testSnapshotStore(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory) throws Exception {
         String storeName = AwsKinesisTestUtils.createStreamAndWaitActivationWithRandomName();
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.testSnapshotStore(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);
+        Sample.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer,
+                                                                     storeName);
     }
+
+    @Test(dataProvider = "stores")
+    public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStore(TransactionStoreFactory transactionStoreFactory,
+                                                                                  SnapshotStoreFactory snapshotStoreFactory) throws Exception {
+        String storeName = AwsKinesisTestUtils.createStreamAndWaitActivationWithRandomName();
+        JacksonSerializer jacksonSerializer = new JacksonSerializer();
+        Sample.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory,
+                                                                                  jacksonSerializer, storeName);
+    }
+
 }

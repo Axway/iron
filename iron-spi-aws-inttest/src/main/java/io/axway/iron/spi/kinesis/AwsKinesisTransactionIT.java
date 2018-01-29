@@ -17,7 +17,7 @@ public class AwsKinesisTransactionIT {
     public Object[][] providesStores() {
         setSystemPropertyForDev();
 
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"));
+        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"), null);
         KinesisTransactionStoreFactory kinesisTransactionStoreFactory = buildTestAwsKinesisTransactionStoreFactory();
 
         return new Object[][]{ //
@@ -27,16 +27,19 @@ public class AwsKinesisTransactionIT {
     }
 
     @Test(dataProvider = "stores")
-    public void test(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory) throws Exception {
+    public void shouldCreateCompanySequenceBeRight(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory)
+            throws Exception {
         String storeName = createStreamAndWaitActivationWithRandomName();
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.testCreateCompany(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);
+        Sample.checkThatCreateCompanySequenceIsRight(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);
     }
 
     @Test(dataProvider = "stores")
-    public void testStore(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory) throws Exception {
-        String storeName = createStreamAndWaitActivationWithRandomName();
+    public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStore(TransactionStoreFactory transactionStoreFactory,
+                                                                                  SnapshotStoreFactory snapshotStoreFactory) throws Exception {
+        String storeName = AwsKinesisTestUtils.createStreamAndWaitActivationWithRandomName();
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.testStore(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);
+        Sample.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory,
+                                                                                  jacksonSerializer, storeName);
     }
 }
