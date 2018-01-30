@@ -29,7 +29,8 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT {
     }
 
     @Test(dataProvider = "stores")
-    public void test(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory) throws Exception {
+    public void shouldCreateCompanySequenceBeRight(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory)
+            throws Exception {
         String storeName = AwsKinesisTestUtils.createStreamAndWaitActivationWithRandomName();
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
         Sample.checkThatCreateCompanySequenceIsRight(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory, jacksonSerializer, storeName);

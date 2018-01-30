@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
+import javax.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.kinesis.AmazonKinesis;
@@ -44,9 +45,9 @@ class KinesisTransactionStore implements TransactionStore {
      * Create a KinesisTransactionStore based on an already active Kinesis Stream.
      * That is not the responsibility of this constructor to create the Kinesis Stream nor to wait that the Kinesis Stream reaches the 'ACTIVE" status.
      *
-     * @param producer
-     * @param consumer
-     * @param streamName
+     * @param producer the kinesis producer
+     * @param consumer the kinesis consumer
+     * @param streamName the stream name
      */
     public KinesisTransactionStore(KinesisProducer producer, AmazonKinesis consumer, String streamName) {
         checkArgument(!(m_streamName = streamName.trim()).isEmpty(), "Topic name can't be null");
@@ -60,7 +61,7 @@ class KinesisTransactionStore implements TransactionStore {
     }
 
     /**
-     * Returns the single created shard.
+     * Returns the single created shard (stream has a single shard).
      */
     private Shard getUniqueShard() {
         DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest().withStreamName(m_streamName).withLimit(1);
@@ -96,34 +97,21 @@ class KinesisTransactionStore implements TransactionStore {
     @Override
     public TransactionInput pollNextTransaction(long timeout, TimeUnit unit) {
         GetShardIteratorRequest getShardIteratorRequest;
-        if (m_seekTransactionId == null) {
+        if (m_seekTransactionId == null) { // First call to pollNextTransaction, no Snapshot has been created => retrieve the oldest element
             getShardIteratorRequest = new GetShardIteratorRequest().withStreamName(m_streamName)//
                     .withShardIteratorType(ShardIteratorType.TRIM_HORIZON)//
                     .withShardId(m_shard.getShardId());
-        } else {
+        } else {// The m_seekTransactionId has already been set => retrieve elements after m_seekTransactionId
             getShardIteratorRequest = new GetShardIteratorRequest().withStreamName(m_streamName)//
                     .withShardIteratorType(ShardIteratorType.AFTER_SEQUENCE_NUMBER)//
                     .withShardId(m_shard.getShardId())//
                     .withStartingSequenceNumber(m_seekTransactionId.toString());
         }
         GetShardIteratorResult getShardIteratorResult = m_consumer.getShardIterator(getShardIteratorRequest);
-
+        // Suboptimal request : fixed by https://techweb.axway.com/jira/browse/CND-592
         GetRecordsRequest getRecordsRequest = new GetRecordsRequest().withShardIterator(getShardIteratorResult.getShardIterator()).withLimit(1);
 
-        GetRecordsResult getRecordsResult = m_consumer.getRecords(getRecordsRequest);
-
-        List<Record> records = null;
-        do {
-            try {
-                records = getRecordsResult.getRecords();
-            } catch (ProvisionedThroughputExceededException e) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException exception) {
-                    throw new RuntimeException(exception);
-                }
-            }
-        } while (records == null);
+        List<Record> records = getRecords(getRecordsRequest);
 
         if (records.isEmpty()) {
             return null;
@@ -148,5 +136,28 @@ class KinesisTransactionStore implements TransactionStore {
                 return new BigInteger(record.getSequenceNumber());
             }
         };
+    }
+
+    /**
+     * Retrieves records corresponding to the request.
+     *
+     * @param getRecordsRequest the request
+     * @return records corresponding to the request
+     */
+    @Nonnull
+    private List<Record> getRecords(GetRecordsRequest getRecordsRequest) {
+        while (true) {
+            try {
+                GetRecordsResult getRecordsResult = m_consumer.getRecords(getRecordsRequest);
+                return getRecordsResult.getRecords();
+            } catch (ProvisionedThroughputExceededException e) {
+                // Too much The request rate for the stream is too high, or the requested data is too large for the available throughput. Wait to try again.
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException exception) {
+                    throw new RuntimeException(exception);
+                }
+            }
+        }
     }
 }

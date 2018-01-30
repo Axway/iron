@@ -36,7 +36,7 @@ public class AwsS3UtilsTest {
     }
 
     @Test(expectedExceptions = AmazonServiceException.class)
-    public void shouldThrowAnException() {
+    public void shouldThrowAnExceptionWhenNoS3BucketFound() {
         new StrictExpectations() {{
             m_amazonS3.headBucket((HeadBucketRequest) any);
             AmazonServiceException amazonServiceException = new AmazonServiceException("");

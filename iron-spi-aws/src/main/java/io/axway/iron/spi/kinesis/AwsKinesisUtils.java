@@ -55,12 +55,12 @@ public class AwsKinesisUtils {
     }
 
     private static KinesisProducerConfiguration buildDefaultKinesisProducerConfiguration(AWSStaticCredentialsProvider credentialsProvider) {
-        //@formatter:on
         return new KinesisProducerConfiguration()
                 //@formatter:off
-                    .setCredentialsProvider(credentialsProvider)
-                    // FIXME US CND-XXX this version of KinesisProducer does not support aggregation
-                    .setAggregationEnabled(false);}
+                .setCredentialsProvider(credentialsProvider)
+                .setAggregationEnabled(false); // US CND-592 this version of KinesisProducer does not support aggregation
+                //@formatter:on
+    }
 
     /**
      * Build a Kinesis Consumer.
@@ -75,8 +75,8 @@ public class AwsKinesisUtils {
     /**
      * Build a Kinesis Consumer.
      */
-    public static AmazonKinesis buildKinesisConsumer(AWSStaticCredentialsProvider credentialsProvider, @Nullable String region, @Nullable String kinesisEndpoint,
-                                                     @Nullable Long kinesisPort) {
+    public static AmazonKinesis buildKinesisConsumer(AWSStaticCredentialsProvider credentialsProvider, @Nullable String region,
+                                                     @Nullable String kinesisEndpoint, @Nullable Long kinesisPort) {
         checkArgument((region == null && kinesisEndpoint == null && kinesisPort == null) || (region != null && kinesisEndpoint != null && kinesisPort != null),
                       "region, kinesisEndpoint and kinesisPort must all be null or all not null");
         ClientConfiguration clientConfiguration = new ClientConfiguration();
