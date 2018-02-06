@@ -18,7 +18,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT {
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
 
-        setSystemPropertyForDev();
+        setSystemPropertyForLocalstackKinesis();
 
         KinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = buildTestAwsKinesisTransactionStoreFactory();
         AmazonS3SnapshotStoreFactory awsS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();

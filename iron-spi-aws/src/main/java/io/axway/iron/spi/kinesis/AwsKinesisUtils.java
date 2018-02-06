@@ -13,8 +13,6 @@ import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 public class AwsKinesisUtils {
 
     public static final String ACTIVE_STREAM_STATUS = "ACTIVE";
@@ -65,27 +63,13 @@ public class AwsKinesisUtils {
     /**
      * Build a Kinesis Consumer.
      */
-    public static AmazonKinesis buildKinesisConsumer(AWSStaticCredentialsProvider credentialsProvider) {
+    public static AmazonKinesis buildKinesisConsumer(AWSStaticCredentialsProvider credentialsProvider, String region, String kinesisEndpoint,
+                                                     Long kinesisPort) {
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         final AmazonKinesisClientBuilder builder = AmazonKinesisClient.builder().withClientConfiguration(clientConfiguration)
                 .withCredentials(credentialsProvider);
-        return builder.build();
-    }
-
-    /**
-     * Build a Kinesis Consumer.
-     */
-    public static AmazonKinesis buildKinesisConsumer(AWSStaticCredentialsProvider credentialsProvider, @Nullable String region,
-                                                     @Nullable String kinesisEndpoint, @Nullable Long kinesisPort) {
-        checkArgument((region == null && kinesisEndpoint == null && kinesisPort == null) || (region != null && kinesisEndpoint != null && kinesisPort != null),
-                      "region, kinesisEndpoint and kinesisPort must all be null or all not null");
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        final AmazonKinesisClientBuilder builder = AmazonKinesisClient.builder().withClientConfiguration(clientConfiguration)
-                .withCredentials(credentialsProvider);
-        if (region != null && kinesisEndpoint != null && kinesisPort != null) {
-            String kinesisEndpointFull = "https://" + kinesisEndpoint + ":" + kinesisPort;
-            builder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(kinesisEndpointFull, region));
-        }
+        String kinesisEndpointFull = "https://" + kinesisEndpoint + ":" + kinesisPort;
+        builder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(kinesisEndpointFull, region));
         return builder.build();
     }
 

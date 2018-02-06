@@ -21,7 +21,7 @@ public class AwsKinesisTestUtils {
     // Disable certificate verification for testing purpose
     public static final Boolean IS_VERIFY_CERTIFICATE = false;
 
-    public static void setSystemPropertyForDev() {
+    public static void setSystemPropertyForLocalstackKinesis() {
         // Disable Cert checking to simplify testing (no need to manage certificates)
         System.setProperty("com.amazonaws.sdk.disableCertChecking", "");
         // Disable CBOR protocol which is not supported by kinesalite
@@ -48,7 +48,6 @@ public class AwsKinesisTestUtils {
         return buildKinesisConsumer(credentialsProvider, REGION, KINESIS_ENDPOINT, KINESIS_PORT);
     }
 
-    @Nonnull
     public static void createStreamAndWaitActivation(String storeName) {
         AmazonKinesis amazonKinesis = buildTestAmazonKinesis();
         createStreamIfNotExists(amazonKinesis, storeName, 1);

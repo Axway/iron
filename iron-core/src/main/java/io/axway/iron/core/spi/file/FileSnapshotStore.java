@@ -10,6 +10,10 @@ import java.util.stream.*;
 import javax.annotation.*;
 import io.axway.iron.spi.storage.SnapshotStore;
 
+import static io.axway.iron.core.spi.file.FilenameUtils.*;
+import static java.lang.String.format;
+import static java.nio.file.Files.*;
+
 class FileSnapshotStore implements SnapshotStore {
     private static final String SNAPSHOT_EXT = "snapshot";
     private final String m_filenameFormat;
@@ -18,11 +22,11 @@ class FileSnapshotStore implements SnapshotStore {
     private final Path m_snapshotDir;
     private final Path m_snapshotTmpDir;
 
-    FileSnapshotStore(Path snapshotDir, Path snapshotStoreTmpDir, @Nullable Integer limitedSize) {
+    FileSnapshotStore(Path snapshotDir, Path snapshotStoreTmpDir, @Nullable Integer transactionIdLength) {
         m_snapshotDir = snapshotDir;
         m_snapshotTmpDir = snapshotStoreTmpDir;
-        m_filenamePattern = FilenameUtils.buildFilenamePattern(limitedSize);
-        m_filenameFormat = FilenameUtils.buildFilenameFormat(limitedSize);
+        m_filenamePattern = buildFilenamePattern(transactionIdLength);
+        m_filenameFormat = buildFilenameFormat(transactionIdLength);
     }
 
     @Override
@@ -35,7 +39,7 @@ class FileSnapshotStore implements SnapshotStore {
             @Override
             public void close() throws IOException {
                 super.close();
-                Files.move(tmpSnapshotFile, finalSnapshotFile);
+                move(tmpSnapshotFile, finalSnapshotFile);
             }
         };
     }
@@ -48,7 +52,7 @@ class FileSnapshotStore implements SnapshotStore {
 
     @Override
     public List<BigInteger> listSnapshots() {
-        try (Stream<Path> dirList = Files.list(m_snapshotDir)) {
+        try (Stream<Path> dirList = list(m_snapshotDir)) {
             return dirList //
                     .map(path -> path.getFileName().toString()) //
                     .map(m_filenamePattern::matcher) //
@@ -63,9 +67,9 @@ class FileSnapshotStore implements SnapshotStore {
     @Override
     public void deleteSnapshot(BigInteger transactionId) {
         Path snapshotFile = m_snapshotDir.resolve(getSnapshotFileName(transactionId));
-        if (Files.exists(snapshotFile)) {
+        if (exists(snapshotFile)) {
             try {
-                Files.delete(snapshotFile);
+                delete(snapshotFile);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -74,6 +78,6 @@ class FileSnapshotStore implements SnapshotStore {
     }
 
     private String getSnapshotFileName(BigInteger id) {
-        return String.format(m_filenameFormat, id, SNAPSHOT_EXT);
+        return format(m_filenameFormat, id, SNAPSHOT_EXT);
     }
 }

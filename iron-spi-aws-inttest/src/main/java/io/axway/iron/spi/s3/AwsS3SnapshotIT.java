@@ -16,7 +16,7 @@ public class AwsS3SnapshotIT {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-        setSystemPropertyForDev();
+        setSystemPropertyForLocalstackKinesis();
 
         AmazonS3SnapshotStoreFactory amazonS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();
         FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"));

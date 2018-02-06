@@ -15,7 +15,7 @@ public class AwsKinesisTransactionIT {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-        setSystemPropertyForDev();
+        setSystemPropertyForLocalstackKinesis();
 
         FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"), null);
         KinesisTransactionStoreFactory kinesisTransactionStoreFactory = buildTestAwsKinesisTransactionStoreFactory();
