@@ -22,11 +22,13 @@ class AmazonS3SnapshotStore implements SnapshotStore {
     private final AmazonS3 m_amazonS3;
     private final String m_bucketName;
     private String m_storeName;
+    private String m_snapshotDirName;
 
     public AmazonS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String storeName) {
         m_amazonS3 = amazonS3;
         m_bucketName = bucketName;
         m_storeName = storeName;
+        m_snapshotDirName = getSnapshotDirName();
         checkState(doesBucketExist(m_amazonS3, bucketName), "Bucket %s does not exist.", bucketName);
     }
 
@@ -56,10 +58,10 @@ class AmazonS3SnapshotStore implements SnapshotStore {
 
     @Override
     public List<BigInteger> listSnapshots() {
-        List<S3ObjectSummary> objectSummaries = m_amazonS3.listObjectsV2(m_bucketName, getSnapshotDirName()).getObjectSummaries();
+        List<S3ObjectSummary> objectSummaries = m_amazonS3.listObjectsV2(m_bucketName, m_snapshotDirName).getObjectSummaries();
         return objectSummaries.stream() //
                 .map(S3ObjectSummary::getKey) //
-                .map(key -> key.replace(getSnapshotDirName() + "/", "")).map(FILENAME_PATTERN::matcher) //
+                .map(key -> key.replace(m_snapshotDirName + "/", "")).map(FILENAME_PATTERN::matcher) //
                 .filter(Matcher::matches) //
                 .map(matcher -> matcher.group(1)) //
                 .map(BigInteger::new) //
