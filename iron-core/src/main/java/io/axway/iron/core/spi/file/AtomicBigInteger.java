@@ -4,24 +4,25 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static java.math.BigInteger.ONE;
+
 public final class AtomicBigInteger {
 
-    private final AtomicReference<BigInteger> bigInteger;
+    private final AtomicReference<BigInteger> m_bigInteger;
 
-    public AtomicBigInteger(final BigInteger bigInteger) {
-        this.bigInteger = new AtomicReference<>(Objects.requireNonNull(bigInteger));
+    public AtomicBigInteger(BigInteger bigInteger) {
+        m_bigInteger = new AtomicReference<>(Objects.requireNonNull(bigInteger));
     }
 
-    // Method references left out for demonstration purposes
     public BigInteger incrementAndGet() {
-        return bigInteger.accumulateAndGet(BigInteger.ONE, BigInteger::add);
+        return m_bigInteger.accumulateAndGet(ONE, BigInteger::add);
     }
 
     public BigInteger getAndIncrement() {
-        return bigInteger.getAndAccumulate(BigInteger.ONE, BigInteger::add);
+        return m_bigInteger.getAndAccumulate(ONE, BigInteger::add);
     }
 
     public BigInteger get() {
-        return bigInteger.get();
+        return m_bigInteger.get();
     }
 }
