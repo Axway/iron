@@ -13,7 +13,7 @@ import io.axway.iron.spi.storage.SnapshotStore;
 import static io.axway.iron.spi.s3.AwsS3Utils.checkBucketIsAccessible;
 import static java.util.stream.Collectors.*;
 
-class AmazonS3SnapshotStore implements SnapshotStore {
+class AwsS3SnapshotStore implements SnapshotStore {
 
     private static final String DIRNAME_FORMAT = "%s/snapshot";
     private static final String FILENAME_FORMAT = DIRNAME_FORMAT + "/%d.snapshot";
@@ -23,7 +23,7 @@ class AmazonS3SnapshotStore implements SnapshotStore {
     private String m_storeName;
     private String m_snapshotDirName;
 
-    public AmazonS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String storeName) {
+    public AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String storeName) {
         m_amazonS3 = amazonS3;
         m_bucketName = bucketName;
         m_storeName = storeName;

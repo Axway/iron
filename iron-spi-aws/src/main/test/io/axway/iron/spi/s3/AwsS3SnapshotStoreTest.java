@@ -13,7 +13,7 @@ import mockit.StrictExpectations;
 import static java.util.stream.Stream.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class AmazonS3SnapshotStoreTest {
+public class AwsS3SnapshotStoreTest {
 
     @Mocked
     AmazonS3 m_amazonS3;
@@ -33,8 +33,8 @@ public class AmazonS3SnapshotStoreTest {
             });
             result = listObjectsV2Result;
         }};
-        AmazonS3SnapshotStore amazonS3SnapshotStore = new AmazonS3SnapshotStore(m_amazonS3, "bucketName", "storeName");
-        assertThat(amazonS3SnapshotStore.listSnapshots())
+        AwsS3SnapshotStore awsS3SnapshotStore = new AwsS3SnapshotStore(m_amazonS3, "bucketName", "storeName");
+        assertThat(awsS3SnapshotStore.listSnapshots())
                 .containsExactly(new BigInteger("123456789012345678901234567890"), new BigInteger("123456789012345678901234567891"));
     }
 }

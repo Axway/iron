@@ -6,7 +6,7 @@ import io.axway.iron.sample.Sample;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 import io.axway.iron.spi.kinesis.AwsKinesisTestUtils;
 import io.axway.iron.spi.kinesis.KinesisTransactionStoreFactory;
-import io.axway.iron.spi.s3.AmazonS3SnapshotStoreFactory;
+import io.axway.iron.spi.s3.AwsS3SnapshotStoreFactory;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
@@ -21,7 +21,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT {
         setSystemPropertyForLocalstackKinesis();
 
         KinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = buildTestAwsKinesisTransactionStoreFactory();
-        AmazonS3SnapshotStoreFactory awsS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();
+        AwsS3SnapshotStoreFactory awsS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();
 
         return new Object[][]{ //
                 {awsKinesisTransactionStoreFactory, awsS3SnapshotStoreFactory}, //

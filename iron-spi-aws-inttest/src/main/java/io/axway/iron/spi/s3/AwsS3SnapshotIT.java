@@ -18,12 +18,12 @@ public class AwsS3SnapshotIT {
     public Object[][] providesStores() {
         setSystemPropertyForLocalstackKinesis();
 
-        AmazonS3SnapshotStoreFactory amazonS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();
+        AwsS3SnapshotStoreFactory awsS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();
         FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"));
 
         return new Object[][]{ //
                 {fileStoreFactory, fileStoreFactory}, //
-                {fileStoreFactory, amazonS3SnapshotStoreFactory}, //
+                {fileStoreFactory, awsS3SnapshotStoreFactory}, //
         };
     }
 

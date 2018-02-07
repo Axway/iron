@@ -8,7 +8,7 @@ import static io.axway.iron.spi.s3.AwsS3Utils.createBucketIfNotExists;
 
 public class AwsS3TestUtils {
 
-    public static AmazonS3SnapshotStoreFactory buildTestAwsS3SnapshotStoreFactory() {
+    public static AwsS3SnapshotStoreFactory buildTestAwsS3SnapshotStoreFactory() {
         // Disable Cert checking to simplify testing (no need to manage certificates)
         System.setProperty("com.amazonaws.sdk.disableCertChecking", "");
         // Disable CBOR protocol which is not supported by kinesalite
@@ -27,6 +27,6 @@ public class AwsS3TestUtils {
 
         createBucketIfNotExists(amazonS3, bucketName, region);
 
-        return new AmazonS3SnapshotStoreFactory(amazonS3, bucketName);
+        return new AwsS3SnapshotStoreFactory(amazonS3, bucketName);
     }
 }
