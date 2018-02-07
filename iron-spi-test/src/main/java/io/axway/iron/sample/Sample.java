@@ -345,7 +345,7 @@ public class Sample {
                 future.get();
             } catch (ExecutionException e) {
                 // discarded
-                assertThat(e.getCause().getMessage()).as("An exception has corretly been thrown, but the message was not correct.").isEqualTo(expectedMessage);
+                assertThat(e.getCause().getMessage()).as("An exception has correctly been thrown, but the message was not correct.").isEqualTo(expectedMessage);
                 return;
             }
             fail("No exception has been thrown, while exception with message [" + expectedMessage + "] was expected.");
