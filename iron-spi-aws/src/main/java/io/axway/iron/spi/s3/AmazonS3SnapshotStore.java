@@ -11,14 +11,14 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import io.axway.iron.spi.storage.SnapshotStore;
 
 import static com.google.common.base.Preconditions.checkState;
-import static io.axway.iron.spi.s3.AwsS3Utils.doesBucketExist;
+import static io.axway.iron.spi.s3.AwsS3Utils.isBucketAccessible;
 import static java.util.stream.Collectors.*;
 
 class AmazonS3SnapshotStore implements SnapshotStore {
 
-    private static final String DIRNAME_FORMAT = "%s/tx";
-    private static final String FILENAME_FORMAT = DIRNAME_FORMAT + "/%d.tx";
-    private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]+)\\.tx");
+    private static final String DIRNAME_FORMAT = "%s/snapshot";
+    private static final String FILENAME_FORMAT = DIRNAME_FORMAT + "/%d.snapshot";
+    private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]+)\\.snapshot");
     private final AmazonS3 m_amazonS3;
     private final String m_bucketName;
     private String m_storeName;
@@ -29,7 +29,7 @@ class AmazonS3SnapshotStore implements SnapshotStore {
         m_bucketName = bucketName;
         m_storeName = storeName;
         m_snapshotDirName = getSnapshotDirName();
-        checkState(doesBucketExist(m_amazonS3, bucketName), "Bucket %s does not exist.", bucketName);
+        checkState(isBucketAccessible(m_amazonS3, bucketName), "Bucket %s does not exist.", bucketName);
     }
 
     @Override
@@ -51,7 +51,7 @@ class AmazonS3SnapshotStore implements SnapshotStore {
     public InputStream createSnapshotReader(BigInteger transactionId) throws IOException {
         S3Object object = m_amazonS3.getObject(m_bucketName, getSnapshotFileName(transactionId));
         if (object == null) {
-            throw new RuntimeException(transactionId + " doesn't exists");
+            throw new RuntimeException("Transaction " + transactionId + " doesn't exist");
         }
         return object.getObjectContent();
     }

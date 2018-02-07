@@ -23,7 +23,7 @@ public class AwsS3UtilsTest {
             amazonServiceException.setStatusCode(404);
             result = amazonServiceException;
         }};
-        assertThat(AwsS3Utils.doesBucketExist(m_amazonS3, "bucketName")).isFalse();
+        assertThat(AwsS3Utils.isBucketAccessible(m_amazonS3, "bucketName")).isFalse();
     }
 
     @Test
@@ -32,7 +32,7 @@ public class AwsS3UtilsTest {
             m_amazonS3.headBucket((HeadBucketRequest) any);
             result = new HeadBucketResult();
         }};
-        assertThat(AwsS3Utils.doesBucketExist(m_amazonS3, "bucketName")).isTrue();
+        assertThat(AwsS3Utils.isBucketAccessible(m_amazonS3, "bucketName")).isTrue();
     }
 
     @Test(expectedExceptions = AmazonServiceException.class)
@@ -43,6 +43,6 @@ public class AwsS3UtilsTest {
             amazonServiceException.setStatusCode(401);
             result = amazonServiceException;
         }};
-        AwsS3Utils.doesBucketExist(m_amazonS3, "bucketName");
+        AwsS3Utils.isBucketAccessible(m_amazonS3, "bucketName");
     }
 }
