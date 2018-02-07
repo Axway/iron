@@ -10,8 +10,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import io.axway.iron.spi.storage.SnapshotStore;
 
-import static com.google.common.base.Preconditions.checkState;
-import static io.axway.iron.spi.s3.AwsS3Utils.isBucketAccessible;
+import static io.axway.iron.spi.s3.AwsS3Utils.checkBucketIsAccessible;
 import static java.util.stream.Collectors.*;
 
 class AmazonS3SnapshotStore implements SnapshotStore {
@@ -29,7 +28,7 @@ class AmazonS3SnapshotStore implements SnapshotStore {
         m_bucketName = bucketName;
         m_storeName = storeName;
         m_snapshotDirName = getSnapshotDirName();
-        checkState(isBucketAccessible(m_amazonS3, bucketName), "Bucket %s does not exist.", bucketName);
+        checkBucketIsAccessible(m_amazonS3, bucketName);
     }
 
     @Override

@@ -17,10 +17,6 @@ public class AwsKinesisUtils {
 
     public static final String ACTIVE_STREAM_STATUS = "ACTIVE";
 
-    public static KinesisProducer buildKinesisProducer(AWSStaticCredentialsProvider credentialsProvider) {
-        return new KinesisProducer(buildDefaultKinesisProducerConfiguration(credentialsProvider));
-    }
-
     /**
      * Here'll walk through some of the config options and create an instance of
      * KinesisProducer, which will be used to put records.

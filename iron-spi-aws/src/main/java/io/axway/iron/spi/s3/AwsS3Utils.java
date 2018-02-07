@@ -20,21 +20,17 @@ public class AwsS3Utils {
     }
 
     /**
-     * Returns true if the bucket does exist and is readable.
-     * Returns false if the bucket does not exist.
-     * Throws an exception if the bucket is readable but is not readable.
+     * Throws an exception if the bucket does not exist or is not readable.
      *
      * @param amazonS3 Amazon S3 client
      * @param bucketName bucket name
-     * @return true if the bucket exists and
      */
-    public static boolean isBucketAccessible(AmazonS3 amazonS3, String bucketName) {
+    public static void checkBucketIsAccessible(AmazonS3 amazonS3, String bucketName) {
         HeadBucketRequest headBucketRequest = new HeadBucketRequest(bucketName);
         try {
             amazonS3.headBucket(headBucketRequest);
-            return true;
         } catch (AmazonServiceException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException("Bucket " + bucketName + " is not accessible.", e);
         }
     }
 
