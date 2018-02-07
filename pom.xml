@@ -48,6 +48,10 @@
             <name>Philippe Laplanche</name>
             <url>https://github.com/plaplanche</url>
         </developer>
+        <developer>
+            <name>Guillaume Vauvert</name>
+            <url>https://github.com/gvauvert</url>
+        </developer>
     </developers>
 
     <scm>
@@ -193,11 +197,6 @@
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.axway.iron</groupId>
-                <artifactId>iron-spi-amazon</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
