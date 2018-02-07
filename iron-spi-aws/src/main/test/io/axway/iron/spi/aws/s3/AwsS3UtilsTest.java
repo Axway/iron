@@ -1,4 +1,4 @@
-package io.axway.iron.spi.s3;
+package io.axway.iron.spi.aws.s3;
 
 import org.testng.annotations.Test;
 import com.amazonaws.AmazonServiceException;

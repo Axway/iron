@@ -1,4 +1,4 @@
-package io.axway.iron.spi.kinesis;
+package io.axway.iron.spi.aws.kinesis;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import io.axway.iron.spi.storage.TransactionStore;
 
 import static com.google.common.base.Preconditions.*;
-import static io.axway.iron.spi.kinesis.AwsKinesisUtils.doesStreamExist;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.doesStreamExist;
 
 /**
  * Kinesis implementation of the TransactionStore.

@@ -1,4 +1,4 @@
-package io.axway.iron.spi.kinesis;
+package io.axway.iron.spi.aws.kinesis;
 
 import java.util.*;
 import javax.annotation.*;
@@ -7,7 +7,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 
-import static io.axway.iron.spi.kinesis.AwsKinesisUtils.*;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.*;
 
 public class AwsKinesisTestUtils {
 

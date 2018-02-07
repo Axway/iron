@@ -1,4 +1,4 @@
-package io.axway.iron.spi.s3;
+package io.axway.iron.spi.aws.s3;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;

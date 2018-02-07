@@ -1,4 +1,4 @@
-package io.axway.iron.spi.s3;
+package io.axway.iron.spi.aws.s3;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -10,7 +10,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import io.axway.iron.spi.storage.SnapshotStore;
 
-import static io.axway.iron.spi.s3.AwsS3Utils.checkBucketIsAccessible;
+import static io.axway.iron.spi.aws.s3.AwsS3Utils.checkBucketIsAccessible;
 import static java.util.stream.Collectors.*;
 
 class AwsS3SnapshotStore implements SnapshotStore {

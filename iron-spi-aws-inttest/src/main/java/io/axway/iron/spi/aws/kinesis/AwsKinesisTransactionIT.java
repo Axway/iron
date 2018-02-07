@@ -1,4 +1,4 @@
-package io.axway.iron.spi.kinesis;
+package io.axway.iron.spi.aws.kinesis;
 
 import java.nio.file.Paths;
 import org.testng.annotations.DataProvider;
@@ -9,7 +9,7 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static io.axway.iron.spi.kinesis.AwsKinesisTestUtils.*;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisTestUtils.*;
 
 public class AwsKinesisTransactionIT {
 

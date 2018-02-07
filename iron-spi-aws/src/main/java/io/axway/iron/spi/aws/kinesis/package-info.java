@@ -1,5 +1,5 @@
 @ParametersAreNonnullByDefault
-package io.axway.iron.spi.kinesis;
+package io.axway.iron.spi.aws.kinesis;
 
 import javax.annotation.*;
 

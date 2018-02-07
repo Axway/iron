@@ -1,4 +1,4 @@
-package io.axway.iron.spi.s3;
+package io.axway.iron.spi.aws.s3;
 
 import java.nio.file.Paths;
 import org.testng.annotations.DataProvider;
@@ -9,8 +9,8 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static io.axway.iron.spi.kinesis.AwsKinesisTestUtils.*;
-import static io.axway.iron.spi.s3.AwsS3TestUtils.buildTestAwsS3SnapshotStoreFactory;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisTestUtils.*;
+import static io.axway.iron.spi.aws.s3.AwsS3TestUtils.buildTestAwsS3SnapshotStoreFactory;
 
 public class AwsS3SnapshotIT {
 
