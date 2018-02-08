@@ -1,8 +1,6 @@
 package io.axway.iron.spi.aws.s3;
 
 import java.util.*;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
@@ -22,9 +20,10 @@ public class AwsS3SnapshotStoreFactory implements SnapshotStoreFactory {
         String s3Endpoint = checkKeyHasValue(properties, S3_ENDPOINT_KEY);
         Long s3Port = checkKeyHasLongValue(properties, S3_PORT_KEY);
 
-        AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
-        m_amazonS3 = AwsS3Utils.buildS3Client(credentialsProvider, region, s3Endpoint, s3Port);
-        m_bucketName = bucketName;
+        manageDisableVerifyCertificate(properties);
+
+        m_amazonS3 = AwsS3Utils.buildS3Client(accessKey, secretKey, region, s3Endpoint, s3Port);
+        m_bucketName = AwsS3Utils.checkBucketIsAccessible(m_amazonS3, bucketName);
     }
 
     @Override

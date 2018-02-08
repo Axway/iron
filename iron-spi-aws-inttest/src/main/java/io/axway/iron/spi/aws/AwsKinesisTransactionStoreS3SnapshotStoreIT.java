@@ -10,16 +10,13 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static io.axway.iron.spi.aws.kinesis.AwsKinesisTestUtils.*;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisTestUtils.buildTestAwsKinesisTransactionStoreFactory;
 import static io.axway.iron.spi.aws.s3.AwsS3TestUtils.buildTestAwsS3SnapshotStoreFactory;
 
 public class AwsKinesisTransactionStoreS3SnapshotStoreIT {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-
-        setSystemPropertyForLocalstackKinesis();
-
         KinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = buildTestAwsKinesisTransactionStoreFactory();
         AwsS3SnapshotStoreFactory awsS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();
 
@@ -52,5 +49,4 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT {
         Sample.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(transactionStoreFactory, jacksonSerializer, snapshotStoreFactory,
                                                                                   jacksonSerializer, storeName);
     }
-
 }

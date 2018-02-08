@@ -48,10 +48,6 @@
             <groupId>io.axway.iron</groupId>
             <artifactId>iron-spi-jackson</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-cbor</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

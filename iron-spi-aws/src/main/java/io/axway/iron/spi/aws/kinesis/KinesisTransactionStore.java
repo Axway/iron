@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
-import javax.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.kinesis.AmazonKinesis;
@@ -144,7 +143,6 @@ class KinesisTransactionStore implements TransactionStore {
      * @param getRecordsRequest the request
      * @return records corresponding to the request
      */
-    @Nonnull
     private List<Record> getRecords(GetRecordsRequest getRecordsRequest) {
         while (true) {
             try {

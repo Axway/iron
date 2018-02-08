@@ -9,14 +9,15 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static io.axway.iron.spi.aws.kinesis.AwsKinesisTestUtils.*;
+import static io.axway.iron.spi.aws.PropertiesHelper.DISABLE_CERT_CHECKING_SYSTEM_PROPERTY;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisTestUtils.createStreamAndWaitActivationWithRandomName;
 import static io.axway.iron.spi.aws.s3.AwsS3TestUtils.buildTestAwsS3SnapshotStoreFactory;
 
 public class AwsS3SnapshotIT {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-        setSystemPropertyForLocalstackKinesis();
+        System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "");
 
         AwsS3SnapshotStoreFactory awsS3SnapshotStoreFactory = buildTestAwsS3SnapshotStoreFactory();
         FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"));
