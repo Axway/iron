@@ -18,7 +18,6 @@ public class AwsKinesisTestUtils {
     public static final String CLOUDWATCH_ENDPOINT = "localhost";
     public static final Long CLOUDWATCH_PORT = 4582L;
 
-
     public static KinesisTransactionStoreFactory buildTestAwsKinesisTransactionStoreFactory() {
 
         Properties properties = buildTestAwsKinesisProperties(ACCESS_KEY, SECRET_KEY, REGION, KINESIS_ENDPOINT, KINESIS_PORT, CLOUDWATCH_ENDPOINT,
@@ -45,6 +44,8 @@ public class AwsKinesisTestUtils {
     }
 
     public static AmazonKinesis buildTestAmazonKinesis() {
+        System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "");
+        System.setProperty(DISABLE_CBOR_SYSTEM_PROPERTY, "");
         AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY));
 
         return buildKinesisConsumer(credentialsProvider, REGION, KINESIS_ENDPOINT, KINESIS_PORT);

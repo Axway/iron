@@ -24,6 +24,7 @@ import io.axway.iron.sample.model.Company;
 import io.axway.iron.sample.model.Person;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
+import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
@@ -236,9 +237,12 @@ public class Sample {
             Store.TransactionBuilder tx1 = store1.begin();
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("MyCompany1").submit();
             tx1.submit().get();
-            assertThat(snapshotStoreFactory.createSnapshotStore(storeName).listSnapshots()).hasSize(1);
+            SnapshotStore snapshotStoreCreatedBeforeSnapshot = snapshotStoreFactory.createSnapshotStore(storeName);
+            assertThat(snapshotStoreCreatedBeforeSnapshot.listSnapshots()).hasSize(1);
             storeManager1.snapshot();
-            assertThat(snapshotStoreFactory.createSnapshotStore(storeName).listSnapshots()).hasSize(2);
+            SnapshotStore snapshotStoreCreatedAfterSnapshot = snapshotStoreFactory.createSnapshotStore(storeName);
+            assertThat(snapshotStoreCreatedBeforeSnapshot.listSnapshots()).hasSize(2);
+            assertThat(snapshotStoreCreatedAfterSnapshot.listSnapshots()).hasSize(2);
         }
     }
 
