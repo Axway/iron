@@ -7,11 +7,12 @@
     <parent>
         <groupId>io.axway.iron</groupId>
         <artifactId>iron</artifactId>
-        <version>0.1.3-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>iron-spi-test</artifactId>
-    <version>0.1.3-SNAPSHOT</version>
+    <name>${project.artifactId}</name>
+    <description>Iron SPI test helper</description>
 
     <dependencies>
         <dependency>
