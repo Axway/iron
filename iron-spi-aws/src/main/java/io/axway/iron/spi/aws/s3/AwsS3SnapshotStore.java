@@ -23,7 +23,7 @@ class AwsS3SnapshotStore implements SnapshotStore {
     private String m_storeName;
     private String m_snapshotDirName;
 
-    public AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String storeName) {
+    AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String storeName) {
         m_amazonS3 = amazonS3;
         m_bucketName = bucketName;
         m_storeName = storeName;

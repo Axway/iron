@@ -5,21 +5,23 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.sample.Sample;
+import io.axway.iron.spi.aws.AwsProperties;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static io.axway.iron.spi.aws.PropertiesHelper.*;
 import static io.axway.iron.spi.aws.kinesis.AwsKinesisTestUtils.*;
 
-public class AwsKinesisTransactionIT {
+public class AwsKinesisTransactionIT implements AwsProperties, AwsKinesisProperties {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-        System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "1");
-        System.setProperty(DISABLE_CBOR_SYSTEM_PROPERTY, "");
-        //System.setProperty(DISABLE_CBOR_ENV_VAR, "1");
-
+        if (DISABLE_VERIFY_CERTIFICATE.toLowerCase().equals("true")) {
+            System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "");
+        }
+        if (DISABLE_CBOR.toLowerCase().equals("true")) {
+            System.setProperty(DISABLE_CBOR_SYSTEM_PROPERTY, "");
+        }
         FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"), null);
         KinesisTransactionStoreFactory kinesisTransactionStoreFactory = buildTestAwsKinesisTransactionStoreFactory();
 

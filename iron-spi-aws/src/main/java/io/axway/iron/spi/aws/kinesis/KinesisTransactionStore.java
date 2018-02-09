@@ -48,7 +48,7 @@ class KinesisTransactionStore implements TransactionStore {
      * @param consumer the kinesis consumer
      * @param streamName the stream name
      */
-    public KinesisTransactionStore(KinesisProducer producer, AmazonKinesis consumer, String streamName) {
+    KinesisTransactionStore(KinesisProducer producer, AmazonKinesis consumer, String streamName) {
         checkArgument(!(m_streamName = streamName.trim()).isEmpty(), "Topic name can't be null");
 
         m_producer = producer;

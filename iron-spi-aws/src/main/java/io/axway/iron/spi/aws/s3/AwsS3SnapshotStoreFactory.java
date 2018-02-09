@@ -2,12 +2,13 @@ package io.axway.iron.spi.aws.s3;
 
 import java.util.*;
 import com.amazonaws.services.s3.AmazonS3;
+import io.axway.iron.spi.aws.AwsProperties;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 
 import static io.axway.iron.spi.aws.PropertiesHelper.*;
 
-public class AwsS3SnapshotStoreFactory implements SnapshotStoreFactory {
+public class AwsS3SnapshotStoreFactory implements SnapshotStoreFactory, AwsProperties, AwsS3Properties {
 
     private final String m_bucketName;
     private final AmazonS3 m_amazonS3;
