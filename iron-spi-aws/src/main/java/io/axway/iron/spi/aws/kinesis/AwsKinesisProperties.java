@@ -1,12 +1,27 @@
 package io.axway.iron.spi.aws.kinesis;
 
-public interface AwsKinesisProperties {
-    String KINESIS_ENDPOINT_KEY = "io.axway.iron.spi.aws.kinesis.kinesis_endpoint";
-    String KINESIS_PORT_KEY = "io.axway.iron.spi.aws.kinesis.kinesis_port";
-    String CLOUDWATCH_ENDPOINT_KEY = "io.axway.iron.spi.aws.cloudwatch.cloudwatch_endpoint";
-    String CLOUDWATCH_PORT_KEY = "io.axway.iron.spi.aws.cloudwatch.cloudwatch_port";
-    String DISABLE_CBOR_KEY = "io.axway.iron.spi.aws.kinesis.disable_cbor";
-    // Disable CBOR protocol which is not supported by kinesalite
-    String DISABLE_CBOR_ENV_VAR = "AWS_CBOR_DISABLE";
-    String DISABLE_CBOR_SYSTEM_PROPERTY = "com.amazonaws.sdk.disableCbor";
+public enum AwsKinesisProperties implements PropertyMapper {
+    KINESIS_ENDPOINT_KEY("io.axway.iron.spi.aws.kinesis.kinesis_endpoint", "AWS_KINESIS_ENDPOINT"),//
+    KINESIS_PORT_KEY("io.axway.iron.spi.aws.kinesis.kinesis_port", "AWS_KINESIS_PORT"),//
+    CLOUDWATCH_ENDPOINT_KEY("io.axway.iron.spi.aws.cloudwatch.cloudwatch_endpoint", "AWS_CLOUDWATCH_ENDPOINT"),//
+    CLOUDWATCH_PORT_KEY("io.axway.iron.spi.aws.cloudwatch.cloudwatch_port", "AWS_CLOUDWATCH_PORT"),//
+    DISABLE_CBOR_KEY("io.axway.iron.spi.aws.kinesis.disable_cbor", "AWS_CBOR_DISABLE");
+
+    private String m_propertyKey;
+    private String m_envVarName;
+
+    AwsKinesisProperties(String propertyKey, String envVarName) {
+        m_propertyKey = propertyKey;
+        m_envVarName = envVarName;
+    }
+
+    @Override
+    public String getPropertyKey() {
+        return m_propertyKey;
+    }
+
+    @Override
+    public String getEnvVarName() {
+        return m_envVarName;
+    }
 }

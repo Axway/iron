@@ -19,7 +19,6 @@
             <groupId>io.axway.iron</groupId>
             <artifactId>iron-api</artifactId>
         </dependency>
-
         <!-- test dependency -->
         <dependency>
             <groupId>io.axway.iron</groupId>

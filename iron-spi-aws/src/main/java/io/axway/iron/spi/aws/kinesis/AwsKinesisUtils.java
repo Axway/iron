@@ -1,71 +1,39 @@
 package io.axway.iron.spi.aws.kinesis;
 
-import javax.annotation.*;
-import com.amazonaws.ClientConfiguration;
+import java.util.*;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.kinesis.AmazonKinesis;
-import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
 import com.amazonaws.services.kinesis.model.DescribeStreamResult;
 import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
-import com.amazonaws.services.kinesis.producer.KinesisProducer;
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
+
+import static io.axway.iron.spi.aws.AwsProperties.*;
+import static io.axway.iron.spi.aws.PropertiesHelper.getValue;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.*;
 
 public class AwsKinesisUtils {
 
     public static final String ACTIVE_STREAM_STATUS = "ACTIVE";
 
-    /**
-     * Here'll walk through some of the config options and create an instance of
-     * KinesisProducer, which will be used to put records.
-     *
-     * @return KinesisProducer instance used to put records.
-     */
-    public static KinesisProducer buildKinesisProducer(AWSStaticCredentialsProvider credentialsProvider, @Nullable String region,
-                                                       @Nullable String kinesisEndpoint, @Nullable Long kinesisPort, @Nullable String cloudwatchEndpoint,
-                                                       @Nullable Long cloudwatchPort, @Nullable Boolean isVerifyCertificate) {
-        KinesisProducerConfiguration config = buildDefaultKinesisProducerConfiguration(credentialsProvider);
-        if (region != null) {
-            config.setRegion(region);
+    public static AmazonKinesis buildKinesisClient(Properties properties) {
+        AmazonKinesisClientBuilder builder = AmazonKinesisClientBuilder.standard();
+        Optional<String> accessKey = getValue(properties, ACCESS_KEY_KEY);
+        Optional<String> secretKey = getValue(properties, SECRET_KEY_KEY);
+        if (accessKey.isPresent() && secretKey.isPresent()) {
+            builder.setCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey.get(), secretKey.get())));
         }
-        if (kinesisEndpoint != null) {
-            config.setKinesisEndpoint(kinesisEndpoint);
+        Optional<String> region = getValue(properties, REGION_KEY);
+        Optional<String> kinesisEndpoint = getValue(properties, KINESIS_ENDPOINT_KEY);
+        Optional<String> kinesisPort = getValue(properties, KINESIS_PORT_KEY);
+        if (kinesisEndpoint.isPresent() && kinesisPort.isPresent() && region.isPresent()) {
+            String kinesisEndpointFull = "https://" + kinesisEndpoint.get() + ":" + kinesisPort.get();
+            builder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(kinesisEndpointFull, region.get()));
+        } else {
+            region.ifPresent(builder::setRegion);
         }
-        if (kinesisPort != null) {
-            config.setKinesisPort(kinesisPort);
-        }
-        if (cloudwatchEndpoint != null) {
-            config.setCloudwatchEndpoint(cloudwatchEndpoint);
-        }
-        if (cloudwatchPort != null) {
-            config.setCloudwatchPort(cloudwatchPort);
-        }
-        if (isVerifyCertificate != null) {
-            config.setVerifyCertificate(isVerifyCertificate);
-        }
-        return new KinesisProducer(config);
-    }
-
-    private static KinesisProducerConfiguration buildDefaultKinesisProducerConfiguration(AWSStaticCredentialsProvider credentialsProvider) {
-        return new KinesisProducerConfiguration()
-                //@formatter:off
-                .setCredentialsProvider(credentialsProvider)
-                .setAggregationEnabled(false); // US CND-592 this version of KinesisProducer does not support aggregation
-                //@formatter:on
-    }
-
-    /**
-     * Build a Kinesis Consumer.
-     */
-    public static AmazonKinesis buildKinesisConsumer(AWSStaticCredentialsProvider credentialsProvider, String region, String kinesisEndpoint,
-                                                     Long kinesisPort) {
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        final AmazonKinesisClientBuilder builder = AmazonKinesisClient.builder().withClientConfiguration(clientConfiguration)
-                .withCredentials(credentialsProvider);
-        String kinesisEndpointFull = "https://" + kinesisEndpoint + ":" + kinesisPort;
-        builder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(kinesisEndpointFull, region));
         return builder.build();
     }
 
@@ -98,23 +66,6 @@ public class AwsKinesisUtils {
             return false;
         }
         return true;
-    }
-
-    /**
-     * Returns true if the stream already exists.
-     *
-     * @param consumer
-     * @param streamName the name of the stream
-     */
-    public static boolean isStreamActive(AmazonKinesis consumer, String streamName) {
-        DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest().withStreamName(streamName).withLimit(1);
-        DescribeStreamResult describeStreamResult;
-        try {
-            describeStreamResult = consumer.describeStream(describeStreamRequest);
-        } catch (ResourceNotFoundException e) {
-            return false;
-        }
-        return describeStreamResult.getStreamDescription().getStreamStatus().equals(ACTIVE_STREAM_STATUS);
     }
 
     /**

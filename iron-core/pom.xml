@@ -31,7 +31,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-
         <!-- test dependencies -->
         <dependency>
             <groupId>io.axway.iron</groupId>
