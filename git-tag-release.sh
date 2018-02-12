@@ -47,7 +47,7 @@ fi
 
 (echo $RELEASE_VERSION | grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+$") || (echo "Not a valid release version" && false)
 
-NEXT_VERSION="$(echo $RELEASE_VERSION | sed -E "s/([0-9]+\.[0-9]+\.)[0-9]+/\1/")$(($(echo $RELEASE_VERSION | sed -E "s/[0-9]+\.[0-9]+\.([0-9]+)/\1/")+1))-SNAPSHOT"
+NEXT_VERSION="$(echo $RELEASE_VERSION | sed -E "s/([0-9]+\.)[0-9]+\.[0-9]+/\1/")$(($(echo $RELEASE_VERSION | sed -E "s/[0-9]+\.([0-9]+)\.[0-9]+/\1/")+1)).0-SNAPSHOT"
 
 echo "Next version is   : $NEXT_VERSION"
 
