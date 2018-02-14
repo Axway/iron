@@ -27,6 +27,6 @@ public class KinesisTransactionStoreFactory implements TransactionStoreFactory {
 
     @Override
     public TransactionStore createTransactionStore(String storeName) {
-        return new KinesisTransactionStore(m_producer, m_kinesisClient, storeName);
+        return new KinesisTransactionStore(m_kinesisClient, storeName);
     }
 }

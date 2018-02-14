@@ -18,7 +18,6 @@ import com.amazonaws.services.kinesis.model.ProvisionedThroughputExceededExcepti
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
-import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import io.axway.iron.spi.storage.TransactionStore;
 
@@ -35,8 +34,7 @@ class KinesisTransactionStore implements TransactionStore {
 
     private final String m_streamName;
     private final Shard m_shard;
-    private final KinesisProducer m_producer;
-    private final AmazonKinesis m_consumer;
+    private final AmazonKinesis m_kinesis;
 
     private BigInteger m_seekTransactionId = null;
 
@@ -44,17 +42,15 @@ class KinesisTransactionStore implements TransactionStore {
      * Create a KinesisTransactionStore based on an already active Kinesis Stream.
      * That is not the responsibility of this constructor to create the Kinesis Stream nor to wait that the Kinesis Stream reaches the 'ACTIVE" status.
      *
-     * @param producer the kinesis producer
-     * @param consumer the kinesis consumer
+     * @param kinesis the kinesis consumer
      * @param streamName the stream name
      */
-    KinesisTransactionStore(KinesisProducer producer, AmazonKinesis consumer, String streamName) {
+    KinesisTransactionStore(AmazonKinesis kinesis, String streamName) {
         checkArgument(!(m_streamName = streamName.trim()).isEmpty(), "Topic name can't be null");
 
-        m_producer = producer;
-        m_consumer = consumer;
+        m_kinesis = kinesis;
 
-        checkState(doesStreamExist(m_consumer, m_streamName), "The Kinesis Stream %s should already exist.", m_streamName);
+        checkState(doesStreamExist(m_kinesis, m_streamName), "The Kinesis Stream %s should already exist.", m_streamName);
 
         m_shard = getUniqueShard();
     }
@@ -64,7 +60,7 @@ class KinesisTransactionStore implements TransactionStore {
      */
     private Shard getUniqueShard() {
         DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest().withStreamName(m_streamName).withLimit(1);
-        DescribeStreamResult describeStreamResult = m_consumer.describeStream(describeStreamRequest);
+        DescribeStreamResult describeStreamResult = m_kinesis.describeStream(describeStreamRequest);
         String streamStatus = describeStreamResult.getStreamDescription().getStreamStatus();
         if (streamStatus == null || !streamStatus.equals(AwsKinesisUtils.ACTIVE_STREAM_STATUS)) {
             throw new RuntimeException("Stream " + m_streamName + " does not exist.");
@@ -83,7 +79,7 @@ class KinesisTransactionStore implements TransactionStore {
             public void close() throws IOException {
                 super.close();
                 ByteBuffer wrap = ByteBuffer.wrap(toByteArray());
-                m_producer.addUserRecord(m_streamName, "uselessPartitionKey", wrap);
+                m_kinesis.putRecord(m_streamName, wrap, "uselessPartitionKey");
             }
         };
     }
@@ -106,7 +102,7 @@ class KinesisTransactionStore implements TransactionStore {
                     .withShardId(m_shard.getShardId())//
                     .withStartingSequenceNumber(m_seekTransactionId.toString());
         }
-        GetShardIteratorResult getShardIteratorResult = m_consumer.getShardIterator(getShardIteratorRequest);
+        GetShardIteratorResult getShardIteratorResult = m_kinesis.getShardIterator(getShardIteratorRequest);
         // Suboptimal request : fixed by https://techweb.axway.com/jira/browse/CND-592
         GetRecordsRequest getRecordsRequest = new GetRecordsRequest().withShardIterator(getShardIteratorResult.getShardIterator()).withLimit(1);
 
@@ -146,7 +142,7 @@ class KinesisTransactionStore implements TransactionStore {
     private List<Record> getRecords(GetRecordsRequest getRecordsRequest) {
         while (true) {
             try {
-                GetRecordsResult getRecordsResult = m_consumer.getRecords(getRecordsRequest);
+                GetRecordsResult getRecordsResult = m_kinesis.getRecords(getRecordsRequest);
                 return getRecordsResult.getRecords();
             } catch (ProvisionedThroughputExceededException e) {
                 // Too much The request rate for the stream is too high, or the requested data is too large for the available throughput. Wait to try again.

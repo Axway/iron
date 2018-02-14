@@ -46,4 +46,19 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>localstack</id>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>
+                            src/test/localstack-resources
+                        </directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
