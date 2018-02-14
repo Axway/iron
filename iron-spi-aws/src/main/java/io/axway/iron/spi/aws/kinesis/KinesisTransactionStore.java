@@ -5,8 +5,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
 import com.amazonaws.services.kinesis.model.DescribeStreamResult;
@@ -29,8 +27,6 @@ import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.doesStreamExist;
  * Transactions are stored in a Kinesis Stream.
  */
 class KinesisTransactionStore implements TransactionStore {
-
-    private static final Logger LOG = LoggerFactory.getLogger(KinesisTransactionStore.class);
 
     private final String m_streamName;
     private final Shard m_shard;

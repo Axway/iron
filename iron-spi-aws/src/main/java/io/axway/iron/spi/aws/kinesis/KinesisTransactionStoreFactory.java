@@ -2,7 +2,6 @@ package io.axway.iron.spi.aws.kinesis;
 
 import java.util.*;
 import com.amazonaws.services.kinesis.AmazonKinesis;
-import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import io.axway.iron.spi.storage.TransactionStore;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
@@ -13,7 +12,6 @@ import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.buildKinesisClient;
  */
 public class KinesisTransactionStoreFactory implements TransactionStoreFactory {
 
-    private KinesisProducer m_producer;
     private AmazonKinesis m_kinesisClient;
 
     /**
