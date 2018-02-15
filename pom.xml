@@ -88,6 +88,7 @@
         <module>iron-spi-aws</module>
         <module>iron-spi-test</module>
         <module>iron-spi-aws-inttest</module>
+        <module>iron-spi-file-inttest</module>
     </modules>
 
     <dependencyManagement>

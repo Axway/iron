@@ -1,10 +1,10 @@
-package io.axway.iron.spi.aws.kinesis;
+package io.axway.iron.spi.aws;
 
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import io.axway.iron.sample.Sample;
-import io.axway.iron.spi.aws.BaseInttest;
+import io.axway.iron.spi.aws.kinesis.KinesisTransactionStoreFactory;
 import io.axway.iron.spi.aws.s3.AwsS3Properties;
 import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactory;
 import io.axway.iron.spi.jackson.JacksonSerializer;
@@ -36,7 +36,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
     }
 
     @Test
-    public void testSnapshotStore() throws Exception {
+    public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
         Sample.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
                                                                      new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);

@@ -7,19 +7,13 @@ import io.axway.iron.sample.Sample;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
-public class AwsKinesisTransactionIT extends BaseInttest {
+/**
+ * Test KinesisTransactionStore and FileSnapshotStore
+ */
+public class AwsKinesisTransactionStoreIT extends BaseInttest {
 
     @Test
-    public void shouldCreateCompanySequenceBeRightSample() throws Exception {
-        String randomStoreName = createRandomStoreName();
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"), null);
-
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.checkThatCreateCompanySequenceIsRight(fileStoreFactory, jacksonSerializer, fileStoreFactory, jacksonSerializer, randomStoreName);
-    }
-
-    @Test
-    public void shouldCreateCompanySequenceBeRightKinesis() throws Exception {
+    public void shouldCreateCompanySequenceBeRight() throws Exception {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
         FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"), null);
@@ -45,7 +39,7 @@ public class AwsKinesisTransactionIT extends BaseInttest {
     }
 
     @Test
-    public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStoreKinesis() throws Exception {
+    public void shouldRetrieveCommandsFromSnapshotStoreAndNot() throws Exception {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
         FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"), null);

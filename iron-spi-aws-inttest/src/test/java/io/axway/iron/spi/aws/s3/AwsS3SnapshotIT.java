@@ -7,19 +7,13 @@ import io.axway.iron.sample.Sample;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
+/**
+ * Test FileTransactionStore and S3SnapshotStore
+ */
 public class AwsS3SnapshotIT extends BaseInttest {
 
     @Test
-    public void shouldCreateCompanySequenceSample() throws Exception {
-        String storeName = initStoreName();
-        FileStoreFactory ironFileStoreFactory = new FileStoreFactory(Paths.get("iron"));
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-
-        Sample.checkThatCreateCompanySequenceIsRight(ironFileStoreFactory, jacksonSerializer, ironFileStoreFactory, jacksonSerializer, storeName);
-    }
-
-    @Test
-    public void shouldCreateCompanySequenceBeRightWithS3() throws Exception {
+    public void shouldCreateCompanySequenceBeRight() throws Exception {
         String storeName = initStoreName();
         createS3Bucket(storeName);
         AwsS3SnapshotStoreFactory s3SnapshotStoreFactory = new AwsS3SnapshotStoreFactory(m_configuration);
@@ -44,7 +38,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
     }
 
     @Test
-    public void shouldListSnapshotsReturnTheRightNumberOfSnapshotsWithS3() throws Exception {
+    public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         String storeName = initStoreName();
         createS3Bucket(storeName);
         AwsS3SnapshotStoreFactory s3SnapshotStoreFactory = new AwsS3SnapshotStoreFactory(m_configuration);
