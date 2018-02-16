@@ -50,7 +50,7 @@ class AwsS3SnapshotStore implements SnapshotStore {
     public InputStream createSnapshotReader(BigInteger transactionId) throws IOException {
         S3Object object = m_amazonS3.getObject(m_bucketName, getSnapshotFileName(transactionId));
         if (object == null) {
-            throw new RuntimeException("Transaction " + transactionId + " doesn't exist");
+            throw new AwsS3Exception("Snapshot doesn't exist", args -> args.add("bucketName", m_bucketName).add("transactionId", transactionId));
         }
         return object.getObjectContent();
     }

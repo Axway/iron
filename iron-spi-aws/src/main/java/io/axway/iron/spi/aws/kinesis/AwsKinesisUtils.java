@@ -78,7 +78,8 @@ public class AwsKinesisUtils {
             try {
                 int httpStatusCode = kinesis.deleteStream(storeName).getSdkHttpMetadata().getHttpStatusCode();
                 if (200 != httpStatusCode) {
-                    throw new RuntimeException("Can't perform " + actionLabel + " http status code not 200 " + httpStatusCode);
+                    throw new AwsKinesisException("Can't perform the action because the http status code not 200 ",
+                                                  args -> args.add("storeName", storeName).add("action", actionLabel).add("httpStatusCode", httpStatusCode));
                 }
             } catch (ResourceNotFoundException rnfe) {
                 // No need to delete resource doesn't even exists
@@ -126,7 +127,8 @@ public class AwsKinesisUtils {
             }
         } while (System.currentTimeMillis() < endTime);
         if (describeStreamResult == null || streamStatus == null || !streamStatus.equals(ACTIVE_STREAM_STATUS)) {
-            throw new RuntimeException("Stream " + streamName + " never went " + ACTIVE_STREAM_STATUS);
+            throw new AwsKinesisException("Stream never went active",
+                                          args -> args.add("streamName", streamName).add("streamCreationTimeoutMillis", streamCreationTimeoutMillis));
         }
     }
 

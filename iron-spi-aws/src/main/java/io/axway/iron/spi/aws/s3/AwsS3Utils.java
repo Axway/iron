@@ -56,7 +56,7 @@ public class AwsS3Utils {
         try {
             amazonS3.headBucket(headBucketRequest);
         } catch (AmazonServiceException e) {
-            throw new RuntimeException("Bucket " + bucketName + " is not accessible.", e);
+            throw new AwsS3Exception("Bucket is not accessible", args -> args.add("bucketName", bucketName), e);
         }
         return bucketName;
     }
@@ -122,7 +122,7 @@ public class AwsS3Utils {
             LOG.debug(" OK, bucket ready to delete!");
             s3.deleteBucket(storeName);
         } catch (AmazonServiceException e) {
-            throw new RuntimeException("Can't remove s3 bucket " + storeName, e);
+            throw new AwsS3Exception("Can't remove s3 bucket", args -> args.add("storeName", storeName), e);
         }
     }
 }

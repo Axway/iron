@@ -59,7 +59,7 @@ class KinesisTransactionStore implements TransactionStore {
         DescribeStreamResult describeStreamResult = m_kinesis.describeStream(describeStreamRequest);
         String streamStatus = describeStreamResult.getStreamDescription().getStreamStatus();
         if (streamStatus == null || !streamStatus.equals(AwsKinesisUtils.ACTIVE_STREAM_STATUS)) {
-            throw new RuntimeException("Stream " + m_streamName + " does not exist.");
+            throw new AwsKinesisException("Stream does not exist", args -> args.add("streamName", m_streamName));
         }
         List<Shard> shards = describeStreamResult.getStreamDescription().getShards();
 
@@ -145,7 +145,8 @@ class KinesisTransactionStore implements TransactionStore {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException exception) {
-                    throw new RuntimeException(exception);
+                    throw new AwsKinesisException("Interrupted while waiting provisioned throughput does no more exceed limit",
+                                                  args -> args.add("streamName", m_streamName).add("shardId", m_shard.getShardId()), exception);
                 }
             }
         }

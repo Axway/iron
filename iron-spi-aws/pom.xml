@@ -38,6 +38,10 @@
         <!-- Internal dependencies -->
         <dependency>
             <groupId>io.axway.iron</groupId>
+            <artifactId>iron-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.axway.iron</groupId>
             <artifactId>iron-spi</artifactId>
         </dependency>
         <dependency>
