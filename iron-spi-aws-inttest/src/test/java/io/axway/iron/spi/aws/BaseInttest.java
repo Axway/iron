@@ -26,10 +26,10 @@ public abstract class BaseInttest {
 
     @BeforeClass
     public void handleLocalStackConfigurationForLocalTesting() {
-        if (PropertiesHelper.getValue(m_configuration, AwsProperties.DISABLE_VERIFY_CERTIFICATE_KEY).orElse("").toLowerCase().equals("true")) {
+        if (PropertiesHelper.getValue(m_configuration, AwsProperties.DISABLE_VERIFY_CERTIFICATE_KEY).orElse("").equalsIgnoreCase("true")) {
             System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "");
         }
-        if (PropertiesHelper.getValue(m_configuration, AwsProperties.DISABLE_CBOR_KEY).orElse("").toLowerCase().equals("true")) {
+        if (PropertiesHelper.getValue(m_configuration, AwsProperties.DISABLE_CBOR_KEY).orElse("").equalsIgnoreCase("true")) {
             System.setProperty(AWS_CBOR_DISABLE_SYSTEM_PROPERTY, "");
         }
     }
