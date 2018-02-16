@@ -1,6 +1,7 @@
 package io.axway.iron.spi.aws;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +9,7 @@ import org.testng.annotations.BeforeClass;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.base.Preconditions;
+import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisUtils;
 import io.axway.iron.spi.aws.s3.AwsS3Utils;
 
@@ -57,6 +59,14 @@ public abstract class BaseInttest {
     protected void deleteKinesisStream(String storeName) {
         AmazonKinesis amazonKinesis = AwsKinesisUtils.buildKinesisClient(m_configuration);
         AwsKinesisUtils.deleteStream(amazonKinesis, storeName);
+    }
+
+    protected FileStoreFactory buildFileStoreFactory() {
+        return new FileStoreFactory(Paths.get("iron", "iron-spi-aws-inttest"));
+    }
+
+    protected FileStoreFactory buildFileStoreFactoryNoLimitedSize() {
+        return new FileStoreFactory(Paths.get("iron", "iron-spi-aws-inttest"), null);
     }
 
     private Properties loadConfiguration() {

@@ -37,8 +37,8 @@ public class SampleTest {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron"));
-        ChronicleTransactionStoreFactory chronicleTransactionStoreFactory = new ChronicleTransactionStoreFactory(Paths.get("iron"));
+        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron", "iron-sample"));
+        ChronicleTransactionStoreFactory chronicleTransactionStoreFactory = new ChronicleTransactionStoreFactory(Paths.get("iron", "iron-sample"));
 
         String storeBaseName = "irontest-" + System.getProperty("user.name");
 

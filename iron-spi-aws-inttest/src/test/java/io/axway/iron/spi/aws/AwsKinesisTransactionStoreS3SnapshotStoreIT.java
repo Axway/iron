@@ -3,7 +3,7 @@ package io.axway.iron.spi.aws;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import io.axway.iron.sample.Sample;
+import io.axway.iron.sample.SpiTest;
 import io.axway.iron.spi.aws.kinesis.KinesisTransactionStoreFactory;
 import io.axway.iron.spi.aws.s3.AwsS3Properties;
 import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactory;
@@ -31,22 +31,22 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
     public void shouldCreateCompanySequenceBeRight() throws Exception {
 
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.checkThatCreateCompanySequenceIsRight(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
-                                                     new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
+        SpiTest.checkThatCreateCompanySequenceIsRight(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+                                                      new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
     @Test
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
-                                                                     new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
+        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+                                                                      new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
     @Test
     public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStore() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        Sample.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
-                                                                                  new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer,
-                                                                                  m_storeName);
+        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+                                                                                   new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer,
+                                                                                   m_storeName);
     }
 }

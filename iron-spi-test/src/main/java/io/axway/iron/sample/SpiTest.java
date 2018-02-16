@@ -33,7 +33,7 @@ import static io.axway.iron.core.StoreManagerFactoryBuilder.newStoreManagerBuild
 import static java.util.stream.Collectors.*;
 import static org.assertj.core.api.Assertions.*;
 
-public class Sample {
+public class SpiTest {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/mm/yyyy");
 
