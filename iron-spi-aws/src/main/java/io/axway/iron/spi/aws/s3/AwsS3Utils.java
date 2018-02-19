@@ -17,7 +17,6 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.S3VersionSummary;
 import com.amazonaws.services.s3.model.VersionListing;
-import com.google.common.base.Throwables;
 
 import static io.axway.iron.spi.aws.AwsProperties.*;
 import static io.axway.iron.spi.aws.PropertiesHelper.getValue;
@@ -70,7 +69,7 @@ public class AwsS3Utils {
                 CreateBucketRequest createBucketRequest = new CreateBucketRequest(bucketName, region);
                 amazonS3.createBucket(createBucketRequest);
             } else {
-                throw Throwables.propagate(e);
+                throw e;
             }
         }
     }
@@ -84,45 +83,47 @@ public class AwsS3Utils {
      */
     public static void deleteBucket(AmazonS3 s3, String storeName) {
         try {
-            LOG.debug(" - removing objects from bucket");
-            ObjectListing object_listing = s3.listObjects(storeName);
-            while (true) {
-                for (S3ObjectSummary summary : object_listing.getObjectSummaries()) {
-                    s3.deleteObject(storeName, summary.getKey());
-                }
-
-                // more object_listing to retrieve?
-                if (object_listing.isTruncated()) {
-                    object_listing = s3.listNextBatchOfObjects(object_listing);
-                } else {
-                    break;
-                }
-            }
-
-            LOG.debug(" - removing versions from bucket");
-            try {
-                VersionListing version_listing = s3.listVersions(new ListVersionsRequest().withBucketName(storeName));
-                while (true) {
-                    for (S3VersionSummary vs : version_listing.getVersionSummaries()) {
-                        s3.deleteVersion(
-
-                                storeName, vs.getKey(), vs.getVersionId());
-                    }
-
-                    if (version_listing.isTruncated()) {
-                        version_listing = s3.listNextBatchOfVersions(version_listing);
-                    } else {
-                        break;
-                    }
-                }
-            } catch (AmazonS3Exception e) {
-                LOG.warn("Can't do s3.listVersions, don't care of this message if you are using localstack since this method is not implemented");
-            }
-
+            removeObjectsFromBucket(s3, storeName);
+            removeVersionsFromBucket(s3, storeName);
             LOG.debug(" OK, bucket ready to delete!");
             s3.deleteBucket(storeName);
         } catch (AmazonServiceException e) {
             throw new AwsS3Exception("Can't remove s3 bucket", args -> args.add("storeName", storeName), e);
+        }
+    }
+
+    private static void removeVersionsFromBucket(AmazonS3 s3, String storeName) {
+        LOG.debug(" - removing versions from bucket");
+        try {
+            VersionListing versionListing = s3.listVersions(new ListVersionsRequest().withBucketName(storeName));
+            while (true) {
+                for (S3VersionSummary vs : versionListing.getVersionSummaries()) {
+                    s3.deleteVersion(storeName, vs.getKey(), vs.getVersionId());
+                }
+                if (versionListing.isTruncated()) {
+                    versionListing = s3.listNextBatchOfVersions(versionListing);
+                } else {
+                    break;
+                }
+            }
+        } catch (AmazonS3Exception e) {
+            LOG.warn("Can't do s3.listVersions, don't care of this message if you are using localstack since this method is not implemented");
+        }
+    }
+
+    private static void removeObjectsFromBucket(AmazonS3 s3, String storeName) {
+        LOG.debug(" - removing objects from bucket");
+        ObjectListing objectListing = s3.listObjects(storeName);
+        while (true) {
+            for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
+                s3.deleteObject(storeName, summary.getKey());
+            }
+            // more objectListing to retrieve?
+            if (objectListing.isTruncated()) {
+                objectListing = s3.listNextBatchOfObjects(objectListing);
+            } else {
+                break;
+            }
         }
     }
 }
