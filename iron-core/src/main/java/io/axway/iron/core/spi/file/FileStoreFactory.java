@@ -37,7 +37,7 @@ public class FileStoreFactory implements SnapshotStoreFactory, TransactionStoreF
         // store name is already enforced to be securely usable for file name thanks to io.axway.iron.StoreManagerFactory.STORE_NAME_VALIDATOR_PATTERN
         Path transactionStoreDir = ensureDirectoryExists(m_fileStoreDir.resolve(storeName).resolve("tx"));
         Path transactionStoreTmpDir = ensureDirectoryExists(transactionStoreDir.resolve(".tmp"));
-        return new FileTransactionStore(transactionStoreDir, transactionStoreTmpDir, m_limitedSize);
+        return new FileTransactionStore(transactionStoreDir, transactionStoreTmpDir);
     }
 
     private Path ensureDirectoryExists(Path dir) {
