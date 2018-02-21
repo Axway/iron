@@ -82,7 +82,7 @@ class StorePersistence {
                                 + SNAPSHOT_MODEL_VERSION + " is expected");
             }
 
-            if (latestTxId.compareTo(serializableSnapshot.getTransactionId()) != 0) {
+            if (!latestTxId.equals(serializableSnapshot.getTransactionId())) {
                 throw new IllegalStateException(
                         "Snapshot transaction id " + serializableSnapshot.getTransactionId() + " mismatch with request transaction id " + latestTxId);
             }

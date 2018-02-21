@@ -5,31 +5,28 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.regex.*;
 import java.util.stream.*;
-import javax.annotation.*;
 import io.axway.iron.spi.storage.TransactionStore;
 
 class FileTransactionStore implements TransactionStore {
     private static final String TX_EXT = "tx";
-    private final String m_filenameFormat;
-    private final Pattern m_filenamePattern;
+    private static final String FILENAME_FORMAT = "%020d.%s";
+    private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]{20}).([a-z]+)");
 
     private final Path m_transactionDir;
     private final Path m_transactionTmpDir;
 
-    private final AtomicBigInteger m_tmpCounter = new AtomicBigInteger(BigInteger.ZERO);
+    private final AtomicLong m_tmpCounter = new AtomicLong();
     private final Object m_commitLock = new Object();
-    private BigInteger m_nextTxId = BigInteger.ZERO;
+    private long m_nextTxId = 0;
 
-    private BigInteger m_consumerNextTxId = BigInteger.ZERO;
+    private long m_consumerNextTxId = 0;
 
-    FileTransactionStore(Path transactionDir, Path transactionStoreTmpDir, @Nullable Integer limitedSize) {
+    FileTransactionStore(Path transactionDir, Path transactionStoreTmpDir) {
         m_transactionDir = transactionDir;
         m_transactionTmpDir = transactionStoreTmpDir;
-
-        m_filenameFormat = FilenameUtils.buildFilenameFormat(limitedSize);
-        m_filenamePattern = FilenameUtils.buildFilenamePattern(limitedSize);
 
         m_nextTxId = retrieveNextTxId();
     }
@@ -43,8 +40,7 @@ class FileTransactionStore implements TransactionStore {
             public void close() throws IOException {
                 super.close();
                 synchronized (m_commitLock) {
-                    BigInteger transactionId = m_nextTxId;
-                    m_nextTxId = m_nextTxId.add(BigInteger.ONE);
+                    long transactionId = m_nextTxId++;
                     Path txFile = getTxFile(transactionId);
 
                     Files.move(tmpFile, txFile);
@@ -56,13 +52,13 @@ class FileTransactionStore implements TransactionStore {
 
     @Override
     public void seekTransactionPoll(BigInteger latestProcessedTransactionId) {
-        m_consumerNextTxId = latestProcessedTransactionId.add(BigInteger.ONE);
+        m_consumerNextTxId = latestProcessedTransactionId.longValueExact() + 1;
     }
 
     @Override
     public TransactionInput pollNextTransaction(long timeout, TimeUnit unit) {
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-        BigInteger txId = m_consumerNextTxId;
+        long txId = m_consumerNextTxId;
         Path nextFile = getTxFile(txId);
         while (!Files.exists(nextFile)) {
             long waitTimeout = deadline - System.currentTimeMillis();
@@ -80,7 +76,7 @@ class FileTransactionStore implements TransactionStore {
             }
         }
 
-        m_consumerNextTxId = m_consumerNextTxId.add(BigInteger.ONE);
+        m_consumerNextTxId++;
         return new TransactionInput() {
             @Override
             public InputStream getInputStream() throws IOException {
@@ -89,31 +85,31 @@ class FileTransactionStore implements TransactionStore {
 
             @Override
             public BigInteger getTransactionId() {
-                return txId;
+                return BigInteger.valueOf(txId);
             }
         };
     }
 
-    private BigInteger retrieveNextTxId() {
+    private long retrieveNextTxId() {
         try (Stream<Path> dirList = Files.list(m_transactionDir)) {
             return dirList //
                     .map(path -> path.getFileName().toString()) //
-                    .map(m_filenamePattern::matcher) //
+                    .map(FILENAME_PATTERN::matcher) //
                     .filter(matcher -> matcher.matches() && TX_EXT.equals(matcher.group(2))) //
-                    .map(matcher -> new BigInteger(matcher.group(1))) //
-                    .max(BigInteger::compareTo) //
-                    .orElse(BigInteger.ONE.negate()) // in case no file exists we want nextTxId=0
-                    .add(BigInteger.ONE);
+                    .mapToLong(matcher -> Long.valueOf(matcher.group(1))) //
+                    .max() //
+                    .orElse(-1L) // in case no file exists we want nextTxId=0
+                    + 1;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private Path getTxFile(BigInteger id) {
+    private Path getTxFile(long id) {
         return m_transactionDir.resolve(getFileName(id, TX_EXT));
     }
 
-    private String getFileName(BigInteger id, String ext) {
-        return String.format(m_filenameFormat, id, ext);
+    private String getFileName(long id, String ext) {
+        return String.format(FILENAME_FORMAT, id, ext);
     }
 }
