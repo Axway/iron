@@ -321,7 +321,7 @@
                         <configuration>
                             <instructions>
                                 <Bundle-DocURL>${project.url}</Bundle-DocURL>
-                                <Import-Package>javax.annotation.*;version="0.0.0",${bnd.Import-Package}</Import-Package>
+                                <Import-Package>javax.annotation.*;resolution:=optional,${bnd.Import-Package}</Import-Package>
                                 <SCM-Revision>${buildNumber}</SCM-Revision>
                             </instructions>
                         </configuration>
