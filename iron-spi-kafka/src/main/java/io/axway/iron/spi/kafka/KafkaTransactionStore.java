@@ -1,6 +1,7 @@
 package io.axway.iron.spi.kafka;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -75,8 +76,8 @@ class KafkaTransactionStore implements TransactionStore {
     }
 
     @Override
-    public void seekTransactionPoll(long latestProcessedTransactionId) {
-        m_consumer.seek(m_topicPartition, latestProcessedTransactionId + 1);
+    public void seekTransactionPoll(BigInteger latestProcessedTransactionId) {
+        m_consumer.seek(m_topicPartition, latestProcessedTransactionId.longValueExact() + 1);
     }
 
     @Override
@@ -98,8 +99,8 @@ class KafkaTransactionStore implements TransactionStore {
             }
 
             @Override
-            public long getTransactionId() {
-                return firstRecord.offset();
+            public BigInteger getTransactionId() {
+                return BigInteger.valueOf(firstRecord.offset());
             }
         };
     }

@@ -1,6 +1,7 @@
 package io.axway.iron.spi.chronicle;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -37,8 +38,8 @@ class ChronicleTransactionStore implements TransactionStore {
     }
 
     @Override
-    public void seekTransactionPoll(long latestProcessedTransactionId) {
-        m_tailer.moveToIndex(latestProcessedTransactionId);
+    public void seekTransactionPoll(BigInteger latestProcessedTransactionId) {
+        m_tailer.moveToIndex(latestProcessedTransactionId.longValueExact());
     }
 
     @Override
@@ -56,8 +57,8 @@ class ChronicleTransactionStore implements TransactionStore {
                 }
 
                 @Override
-                public long getTransactionId() {
-                    return transactionId;
+                public BigInteger getTransactionId() {
+                    return BigInteger.valueOf(transactionId);
                 }
             };
         } else {

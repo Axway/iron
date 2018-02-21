@@ -1,6 +1,7 @@
 package io.axway.iron.core.spi.file;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.*;
@@ -50,8 +51,8 @@ class FileTransactionStore implements TransactionStore {
     }
 
     @Override
-    public void seekTransactionPoll(long latestProcessedTransactionId) {
-        m_consumerNextTxId = latestProcessedTransactionId + 1;
+    public void seekTransactionPoll(BigInteger latestProcessedTransactionId) {
+        m_consumerNextTxId = latestProcessedTransactionId.longValueExact() + 1;
     }
 
     @Override
@@ -83,8 +84,8 @@ class FileTransactionStore implements TransactionStore {
             }
 
             @Override
-            public long getTransactionId() {
-                return txId;
+            public BigInteger getTransactionId() {
+                return BigInteger.valueOf(txId);
             }
         };
     }
