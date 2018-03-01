@@ -18,13 +18,31 @@ import static io.axway.iron.spi.aws.AwsProperties.*;
 import static io.axway.iron.spi.aws.PropertiesHelper.getValue;
 import static io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.*;
 
+/**
+ * Some AWS Kinesis utils.
+ */
 public class AwsKinesisUtils {
+    /**
+     * Stream Status when the steam is active.
+     */
     static final String ACTIVE_STREAM_STATUS = "ACTIVE";
 
     private static final Logger LOG = LoggerFactory.getLogger(AwsKinesisUtils.class);
     private static final int DEFAULT_RETRY_DURATION_IN_MILLIS = 5000;
     private static final int DEFAULT_RETRY_COUNT = 5;
 
+    /**
+     * Create a AmazonKinesis client configured with some optional properties (can also be configured using environment variables):
+     * - aws access key (optional) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_ENVVAR}
+     * - aws secret key (optional) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_ENVVAR}
+     * - aws region (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_ENVVAR}
+     * - kinesis endpoint (optional*) {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_ENDPOINT_PROPERTY} / {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_ENDPOINT_ENVVAR}
+     * - kinesis port (optional*) {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_PORT_PROPERTY} / {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_PORT_ENVVAR}
+     * (*) to configure the endpoint, endpoint, port and region must be provided.
+     *
+     * @param properties properties to configure the AmazonKinesis client
+     * @return a configured AmazonKinesis client
+     */
     public static AmazonKinesis buildKinesisClient(Properties properties) {
         AmazonKinesisClientBuilder builder = AmazonKinesisClientBuilder.standard();
         Optional<String> accessKey = getValue(properties, ACCESS_KEY_KEY);
@@ -47,7 +65,7 @@ public class AwsKinesisUtils {
     /**
      * Create a stream if it does not already exist.
      *
-     * @param kinesis
+     * @param kinesis AmazonKinesis client
      * @param streamName the name of the stream
      * * @throws LimitExceededException after retry exhausted
      */
@@ -68,18 +86,18 @@ public class AwsKinesisUtils {
      * <p>
      * Won't raise an error if stream doesn't exists
      *
-     * @param kinesis
-     * @param storeName
+     * @param kinesis AmazonKinesis
+     * @param streamName the name of the stream
      * @throws LimitExceededException after retry exhausted
      */
-    public static void deleteStream(AmazonKinesis kinesis, String storeName) {
+    public static void deleteStream(AmazonKinesis kinesis, String streamName) {
         String actionLabel = "deleteStream";
         performAmazonActionWithRetry(actionLabel, () -> {
             try {
-                int httpStatusCode = kinesis.deleteStream(storeName).getSdkHttpMetadata().getHttpStatusCode();
+                int httpStatusCode = kinesis.deleteStream(streamName).getSdkHttpMetadata().getHttpStatusCode();
                 if (200 != httpStatusCode) {
                     throw new AwsKinesisException("Can't perform the action because the http status code not 200 ",
-                                                  args -> args.add("storeName", storeName).add("action", actionLabel).add("httpStatusCode", httpStatusCode));
+                                                  args -> args.add("storeName", streamName).add("action", actionLabel).add("httpStatusCode", httpStatusCode));
                 }
             } catch (ResourceNotFoundException rnfe) {
                 // No need to delete resource doesn't even exists
@@ -91,13 +109,14 @@ public class AwsKinesisUtils {
     /**
      * Returns true if the stream already exists.
      *
-     * @param consumer
+     * @param kinesis AmazonKinesis
      * @param streamName the name of the stream
+     * @return true if the stream already exists
      */
-    static boolean doesStreamExist(AmazonKinesis consumer, String streamName) {
+    static boolean doesStreamExist(AmazonKinesis kinesis, String streamName) {
         DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest().withStreamName(streamName).withLimit(1);
         try {
-            consumer.describeStream(describeStreamRequest);
+            kinesis.describeStream(describeStreamRequest);
         } catch (ResourceNotFoundException e) {
             return false;
         }
@@ -105,7 +124,7 @@ public class AwsKinesisUtils {
     }
 
     /**
-     * Returns the single created shard.
+     * Waits that the stream has been created.
      */
     public static void waitStreamActivation(AmazonKinesis consumer, String streamName, long streamCreationTimeoutMillis) {
         DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest().withStreamName(streamName).withLimit(1);
@@ -135,13 +154,13 @@ public class AwsKinesisUtils {
     /**
      * Handle retry for amazon quotas
      *
-     * @param actionLabel
-     * @param action
-     * @param retry
-     * @param durationInMillis
+     * @param actionLabel action label used for logging purpose only
+     * @param action the action to retry
+     * @param retryLimit retry number limit
+     * @param durationInMillis duration between each retry
      * @throws LimitExceededException after retry exhausted
      */
-    private static void performAmazonActionWithRetry(String actionLabel, Supplier<Void> action, int retry, int durationInMillis) {
+    private static void performAmazonActionWithRetry(String actionLabel, Supplier<Void> action, int retryLimit, int durationInMillis) {
         int retryCount = 0;
         do {
             try {
@@ -149,14 +168,14 @@ public class AwsKinesisUtils {
                 return;
             } catch (LimitExceededException lee) {
                 // We should just wait a little time before trying again
-                LOG.debug("LimitExceededException while doing " + actionLabel + " will retry " + (retry - retryCount) + " times");
+                LOG.debug("LimitExceededException while doing " + actionLabel + " will retry " + (retryLimit - retryCount) + " times");
             }
             try {
                 Thread.sleep(durationInMillis);
                 LOG.debug("Throttling {} for {} ms", actionLabel, durationInMillis);
             } catch (InterruptedException ignored) {
             }
-        } while (retryCount++ < retry);
-        throw new LimitExceededException("Can't do " + actionLabel + " after " + retry + " retries");
+        } while (retryCount++ < retryLimit);
+        throw new LimitExceededException("Can't do " + actionLabel + " after " + retryLimit + " retries");
     }
 }

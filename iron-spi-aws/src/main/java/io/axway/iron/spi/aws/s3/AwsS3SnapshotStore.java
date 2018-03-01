@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.regex.*;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import io.axway.iron.spi.storage.SnapshotStore;
@@ -13,21 +14,31 @@ import io.axway.iron.spi.storage.SnapshotStore;
 import static io.axway.iron.spi.aws.s3.AwsS3Utils.checkBucketIsAccessible;
 import static java.util.stream.Collectors.*;
 
+/**
+ * AWS S3 SnapshotStore.
+ */
 class AwsS3SnapshotStore implements SnapshotStore {
 
-    private static final String DIRNAME_FORMAT = "%s/snapshot";
-    private static final String FILENAME_FORMAT = DIRNAME_FORMAT + "/%d.snapshot";
+    private static final String DIRECTORYNAME_FORMAT = "%s/snapshot";
+    private static final String FILENAME_FORMAT = DIRECTORYNAME_FORMAT + "/%d.snapshot";
     private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]+)\\.snapshot");
     private final AmazonS3 m_amazonS3;
     private final String m_bucketName;
     private String m_storeName;
     private String m_snapshotDirName;
 
+    /**
+     * Create an AWS S3 SnapshotStore.
+     *
+     * @param amazonS3 AmazonS3 client
+     * @param bucketName Bucket name
+     * @param storeName Store name
+     */
     AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String storeName) {
         m_amazonS3 = amazonS3;
         m_bucketName = bucketName;
         m_storeName = storeName;
-        m_snapshotDirName = getSnapshotDirName();
+        m_snapshotDirName = getSnapshotDirectoryName();
         checkBucketIsAccessible(m_amazonS3, bucketName);
     }
 
@@ -41,7 +52,7 @@ class AwsS3SnapshotStore implements SnapshotStore {
                 ObjectMetadata metadata = new ObjectMetadata();
                 metadata.setContentType("application/json");
                 metadata.setContentLength(content.length);
-                m_amazonS3.putObject(m_bucketName, getSnapshotFileName(transactionId), new ByteArrayInputStream(content), metadata);
+                m_amazonS3.putObject(new PutObjectRequest(m_bucketName, getSnapshotFileName(transactionId), new ByteArrayInputStream(content), metadata));
             }
         };
     }
@@ -72,11 +83,22 @@ class AwsS3SnapshotStore implements SnapshotStore {
         m_amazonS3.deleteObject(m_bucketName, getSnapshotFileName(transactionId));
     }
 
-    private String getSnapshotDirName() {
-        return String.format(DIRNAME_FORMAT, m_storeName);
+    /**
+     * Return the snapshot directory name.
+     *
+     * @return the snapshot directory name
+     */
+    private String getSnapshotDirectoryName() {
+        return String.format(DIRECTORYNAME_FORMAT, m_storeName);
     }
 
-    private String getSnapshotFileName(BigInteger id) {
-        return String.format(FILENAME_FORMAT, m_storeName, id);
+    /**
+     * Return the snapshot file name based on the transactionId.
+     *
+     * @param transactionId the transactionId
+     * @return the snapshot file name
+     */
+    private String getSnapshotFileName(BigInteger transactionId) {
+        return String.format(FILENAME_FORMAT, m_storeName, transactionId);
     }
 }

@@ -13,6 +13,7 @@ import com.amazonaws.services.kinesis.model.GetRecordsResult;
 import com.amazonaws.services.kinesis.model.GetShardIteratorRequest;
 import com.amazonaws.services.kinesis.model.GetShardIteratorResult;
 import com.amazonaws.services.kinesis.model.ProvisionedThroughputExceededException;
+import com.amazonaws.services.kinesis.model.PutRecordRequest;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
@@ -74,8 +75,8 @@ class KinesisTransactionStore implements TransactionStore {
             @Override
             public void close() throws IOException {
                 super.close();
-                ByteBuffer wrap = ByteBuffer.wrap(toByteArray());
-                m_kinesis.putRecord(m_streamName, wrap, "uselessPartitionKey");
+                ByteBuffer data = ByteBuffer.wrap(toByteArray());
+                m_kinesis.putRecord(new PutRecordRequest().withStreamName(m_streamName).withData(data).withPartitionKey("uselessPartitionKey"));
             }
         };
     }

@@ -25,6 +25,18 @@ import static io.axway.iron.spi.aws.s3.AwsS3Properties.*;
 public class AwsS3Utils {
     private static final Logger LOG = LoggerFactory.getLogger(AwsS3Utils.class);
 
+    /**
+     * Create a AwsS3SnapshotStoreFactory with some properties set to configure S3 client:
+     * - aws access key (optional+) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_ENVVAR}
+     * - aws secret key (optional+) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_ENVVAR}
+     * - aws region (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_ENVVAR}
+     * - s3 endpoint (optional*) {@value io.axway.iron.spi.aws.s3.AwsS3Properties.Constants#AWS_S3_ENDPOINT_PROPERTY} / {@value io.axway.iron.spi.aws.s3.AwsS3Properties.Constants#AWS_S3_ENDPOINT_ENVVAR}
+     * - s3 port (optional*) {@value io.axway.iron.spi.aws.s3.AwsS3Properties.Constants#AWS_S3_PORT_PROPERTY} / {@value io.axway.iron.spi.aws.s3.AwsS3Properties.Constants#AWS_S3_PORT_ENVVAR}
+     * (+) to configure the access, both access key and secret key must be provided.
+     * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
+     *
+     * @param properties the properties
+     */
     public static AmazonS3 buildS3Client(Properties properties) {
         AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard();
         Optional<String> accessKey = getValue(properties, ACCESS_KEY_KEY);
@@ -60,6 +72,13 @@ public class AwsS3Utils {
         return bucketName;
     }
 
+    /**
+     * Create a bucket if not exists.
+     *
+     * @param amazonS3 Amazon S3 client
+     * @param bucketName bucket name
+     * @param region AWS region
+     */
     public static void createBucketIfNotExists(AmazonS3 amazonS3, String bucketName, String region) {
         HeadBucketRequest headBucketRequest = new HeadBucketRequest(bucketName);
         try {
@@ -77,31 +96,37 @@ public class AwsS3Utils {
     /**
      * Delete a bucket after emptying it
      *
-     * @param s3
-     * @param storeName
+     * @param amazonS3 Amazon S3 client
+     * @param bucketName bucket name
      * @see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/delete-or-empty-bucket.html#delete-bucket-sdk-java">AWS SDK Doc</a>
      */
-    public static void deleteBucket(AmazonS3 s3, String storeName) {
+    public static void deleteBucket(AmazonS3 amazonS3, String bucketName) {
         try {
-            removeObjectsFromBucket(s3, storeName);
-            removeVersionsFromBucket(s3, storeName);
+            removeObjectsFromBucket(amazonS3, bucketName);
+            removeVersionsFromBucket(amazonS3, bucketName);
             LOG.debug(" OK, bucket ready to delete!");
-            s3.deleteBucket(storeName);
+            amazonS3.deleteBucket(bucketName);
         } catch (AmazonServiceException e) {
-            throw new AwsS3Exception("Can't remove s3 bucket", args -> args.add("storeName", storeName), e);
+            throw new AwsS3Exception("Can't remove s3 bucket", args -> args.add("storeName", bucketName), e);
         }
     }
 
-    private static void removeVersionsFromBucket(AmazonS3 s3, String storeName) {
+    /**
+     * Remove all versions from the bucket.
+     *
+     * @param amazonS3 Amazon S3 client
+     * @param bucketName bucket name
+     */
+    private static void removeVersionsFromBucket(AmazonS3 amazonS3, String bucketName) {
         LOG.debug(" - removing versions from bucket");
         try {
-            VersionListing versionListing = s3.listVersions(new ListVersionsRequest().withBucketName(storeName));
+            VersionListing versionListing = amazonS3.listVersions(new ListVersionsRequest().withBucketName(bucketName));
             while (true) {
                 for (S3VersionSummary vs : versionListing.getVersionSummaries()) {
-                    s3.deleteVersion(storeName, vs.getKey(), vs.getVersionId());
+                    amazonS3.deleteVersion(bucketName, vs.getKey(), vs.getVersionId());
                 }
                 if (versionListing.isTruncated()) {
-                    versionListing = s3.listNextBatchOfVersions(versionListing);
+                    versionListing = amazonS3.listNextBatchOfVersions(versionListing);
                 } else {
                     break;
                 }
@@ -111,16 +136,22 @@ public class AwsS3Utils {
         }
     }
 
-    private static void removeObjectsFromBucket(AmazonS3 s3, String storeName) {
+    /**
+     * Remove all objects of the S3 bucket
+     *
+     * @param amazonS3 Amazon S3 client
+     * @param bucketName bucket name
+     */
+    private static void removeObjectsFromBucket(AmazonS3 amazonS3, String bucketName) {
         LOG.debug(" - removing objects from bucket");
-        ObjectListing objectListing = s3.listObjects(storeName);
+        ObjectListing objectListing = amazonS3.listObjects(bucketName);
         while (true) {
             for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
-                s3.deleteObject(storeName, summary.getKey());
+                amazonS3.deleteObject(bucketName, summary.getKey());
             }
             // more objectListing to retrieve?
             if (objectListing.isTruncated()) {
-                objectListing = s3.listNextBatchOfObjects(objectListing);
+                objectListing = amazonS3.listNextBatchOfObjects(objectListing);
             } else {
                 break;
             }
