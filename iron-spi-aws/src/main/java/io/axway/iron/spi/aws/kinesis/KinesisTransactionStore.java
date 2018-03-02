@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
+import javax.annotation.*;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
 import com.amazonaws.services.kinesis.model.DescribeStreamResult;
@@ -29,11 +30,14 @@ import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.doesStreamExist;
  */
 class KinesisTransactionStore implements TransactionStore {
 
+    private static final long MAXIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
     private final String m_streamName;
     private final Shard m_shard;
     private final AmazonKinesis m_kinesis;
 
     private BigInteger m_seekTransactionId = null;
+    @Nullable
+    private Long m_lastGetShardIteratorRequestTime = null;
 
     /**
      * Create a KinesisTransactionStore based on an already active Kinesis Stream.
@@ -88,6 +92,33 @@ class KinesisTransactionStore implements TransactionStore {
 
     @Override
     public TransactionInput pollNextTransaction(long timeout, TimeUnit unit) {
+        Record record = getNextRecord();
+        if (record == null) {
+            return null;
+        }
+        m_seekTransactionId = new BigInteger(record.getSequenceNumber());
+        ByteBuffer data = record.getData().asReadOnlyBuffer();
+        return new TransactionInput() {
+            @Override
+            public InputStream getInputStream() throws IOException {
+                return new ByteBufferBackedInputStream(data);
+            }
+
+            @Override
+            public BigInteger getTransactionId() {
+                return new BigInteger(record.getSequenceNumber());
+            }
+        };
+    }
+
+    @Nullable
+    private Record getNextRecord() {
+        Long previousGetShardIteratorRequestTime = m_lastGetShardIteratorRequestTime;
+        m_lastGetShardIteratorRequestTime = System.currentTimeMillis();
+        if (previousGetShardIteratorRequestTime != null
+                && (m_lastGetShardIteratorRequestTime - previousGetShardIteratorRequestTime) < MAXIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS) {
+            return null;
+        }
         GetShardIteratorRequest getShardIteratorRequest;
         if (m_seekTransactionId == null) { // First call to pollNextTransaction, no Snapshot has been created => retrieve the oldest element
             getShardIteratorRequest = new GetShardIteratorRequest().withStreamName(m_streamName)//
@@ -102,32 +133,15 @@ class KinesisTransactionStore implements TransactionStore {
         GetShardIteratorResult getShardIteratorResult = m_kinesis.getShardIterator(getShardIteratorRequest);
         // Suboptimal request : fixed by https://techweb.axway.com/jira/browse/CND-592
         GetRecordsRequest getRecordsRequest = new GetRecordsRequest().withShardIterator(getShardIteratorResult.getShardIterator()).withLimit(1);
-
         List<Record> records = getRecords(getRecordsRequest);
-
+        Record record;
         if (records.isEmpty()) {
-            return null;
+            record = null;
+        } else {
+            checkState(records.size() == 1, "Kinesis should not return more than one record, and returns %d records", records.size());
+            record = records.get(0);
         }
-
-        checkState(records.size() == 1, "Kinesis should not return more than one record, and returns %d records", records.size());
-
-        Record record = records.get(0);
-
-        m_seekTransactionId = new BigInteger(record.getSequenceNumber());
-
-        ByteBuffer data = record.getData().asReadOnlyBuffer();
-
-        return new TransactionInput() {
-            @Override
-            public InputStream getInputStream() throws IOException {
-                return new ByteBufferBackedInputStream(data);
-            }
-
-            @Override
-            public BigInteger getTransactionId() {
-                return new BigInteger(record.getSequenceNumber());
-            }
-        };
+        return record;
     }
 
     /**
