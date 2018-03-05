@@ -15,7 +15,7 @@
     <description>Iron transaction and snapshot store SPI AWS implementations</description>
 
     <properties>
-        <bnd.Import-Package/>
+        <bnd.Import-Package>com.google.common.*;version="12.0",*</bnd.Import-Package>
     </properties>
 
     <dependencies>
@@ -23,12 +23,10 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-kinesis</artifactId>
-            <version>1.11.268</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.11.268</version>
         </dependency>
         <!-- third party dep -->
         <dependency>
