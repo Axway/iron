@@ -13,12 +13,14 @@ import io.axway.iron.spi.storage.SnapshotStore;
 import static io.axway.iron.core.spi.file.FilenameUtils.*;
 import static java.lang.String.format;
 import static java.nio.file.Files.*;
+import static java.util.stream.Collectors.*;
 
 class FileSnapshotStore implements SnapshotStore {
+
     private static final String SNAPSHOT_EXT = "snapshot";
+
     private final String m_filenameFormat;
     private final Pattern m_filenamePattern;
-
     private final Path m_snapshotDir;
     private final Path m_snapshotTmpDir;
 
@@ -57,8 +59,9 @@ class FileSnapshotStore implements SnapshotStore {
                     .map(path -> path.getFileName().toString()) //
                     .map(m_filenamePattern::matcher) //
                     .filter(matcher -> matcher.matches() && SNAPSHOT_EXT.equals(matcher.group(2))) //
-                    .map(matcher -> new BigInteger(matcher.group(1))).sorted() //
-                    .collect(Collectors.toList());
+                    .map(matcher -> new BigInteger(matcher.group(1))) //
+                    .sorted() //
+                    .collect(toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
