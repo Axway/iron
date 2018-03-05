@@ -92,8 +92,7 @@ class AwsKinesisTransactionStore implements TransactionStore {
         if (record == null) {
             return null;
         }
-        String sequenceNumber = record.getSequenceNumber();
-        m_seekTransactionId = new BigInteger(sequenceNumber);
+        m_seekTransactionId = new BigInteger(record.getSequenceNumber());
         ByteBuffer data = record.getData().asReadOnlyBuffer();
         return new TransactionInput() {
             @Override
@@ -103,7 +102,7 @@ class AwsKinesisTransactionStore implements TransactionStore {
 
             @Override
             public BigInteger getTransactionId() {
-                return new BigInteger(sequenceNumber);
+                return m_seekTransactionId;
             }
         };
     }
