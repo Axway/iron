@@ -31,10 +31,11 @@ import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.doesStreamExist;
 class KinesisTransactionStore implements TransactionStore {
 
     private static final long MAXIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
+    private static final String USELESS_PARTITION_KEY = "uselessPartitionKey";
+
     private final String m_streamName;
     private final Shard m_shard;
     private final AmazonKinesis m_kinesis;
-
     private BigInteger m_seekTransactionId = null;
     @Nullable
     private Long m_lastGetShardIteratorRequestTime = null;
@@ -48,11 +49,8 @@ class KinesisTransactionStore implements TransactionStore {
      */
     KinesisTransactionStore(AmazonKinesis kinesis, String streamName) {
         checkArgument(!(m_streamName = streamName.trim()).isEmpty(), "Topic name can't be null");
-
         m_kinesis = kinesis;
-
         checkState(doesStreamExist(m_kinesis, m_streamName), "The Kinesis Stream %s should already exist.", m_streamName);
-
         m_shard = getUniqueShard();
     }
 
@@ -67,9 +65,7 @@ class KinesisTransactionStore implements TransactionStore {
             throw new AwsKinesisException("Stream does not exist", args -> args.add("streamName", m_streamName));
         }
         List<Shard> shards = describeStreamResult.getStreamDescription().getShards();
-
         checkState(shards.size() == 1, "This Kinesis Stream %s should contain a single Shard, but it contains %d shards.", m_streamName, shards.size());
-
         return shards.get(0);
     }
 
@@ -80,7 +76,7 @@ class KinesisTransactionStore implements TransactionStore {
             public void close() throws IOException {
                 super.close();
                 ByteBuffer data = ByteBuffer.wrap(toByteArray());
-                m_kinesis.putRecord(new PutRecordRequest().withStreamName(m_streamName).withData(data).withPartitionKey("uselessPartitionKey"));
+                m_kinesis.putRecord(new PutRecordRequest().withStreamName(m_streamName).withData(data).withPartitionKey(USELESS_PARTITION_KEY));
             }
         };
     }
@@ -96,7 +92,8 @@ class KinesisTransactionStore implements TransactionStore {
         if (record == null) {
             return null;
         }
-        m_seekTransactionId = new BigInteger(record.getSequenceNumber());
+        String sequenceNumber = record.getSequenceNumber();
+        m_seekTransactionId = new BigInteger(sequenceNumber);
         ByteBuffer data = record.getData().asReadOnlyBuffer();
         return new TransactionInput() {
             @Override
@@ -106,7 +103,7 @@ class KinesisTransactionStore implements TransactionStore {
 
             @Override
             public BigInteger getTransactionId() {
-                return new BigInteger(record.getSequenceNumber());
+                return new BigInteger(sequenceNumber);
             }
         };
     }
@@ -131,7 +128,7 @@ class KinesisTransactionStore implements TransactionStore {
                     .withStartingSequenceNumber(m_seekTransactionId.toString());
         }
         GetShardIteratorResult getShardIteratorResult = m_kinesis.getShardIterator(getShardIteratorRequest);
-        // Suboptimal request : fixed by https://techweb.axway.com/jira/browse/CND-592
+        // Suboptimal request, should store records in a list instead. To be fixed.
         GetRecordsRequest getRecordsRequest = new GetRecordsRequest().withShardIterator(getShardIteratorResult.getShardIterator()).withLimit(1);
         List<Record> records = getRecords(getRecordsRequest);
         Record record;
