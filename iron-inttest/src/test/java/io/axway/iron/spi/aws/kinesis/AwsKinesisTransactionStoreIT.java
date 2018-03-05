@@ -2,7 +2,7 @@ package io.axway.iron.spi.aws.kinesis;
 
 import org.testng.annotations.Test;
 import io.axway.iron.core.spi.file.FileStoreFactory;
-import io.axway.iron.sample.SpiTest;
+import io.axway.iron.spi.SpiTest;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
@@ -28,7 +28,7 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
     }
 
     @Test
-    public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStoreSample() throws Exception {
+    public void shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionFileStore() throws Exception {
         String randomStoreName = createRandomStoreName();
         FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();
 
@@ -38,7 +38,7 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
     }
 
     @Test
-    public void shouldRetrieveCommandsFromSnapshotStoreAndNot() throws Exception {
+    public void shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionKinesisStoreSample() throws Exception {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
         FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();

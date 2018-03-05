@@ -2,7 +2,7 @@ package io.axway.iron.spi.aws.s3;
 
 import org.testng.annotations.Test;
 import io.axway.iron.core.spi.file.FileStoreFactory;
-import io.axway.iron.sample.SpiTest;
+import io.axway.iron.spi.SpiTest;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 

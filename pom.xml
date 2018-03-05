@@ -80,14 +80,12 @@
     <modules>
         <module>iron-api</module>
         <module>iron-core</module>
-        <module>iron-sample</module>
+        <module>iron-inttest</module>
         <module>iron-spi</module>
+        <module>iron-spi-aws</module>
         <module>iron-spi-chronicle</module>
         <module>iron-spi-jackson</module>
         <module>iron-spi-kafka</module>
-        <module>iron-spi-aws</module>
-        <module>iron-spi-test</module>
-        <module>iron-spi-file-inttest</module>
     </modules>
 
     <dependencyManagement>
@@ -107,18 +105,8 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>2.9.3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>2.9.4</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>2.9.3</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
@@ -156,6 +144,7 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
                 <version>1.7.25</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.testng</groupId>
@@ -188,7 +177,7 @@
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
-                <artifactId>iron-sample</artifactId>
+                <artifactId>iron-inttest</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -214,11 +203,6 @@
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-aws</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.axway.iron</groupId>
-                <artifactId>iron-spi-test</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>

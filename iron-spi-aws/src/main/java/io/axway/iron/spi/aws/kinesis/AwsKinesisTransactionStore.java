@@ -30,7 +30,7 @@ import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.doesStreamExist;
  */
 class AwsKinesisTransactionStore implements TransactionStore {
 
-    private static final long MAXIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
+    private static final long MINIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
     private static final String USELESS_PARTITION_KEY = "uselessPartitionKey";
 
     private final String m_streamName;
@@ -110,12 +110,12 @@ class AwsKinesisTransactionStore implements TransactionStore {
 
     @Nullable
     private Record getNextRecord() {
-        Long previousGetShardIteratorRequestTime = m_lastGetShardIteratorRequestTime;
-        m_lastGetShardIteratorRequestTime = System.currentTimeMillis();
-        if (previousGetShardIteratorRequestTime != null
-                && (m_lastGetShardIteratorRequestTime - previousGetShardIteratorRequestTime) < MAXIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS) {
+        Long currentGetShardIteratorRequestTime = System.currentTimeMillis();
+        if (m_lastGetShardIteratorRequestTime != null
+                && (currentGetShardIteratorRequestTime - m_lastGetShardIteratorRequestTime) < MINIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS) {
             return null;
         }
+        m_lastGetShardIteratorRequestTime = currentGetShardIteratorRequestTime;
         GetShardIteratorRequest getShardIteratorRequest;
         if (m_seekTransactionId == null) { // First call to pollNextTransaction, no Snapshot has been created => retrieve the oldest element
             getShardIteratorRequest = new GetShardIteratorRequest().withStreamName(m_streamName)//

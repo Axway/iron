@@ -21,8 +21,6 @@ public class AwsS3SnapshotStoreTest {
     @Test
     public void shouldCreateS3Bucket() {
         new StrictExpectations() {{
-            m_amazonS3.headBucket((HeadBucketRequest) any);
-            result = null;
             m_amazonS3.listObjectsV2(anyString, anyString);
             ListObjectsV2Result listObjectsV2Result = new ListObjectsV2Result();
             List<S3ObjectSummary> s3ObjectSummaries = listObjectsV2Result.getObjectSummaries();

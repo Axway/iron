@@ -1,9 +1,10 @@
-package io.axway.iron.core.spi.file;
+package io.axway.iron.spi.file;
 
 import java.nio.file.Paths;
 import java.util.*;
 import org.testng.annotations.Test;
-import io.axway.iron.sample.SpiTest;
+import io.axway.iron.core.spi.file.FileStoreFactory;
+import io.axway.iron.spi.SpiTest;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
 public class FileStoreTest {
