@@ -8,6 +8,7 @@ import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import static com.google.common.base.Preconditions.checkState;
 import static io.axway.iron.spi.aws.PropertiesHelper.getValue;
 import static io.axway.iron.spi.aws.s3.AwsS3Properties.S3_BUCKET_NAME_KEY;
+import static io.axway.iron.spi.aws.s3.AwsS3Utils.*;
 
 /**
  * AWS S3 Snapshot Store Factory.
@@ -33,8 +34,8 @@ public class AwsS3SnapshotStoreFactory implements SnapshotStoreFactory {
     public AwsS3SnapshotStoreFactory(Properties properties) {
         Optional<String> bucketName = getValue(properties, S3_BUCKET_NAME_KEY);
         checkState(bucketName.isPresent() && !bucketName.get().trim().isEmpty());
-        m_amazonS3 = AwsS3Utils.buildS3Client(properties);
-        m_bucketName = AwsS3Utils.checkBucketIsAccessible(m_amazonS3, bucketName.get());
+        m_amazonS3 = buildS3Client(properties);
+        m_bucketName = checkBucketIsAccessible(m_amazonS3, bucketName.get());
     }
 
     @Override

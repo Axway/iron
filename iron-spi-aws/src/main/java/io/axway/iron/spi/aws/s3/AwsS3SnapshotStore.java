@@ -11,7 +11,6 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import io.axway.iron.spi.storage.SnapshotStore;
 
-import static io.axway.iron.spi.aws.s3.AwsS3Utils.checkBucketIsAccessible;
 import static java.util.stream.Collectors.*;
 
 /**
@@ -28,7 +27,7 @@ class AwsS3SnapshotStore implements SnapshotStore {
     private String m_snapshotDirName;
 
     /**
-     * Create an AWS S3 SnapshotStore.
+     * Create an AWS S3 SnapshotStore. The bucket named "bucketName" must exist.
      *
      * @param amazonS3 AmazonS3 client
      * @param bucketName Bucket name
@@ -39,7 +38,6 @@ class AwsS3SnapshotStore implements SnapshotStore {
         m_bucketName = bucketName;
         m_storeName = storeName;
         m_snapshotDirName = getSnapshotDirectoryName();
-        checkBucketIsAccessible(m_amazonS3, bucketName);
     }
 
     @Override
