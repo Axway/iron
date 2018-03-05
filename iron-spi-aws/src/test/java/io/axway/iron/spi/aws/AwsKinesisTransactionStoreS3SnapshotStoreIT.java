@@ -9,7 +9,7 @@ import io.axway.iron.spi.aws.s3.AwsS3Properties;
 import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactory;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
-public class AwsAwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
+public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
 
     private String m_storeName;
 

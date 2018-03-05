@@ -9,7 +9,7 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 /**
  * Test KinesisTransactionStore and FileSnapshotStore
  */
-public class AwsAwsKinesisTransactionStoreIT extends BaseInttest {
+public class AwsKinesisTransactionStoreIT extends BaseInttest {
 
     @Test
     public void shouldCreateCompanySequenceBeRight() throws Exception {

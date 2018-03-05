@@ -6,8 +6,11 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.CreateBucketRequest;
+import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.google.common.base.Preconditions;
 import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisUtils;
@@ -46,7 +49,28 @@ public abstract class BaseInttest {
         Preconditions.checkState(region != null && !region.trim().isEmpty(),
                                  "Can't find aws region. Please consider setting it in configuration.properties with {} key",
                                  AwsProperties.REGION_KEY.getPropertyKey());
-        AwsS3Utils.createBucketIfNotExists(amazonS3, storeName, region);
+        createBucketIfNotExists(amazonS3, storeName, region);
+    }
+
+    /**
+     * Create a bucket if not exists.
+     *
+     * @param amazonS3 Amazon S3 client
+     * @param bucketName bucket name
+     * @param region AWS region
+     */
+    private static void createBucketIfNotExists(AmazonS3 amazonS3, String bucketName, String region) {
+        HeadBucketRequest headBucketRequest = new HeadBucketRequest(bucketName);
+        try {
+            amazonS3.headBucket(headBucketRequest);
+        } catch (AmazonServiceException e) {
+            if (e.getStatusCode() == 404) {
+                CreateBucketRequest createBucketRequest = new CreateBucketRequest(bucketName, region);
+                amazonS3.createBucket(createBucketRequest);
+            } else {
+                throw e;
+            }
+        }
     }
 
     protected void deleteS3Bucket(String storeName) {

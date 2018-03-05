@@ -4,9 +4,6 @@ import java.util.*;
 import java.util.function.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
@@ -14,8 +11,7 @@ import com.amazonaws.services.kinesis.model.DescribeStreamResult;
 import com.amazonaws.services.kinesis.model.LimitExceededException;
 import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
 
-import static io.axway.iron.spi.aws.AwsProperties.*;
-import static io.axway.iron.spi.aws.PropertiesHelper.getValue;
+import static io.axway.iron.spi.aws.AwsUtils.setAws;
 import static io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.*;
 
 /**
@@ -45,20 +41,7 @@ public class AwsKinesisUtils {
      */
     public static AmazonKinesis buildKinesisClient(Properties properties) {
         AmazonKinesisClientBuilder builder = AmazonKinesisClientBuilder.standard();
-        Optional<String> accessKey = getValue(properties, ACCESS_KEY_KEY);
-        Optional<String> secretKey = getValue(properties, SECRET_KEY_KEY);
-        if (accessKey.isPresent() && secretKey.isPresent()) {
-            builder.setCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey.get(), secretKey.get())));
-        }
-        Optional<String> region = getValue(properties, REGION_KEY);
-        Optional<String> kinesisEndpoint = getValue(properties, KINESIS_ENDPOINT_KEY);
-        Optional<String> kinesisPort = getValue(properties, KINESIS_PORT_KEY);
-        if (kinesisEndpoint.isPresent() && kinesisPort.isPresent() && region.isPresent()) {
-            String kinesisEndpointFull = "https://" + kinesisEndpoint.get() + ":" + kinesisPort.get();
-            builder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(kinesisEndpointFull, region.get()));
-        } else {
-            region.ifPresent(builder::setRegion);
-        }
+        setAws(properties, builder, KINESIS_ENDPOINT_KEY, KINESIS_PORT_KEY);
         return builder.build();
     }
 

@@ -21,10 +21,12 @@ class AwsS3SnapshotStore implements SnapshotStore {
     private static final String DIRECTORYNAME_FORMAT = "%s/snapshot";
     private static final String FILENAME_FORMAT = DIRECTORYNAME_FORMAT + "/%d.snapshot";
     private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]+)\\.snapshot");
+    private static final String APPLICATION_JSON_CONTENT_TYPE = "application/json";
+
     private final AmazonS3 m_amazonS3;
     private final String m_bucketName;
-    private String m_storeName;
-    private String m_snapshotDirName;
+    private final String m_storeName;
+    private final String m_snapshotDirName;
 
     /**
      * Create an AWS S3 SnapshotStore. The bucket named "bucketName" must exist.
@@ -48,7 +50,7 @@ class AwsS3SnapshotStore implements SnapshotStore {
                 super.close();
                 byte[] content = toByteArray();
                 ObjectMetadata metadata = new ObjectMetadata();
-                metadata.setContentType("application/json");
+                metadata.setContentType(APPLICATION_JSON_CONTENT_TYPE);
                 metadata.setContentLength(content.length);
                 m_amazonS3.putObject(new PutObjectRequest(m_bucketName, getSnapshotFileName(transactionId), new ByteArrayInputStream(content), metadata));
             }
@@ -69,7 +71,8 @@ class AwsS3SnapshotStore implements SnapshotStore {
         List<S3ObjectSummary> objectSummaries = m_amazonS3.listObjectsV2(m_bucketName, m_snapshotDirName).getObjectSummaries();
         return objectSummaries.stream() //
                 .map(S3ObjectSummary::getKey) //
-                .map(key -> key.replace(m_snapshotDirName + "/", "")).map(FILENAME_PATTERN::matcher) //
+                .map(key -> key.replace(m_snapshotDirName + "/", "")) //
+                .map(FILENAME_PATTERN::matcher) //
                 .filter(Matcher::matches) //
                 .map(matcher -> matcher.group(1)) //
                 .map(BigInteger::new) //
