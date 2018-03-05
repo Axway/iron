@@ -10,7 +10,7 @@ import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.buildKinesisClient;
 /**
  * Kinesis transaction store factory to build Kinesis TransactionStore.
  */
-public class KinesisTransactionStoreFactory implements TransactionStoreFactory {
+public class AwsKinesisTransactionStoreFactory implements TransactionStoreFactory {
 
     private AmazonKinesis m_kinesisClient;
 
@@ -26,12 +26,12 @@ public class KinesisTransactionStoreFactory implements TransactionStoreFactory {
      *
      * @param properties the properties
      */
-    public KinesisTransactionStoreFactory(Properties properties) {
+    public AwsKinesisTransactionStoreFactory(Properties properties) {
         m_kinesisClient = buildKinesisClient(properties);
     }
 
     @Override
     public TransactionStore createTransactionStore(String storeName) {
-        return new KinesisTransactionStore(m_kinesisClient, storeName);
+        return new AwsKinesisTransactionStore(m_kinesisClient, storeName);
     }
 }

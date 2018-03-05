@@ -28,7 +28,7 @@ import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.doesStreamExist;
  * Kinesis implementation of the TransactionStore.
  * Transactions are stored in a Kinesis Stream.
  */
-class KinesisTransactionStore implements TransactionStore {
+class AwsKinesisTransactionStore implements TransactionStore {
 
     private static final long MAXIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
     private static final String USELESS_PARTITION_KEY = "uselessPartitionKey";
@@ -47,7 +47,7 @@ class KinesisTransactionStore implements TransactionStore {
      * @param kinesis the kinesis consumer
      * @param streamName the stream name
      */
-    KinesisTransactionStore(AmazonKinesis kinesis, String streamName) {
+    AwsKinesisTransactionStore(AmazonKinesis kinesis, String streamName) {
         checkArgument(!(m_streamName = streamName.trim()).isEmpty(), "Topic name can't be null");
         m_kinesis = kinesis;
         checkState(doesStreamExist(m_kinesis, m_streamName), "The Kinesis Stream %s should already exist.", m_streamName);

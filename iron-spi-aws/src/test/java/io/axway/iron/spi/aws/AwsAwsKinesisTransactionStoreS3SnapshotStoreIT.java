@@ -4,12 +4,12 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import io.axway.iron.sample.SpiTest;
-import io.axway.iron.spi.aws.kinesis.KinesisTransactionStoreFactory;
+import io.axway.iron.spi.aws.kinesis.AwsKinesisTransactionStoreFactory;
 import io.axway.iron.spi.aws.s3.AwsS3Properties;
 import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactory;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
-public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
+public class AwsAwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
 
     private String m_storeName;
 
@@ -31,21 +31,21 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
     public void shouldCreateCompanySequenceBeRight() throws Exception {
 
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatCreateCompanySequenceIsRight(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+        SpiTest.checkThatCreateCompanySequenceIsRight(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
                                                       new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
     @Test
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
                                                                       new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
     @Test
     public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStore() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(new KinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
                                                                                    new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer,
                                                                                    m_storeName);
     }

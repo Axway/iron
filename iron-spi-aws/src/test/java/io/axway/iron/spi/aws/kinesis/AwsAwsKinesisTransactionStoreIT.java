@@ -9,18 +9,18 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 /**
  * Test KinesisTransactionStore and FileSnapshotStore
  */
-public class AwsKinesisTransactionStoreIT extends BaseInttest {
+public class AwsAwsKinesisTransactionStoreIT extends BaseInttest {
 
     @Test
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
         FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();
-        KinesisTransactionStoreFactory kinesisTransactionStoreFactory = new KinesisTransactionStoreFactory(m_configuration);
+        AwsKinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = new AwsKinesisTransactionStoreFactory(m_configuration);
 
         try {
             JacksonSerializer jacksonSerializer = new JacksonSerializer();
-            SpiTest.checkThatCreateCompanySequenceIsRight(kinesisTransactionStoreFactory, jacksonSerializer, fileStoreFactory, jacksonSerializer,
+            SpiTest.checkThatCreateCompanySequenceIsRight(awsKinesisTransactionStoreFactory, jacksonSerializer, fileStoreFactory, jacksonSerializer,
                                                           randomStoreName);
         } finally {
             deleteKinesisStream(randomStoreName);
@@ -42,11 +42,11 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
         FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();
-        KinesisTransactionStoreFactory kinesisTransactionStoreFactory = new KinesisTransactionStoreFactory(m_configuration);
+        AwsKinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = new AwsKinesisTransactionStoreFactory(m_configuration);
 
         try {
             JacksonSerializer jacksonSerializer = new JacksonSerializer();
-            SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(kinesisTransactionStoreFactory, jacksonSerializer, fileStoreFactory,
+            SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(awsKinesisTransactionStoreFactory, jacksonSerializer, fileStoreFactory,
                                                                                        jacksonSerializer, randomStoreName);
         } finally {
             deleteKinesisStream(randomStoreName);
