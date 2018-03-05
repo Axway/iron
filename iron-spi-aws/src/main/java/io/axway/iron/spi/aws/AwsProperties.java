@@ -7,8 +7,7 @@ public enum AwsProperties implements PropertyMapper {
     REGION_KEY(AWS_REGION_PROPERTY, AWS_REGION_ENVVAR),//
     ACCESS_KEY_KEY(AWS_ACCESS_KEY_PROPERTY, AWS_ACCESS_KEY_ENVVAR),//
     SECRET_KEY_KEY(AWS_SECRET_KEY_PROPERTY, AWS_SECRET_KEY_ENVVAR),//
-    DISABLE_VERIFY_CERTIFICATE_KEY(DISABLE_VERIFY_CERTIFICATE_PROPERTY, DISABLE_VERIFY_CERTIFICATE_ENVVAR),//
-    DISABLE_CBOR_KEY(DISABLE_CBOR_PROPERTY, CBOR_DISABLE_ENVVAR);
+    DISABLE_VERIFY_CERTIFICATE_KEY(AWS_DISABLE_VERIFY_CERTIFICATE_PROPERTY, AWS_DISABLE_VERIFY_CERTIFICATE_ENVVAR);
 
     private String m_propertyKey;
     private String m_envVarName;
@@ -32,15 +31,13 @@ public enum AwsProperties implements PropertyMapper {
      * Set as constants for documentation purpose only.
      */
     public static class Constants {
-        static final String AWS_REGION_PROPERTY = "io.axway.iron.spi.aws.region";
+        public static final String AWS_REGION_PROPERTY = "io.axway.iron.spi.aws.region";
         public static final String AWS_REGION_ENVVAR = "AWS_REGION";
         public static final String AWS_ACCESS_KEY_PROPERTY = "io.axway.iron.spi.aws.access_key";
         public static final String AWS_ACCESS_KEY_ENVVAR = "AWS_ACCESS_KEY";
         public static final String AWS_SECRET_KEY_PROPERTY = "io.axway.iron.spi.aws.secret_key";
         public static final String AWS_SECRET_KEY_ENVVAR = "AWS_SECRET_KEY";
-        static final String DISABLE_VERIFY_CERTIFICATE_PROPERTY = "io.axway.iron.spi.aws.disable_verify_certificate";
-        static final String DISABLE_VERIFY_CERTIFICATE_ENVVAR = "DISABLE_VERIFY_CERTIFICATE";
-        static final String DISABLE_CBOR_PROPERTY = "io.axway.iron.spi.aws.kinesis.disable_cbor";
-        static final String CBOR_DISABLE_ENVVAR = "AWS_CBOR_DISABLE";
+        public static final String AWS_DISABLE_VERIFY_CERTIFICATE_PROPERTY = "io.axway.iron.spi.aws.disable_verify_certificate";
+        public static final String AWS_DISABLE_VERIFY_CERTIFICATE_ENVVAR = "DISABLE_VERIFY_CERTIFICATE";
     }
 }

@@ -14,7 +14,8 @@ import io.axway.iron.spi.aws.kinesis.AwsKinesisUtils;
 import io.axway.iron.spi.aws.s3.AwsS3Utils;
 
 import static com.amazonaws.SDKGlobalConfiguration.*;
-import static io.axway.iron.spi.aws.AwsProperties.REGION_KEY;
+import static io.axway.iron.spi.aws.AwsProperties.*;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.DISABLE_CBOR_KEY;
 
 /**
  * To run these tests, localstack must be started with Kinesis and S3, and localstack profile must be enabled.
@@ -26,10 +27,10 @@ public abstract class BaseInttest {
 
     @BeforeClass
     public void handleLocalStackConfigurationForLocalTesting() {
-        if (PropertiesHelper.getValue(m_configuration, AwsProperties.DISABLE_VERIFY_CERTIFICATE_KEY).orElse("").equalsIgnoreCase("true")) {
+        if (PropertiesHelper.getValue(m_configuration, DISABLE_VERIFY_CERTIFICATE_KEY).orElse("").equalsIgnoreCase("true")) {
             System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "");
         }
-        if (PropertiesHelper.getValue(m_configuration, AwsProperties.DISABLE_CBOR_KEY).orElse("").equalsIgnoreCase("true")) {
+        if (PropertiesHelper.getValue(m_configuration, DISABLE_CBOR_KEY).orElse("").equalsIgnoreCase("true")) {
             System.setProperty(AWS_CBOR_DISABLE_SYSTEM_PROPERTY, "");
         }
     }
