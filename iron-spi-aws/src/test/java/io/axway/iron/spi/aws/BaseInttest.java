@@ -43,7 +43,8 @@ public abstract class BaseInttest {
         AmazonS3 amazonS3 = AwsS3Utils.buildS3Client(m_configuration);
         String region = PropertiesHelper.getValue(m_configuration, REGION_KEY).orElseGet(amazonS3::getRegionName);
         Preconditions.checkState(region != null && !region.trim().isEmpty(),
-                                 "Can't find aws region. Please consider setting it in configuration.properties with {} key", AwsProperties.REGION_KEY.getPropertyKey());
+                                 "Can't find aws region. Please consider setting it in configuration.properties with {} key",
+                                 AwsProperties.REGION_KEY.getPropertyKey());
         AwsS3Utils.createBucketIfNotExists(amazonS3, storeName, region);
     }
 
