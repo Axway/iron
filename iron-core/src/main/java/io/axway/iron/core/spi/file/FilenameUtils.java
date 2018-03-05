@@ -9,7 +9,7 @@ class FilenameUtils {
 
     static Pattern buildFilenamePattern(@Nullable Integer transactionIdLength) {
         String cardinality = transactionIdLength == null ? "+" : ("{" + transactionIdLength + "}");
-        return compile("([0-9]" + cardinality + ").([a-z]+)");
+        return compile("([0-9]" + cardinality + ")\\.([a-z]+)");
     }
 
     static String buildFilenameFormat(@Nullable Integer transactionIdLength) {
