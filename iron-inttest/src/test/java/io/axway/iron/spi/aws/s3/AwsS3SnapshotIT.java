@@ -11,6 +11,7 @@ import static io.axway.iron.spi.aws.AwsProperties.S3_BUCKET_NAME_KEY;
 /**
  * Test FileTransactionStore and S3SnapshotStore
  */
+@Test(enabled = false)
 public class AwsS3SnapshotIT extends BaseInttest {
 
     @Test

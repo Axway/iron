@@ -42,10 +42,6 @@
             <groupId>io.axway.iron</groupId>
             <artifactId>iron-spi</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.axway.iron</groupId>
-            <artifactId>iron-spi-jackson</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

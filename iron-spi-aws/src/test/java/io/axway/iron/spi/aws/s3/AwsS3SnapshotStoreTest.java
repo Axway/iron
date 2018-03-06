@@ -4,7 +4,6 @@ import java.math.BigInteger;
 import java.util.*;
 import org.testng.annotations.Test;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import mockit.Mocked;

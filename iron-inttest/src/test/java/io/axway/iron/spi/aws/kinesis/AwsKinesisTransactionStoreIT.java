@@ -9,6 +9,7 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 /**
  * Test KinesisTransactionStore and FileSnapshotStore
  */
+@Test(enabled = false)
 public class AwsKinesisTransactionStoreIT extends BaseInttest {
 
     @Test
