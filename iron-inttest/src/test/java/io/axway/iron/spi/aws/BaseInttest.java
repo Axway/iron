@@ -29,10 +29,10 @@ public abstract class BaseInttest {
 
     @BeforeClass
     public void handleLocalStackConfigurationForLocalTesting() {
-        if (PropertiesHelper.getValue(m_configuration, DISABLE_VERIFY_CERTIFICATE_KEY).orElse("").equalsIgnoreCase("true")) {
+        if (PropertiesHelper.isSet(m_configuration, DISABLE_VERIFY_CERTIFICATE_KEY)) {
             System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "");
         }
-        if (PropertiesHelper.getValue(m_configuration, DISABLE_CBOR_KEY).orElse("").equalsIgnoreCase("true")) {
+        if (PropertiesHelper.isSet(m_configuration, DISABLE_CBOR_KEY)) {
             System.setProperty(AWS_CBOR_DISABLE_SYSTEM_PROPERTY, "");
         }
     }
@@ -44,7 +44,10 @@ public abstract class BaseInttest {
 
     protected void createS3Bucket(String storeName) {
         AmazonS3 amazonS3 = AwsS3Utils.buildS3Client(m_configuration);
-        String region = PropertiesHelper.getValue(m_configuration, REGION_KEY).orElseGet(amazonS3::getRegionName);
+        String region = PropertiesHelper.getValue(m_configuration, REGION_KEY);
+        if (region == null) {
+            region = amazonS3.getRegionName();
+        }
         Preconditions.checkState(region != null && !region.trim().isEmpty(),
                                  "Can't find aws region. Please consider setting it in configuration.properties with {} key", REGION_KEY.getPropertyKey());
         createBucketIfNotExists(amazonS3, storeName, region);

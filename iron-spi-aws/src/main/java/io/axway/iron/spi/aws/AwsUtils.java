@@ -11,19 +11,21 @@ import static io.axway.iron.spi.aws.PropertiesHelper.getValue;
 public class AwsUtils {
 
     public static void setAws(Properties properties, AwsClientBuilder builder, AwsProperties endpointKey, AwsProperties portKey) {
-        Optional<String> accessKey = getValue(properties, ACCESS_KEY_KEY);
-        Optional<String> secretKey = getValue(properties, SECRET_KEY_KEY);
-        if (accessKey.isPresent() && secretKey.isPresent()) {
-            builder.setCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey.get(), secretKey.get())));
+        String accessKey = getValue(properties, ACCESS_KEY_KEY);
+        String secretKey = getValue(properties, SECRET_KEY_KEY);
+        if (accessKey != null && secretKey != null) {
+            builder.setCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)));
         }
-        Optional<String> region = getValue(properties, REGION_KEY);
-        Optional<String> s3Endpoint = getValue(properties, endpointKey);
-        Optional<String> s3Port = getValue(properties, portKey);
-        if (s3Endpoint.isPresent() && s3Port.isPresent() && region.isPresent()) {
-            String s3EndpointFull = "https://" + s3Endpoint.get() + ":" + s3Port.get();
-            builder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(s3EndpointFull, region.get()));
+        String region = getValue(properties, REGION_KEY);
+        String s3Endpoint = getValue(properties, endpointKey);
+        String s3Port = getValue(properties, portKey);
+        if (s3Endpoint != null && s3Port != null && region != null) {
+            String s3EndpointFull = "https://" + s3Endpoint + ":" + s3Port;
+            builder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(s3EndpointFull, region));
         } else {
-            region.ifPresent(builder::setRegion);
+            if (region != null) {
+                builder.setRegion(region);
+            }
         }
     }
 }

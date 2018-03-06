@@ -1,20 +1,25 @@
 package io.axway.iron.spi.aws;
 
 import java.util.*;
-
-import static java.util.Optional.*;
+import javax.annotation.*;
 
 public class PropertiesHelper {
 
-    public static Optional<String> getValue(Properties properties, AwsProperties property) {
+    @Nullable
+    public static String getValue(Properties properties, AwsProperties property) {
         String value = (String) properties.get(property.getPropertyKey());
         if (value != null) {
-            return of(value);
+            return value;
         }
         value = System.getenv(property.getEnvVarName());
         if (value != null) {
-            return of(value);
+            return value;
         }
-        return empty();
+        return null;
+    }
+
+    public static boolean isSet(Properties properties, AwsProperties property) {
+        String value = PropertiesHelper.getValue(properties, property);
+        return value != null && (value.equals("") || value.equalsIgnoreCase("true"));
     }
 }

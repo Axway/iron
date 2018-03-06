@@ -32,10 +32,10 @@ public class AwsS3SnapshotStoreFactory implements SnapshotStoreFactory {
      * @param properties the properties
      */
     public AwsS3SnapshotStoreFactory(Properties properties) {
-        Optional<String> bucketName = getValue(properties, S3_BUCKET_NAME_KEY);
-        checkState(bucketName.isPresent() && !bucketName.get().trim().isEmpty());
+        String bucketName = getValue(properties, S3_BUCKET_NAME_KEY);
+        checkState(bucketName != null && !bucketName.trim().isEmpty());
         m_amazonS3 = buildS3Client(properties);
-        m_bucketName = checkBucketIsAccessible(m_amazonS3, bucketName.get());
+        m_bucketName = checkBucketIsAccessible(m_amazonS3, bucketName);
     }
 
     @Override
