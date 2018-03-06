@@ -33,13 +33,15 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
     public void shouldCreateCompanySequenceBeRight() throws Exception {
 
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatCreateCompanySequenceIsRight(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer, new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
+        SpiTest.checkThatCreateCompanySequenceIsRight(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+                                                      new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
     @Test
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer, new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
+        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+                                                                      new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
     @Test

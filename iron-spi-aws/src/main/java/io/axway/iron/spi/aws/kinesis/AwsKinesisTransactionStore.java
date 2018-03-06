@@ -18,11 +18,11 @@ import com.amazonaws.services.kinesis.model.PutRecordRequest;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
-import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import io.axway.iron.spi.storage.TransactionStore;
 
 import static com.google.common.base.Preconditions.*;
 import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.doesStreamExist;
+import static java.math.BigInteger.ZERO;
 
 /**
  * Kinesis implementation of the TransactionStore.
@@ -92,7 +92,8 @@ class AwsKinesisTransactionStore implements TransactionStore {
         if (record == null) {
             return null;
         }
-        m_seekTransactionId = new BigInteger(record.getSequenceNumber());
+        BigInteger seekTransactionId = new BigInteger(record.getSequenceNumber());
+        m_seekTransactionId = seekTransactionId;
         ByteBuffer data = record.getData().asReadOnlyBuffer();
         return new TransactionInput() {
             @Override
@@ -102,7 +103,7 @@ class AwsKinesisTransactionStore implements TransactionStore {
 
             @Override
             public BigInteger getTransactionId() {
-                return m_seekTransactionId;
+                return seekTransactionId;
             }
         };
     }
@@ -116,7 +117,8 @@ class AwsKinesisTransactionStore implements TransactionStore {
         }
         m_lastGetShardIteratorRequestTime = currentGetShardIteratorRequestTime;
         GetShardIteratorRequest getShardIteratorRequest;
-        if (m_seekTransactionId == null) { // First call to pollNextTransaction, no Snapshot has been created => retrieve the oldest element
+        if (m_seekTransactionId == null || m_seekTransactionId
+                .equals(ZERO)) { // First call to pollNextTransaction, no Snapshot has been created => retrieve the oldest element
             getShardIteratorRequest = new GetShardIteratorRequest().withStreamName(m_streamName)//
                     .withShardIteratorType(ShardIteratorType.TRIM_HORIZON)//
                     .withShardId(m_shard.getShardId());
@@ -160,6 +162,37 @@ class AwsKinesisTransactionStore implements TransactionStore {
                                                   args -> args.add("streamName", m_streamName).add("shardId", m_shard.getShardId()), exception);
                 }
             }
+        }
+    }
+
+    /**
+     * Simple {@link InputStream} implementation that exposes currently available content of a {@link ByteBuffer}.
+     */
+    class ByteBufferBackedInputStream extends InputStream {
+        final ByteBuffer m_byteBuffer;
+
+        ByteBufferBackedInputStream(ByteBuffer byteBuffer) {
+            m_byteBuffer = byteBuffer;
+        }
+
+        @Override
+        public int available() {
+            return m_byteBuffer.remaining();
+        }
+
+        @Override
+        public int read() throws IOException {
+            return m_byteBuffer.hasRemaining() ? m_byteBuffer.get() & 255 : -1;
+        }
+
+        @Override
+        public int read(byte[] bytes, int off, int len) throws IOException {
+            if (!m_byteBuffer.hasRemaining()) {
+                return -1;
+            }
+            len = Math.min(len, m_byteBuffer.remaining());
+            m_byteBuffer.get(bytes, off, len);
+            return len;
         }
     }
 }
