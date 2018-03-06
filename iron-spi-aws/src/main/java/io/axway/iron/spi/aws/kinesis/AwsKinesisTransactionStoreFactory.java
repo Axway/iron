@@ -19,8 +19,8 @@ public class AwsKinesisTransactionStoreFactory implements TransactionStoreFactor
      * - aws access key (optional+) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_ENVVAR}
      * - aws secret key (optional+) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_ENVVAR}
      * - aws region (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_ENVVAR}
-     * - kinesis endpoint (optional*) {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_ENDPOINT_PROPERTY} / {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_ENDPOINT_ENVVAR}
-     * - kinesis port (optional*) {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_PORT_PROPERTY} / {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_PORT_ENVVAR}
+     * - kinesis endpoint (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_KINESIS_ENDPOINT_PROPERTY} / {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_ENDPOINT_ENVVAR}
+     * - kinesis port (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_KINESIS_PORT_PROPERTY} / {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_PORT_ENVVAR}
      * (+) to configure the access, both access key and secret key must be provided.
      * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
      *
