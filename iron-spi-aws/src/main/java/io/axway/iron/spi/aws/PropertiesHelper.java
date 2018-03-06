@@ -6,7 +6,7 @@ import static java.util.Optional.*;
 
 public class PropertiesHelper {
 
-    public static Optional<String> getValue(Properties properties, PropertyMapper property) {
+    public static Optional<String> getValue(Properties properties, AwsProperties property) {
         String value = (String) properties.get(property.getPropertyKey());
         if (value != null) {
             return of(value);

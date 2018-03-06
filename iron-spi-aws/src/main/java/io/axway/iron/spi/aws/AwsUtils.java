@@ -10,7 +10,7 @@ import static io.axway.iron.spi.aws.PropertiesHelper.getValue;
 
 public class AwsUtils {
 
-    public static void setAws(Properties properties, AwsClientBuilder builder, PropertyMapper endpointKey, PropertyMapper portKey) {
+    public static void setAws(Properties properties, AwsClientBuilder builder, AwsProperties endpointKey, AwsProperties portKey) {
         Optional<String> accessKey = getValue(properties, ACCESS_KEY_KEY);
         Optional<String> secretKey = getValue(properties, SECRET_KEY_KEY);
         if (accessKey.isPresent() && secretKey.isPresent()) {

@@ -14,8 +14,8 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.S3VersionSummary;
 import com.amazonaws.services.s3.model.VersionListing;
 
+import static io.axway.iron.spi.aws.AwsProperties.*;
 import static io.axway.iron.spi.aws.AwsUtils.setAws;
-import static io.axway.iron.spi.aws.s3.AwsS3Properties.*;
 
 public class AwsS3Utils {
     private static final Logger LOG = LoggerFactory.getLogger(AwsS3Utils.class);
@@ -25,8 +25,8 @@ public class AwsS3Utils {
      * - aws access key (optional+) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_ENVVAR}
      * - aws secret key (optional+) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_ENVVAR}
      * - aws region (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_ENVVAR}
-     * - s3 endpoint (optional*) {@value io.axway.iron.spi.aws.s3.AwsS3Properties.Constants#AWS_S3_ENDPOINT_PROPERTY} / {@value io.axway.iron.spi.aws.s3.AwsS3Properties.Constants#AWS_S3_ENDPOINT_ENVVAR}
-     * - s3 port (optional*) {@value io.axway.iron.spi.aws.s3.AwsS3Properties.Constants#AWS_S3_PORT_PROPERTY} / {@value io.axway.iron.spi.aws.s3.AwsS3Properties.Constants#AWS_S3_PORT_ENVVAR}
+     * - s3 endpoint (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_S3_ENDPOINT_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_S3_ENDPOINT_ENVVAR}
+     * - s3 port (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_S3_PORT_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_S3_PORT_ENVVAR}
      * (+) to configure the access, both access key and secret key must be provided.
      * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
      *

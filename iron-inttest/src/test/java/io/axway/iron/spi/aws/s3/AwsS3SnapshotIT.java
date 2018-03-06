@@ -6,6 +6,8 @@ import io.axway.iron.spi.SpiTest;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
+import static io.axway.iron.spi.aws.AwsProperties.S3_BUCKET_NAME_KEY;
+
 /**
  * Test FileTransactionStore and S3SnapshotStore
  */
@@ -54,7 +56,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
 
     private String initStoreName() {
         String storeName = createRandomStoreName();
-        m_configuration.setProperty(AwsS3Properties.S3_BUCKET_NAME_KEY.getPropertyKey(), storeName);
+        m_configuration.setProperty(S3_BUCKET_NAME_KEY.getPropertyKey(), storeName);
         return storeName;
     }
 }

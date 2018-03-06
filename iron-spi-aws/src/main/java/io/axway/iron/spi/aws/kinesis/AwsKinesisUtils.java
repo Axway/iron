@@ -11,8 +11,8 @@ import com.amazonaws.services.kinesis.model.DescribeStreamResult;
 import com.amazonaws.services.kinesis.model.LimitExceededException;
 import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
 
+import static io.axway.iron.spi.aws.AwsProperties.*;
 import static io.axway.iron.spi.aws.AwsUtils.setAws;
-import static io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.*;
 
 /**
  * Some AWS Kinesis utils.
@@ -32,8 +32,8 @@ public class AwsKinesisUtils {
      * - aws access key (optional) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_ENVVAR}
      * - aws secret key (optional) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_ENVVAR}
      * - aws region (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_ENVVAR}
-     * - kinesis endpoint (optional*) {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_ENDPOINT_PROPERTY} / {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_ENDPOINT_ENVVAR}
-     * - kinesis port (optional*) {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_PORT_PROPERTY} / {@value io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.Constants#AWS_KINESIS_PORT_ENVVAR}
+     * - kinesis endpoint (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_KINESIS_ENDPOINT_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_KINESIS_ENDPOINT_ENVVAR}
+     * - kinesis port (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_KINESIS_PORT_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_KINESIS_PORT_ENVVAR}
      * (*) to configure the endpoint, endpoint, port and region must be provided.
      *
      * @param properties properties to configure the AmazonKinesis client

@@ -18,7 +18,6 @@ import io.axway.iron.spi.aws.s3.AwsS3Utils;
 
 import static com.amazonaws.SDKGlobalConfiguration.*;
 import static io.axway.iron.spi.aws.AwsProperties.*;
-import static io.axway.iron.spi.aws.kinesis.AwsKinesisProperties.DISABLE_CBOR_KEY;
 
 /**
  * To run these tests, localstack must be started with Kinesis and S3, and localstack profile must be enabled.
@@ -47,8 +46,7 @@ public abstract class BaseInttest {
         AmazonS3 amazonS3 = AwsS3Utils.buildS3Client(m_configuration);
         String region = PropertiesHelper.getValue(m_configuration, REGION_KEY).orElseGet(amazonS3::getRegionName);
         Preconditions.checkState(region != null && !region.trim().isEmpty(),
-                                 "Can't find aws region. Please consider setting it in configuration.properties with {} key",
-                                 AwsProperties.REGION_KEY.getPropertyKey());
+                                 "Can't find aws region. Please consider setting it in configuration.properties with {} key", REGION_KEY.getPropertyKey());
         createBucketIfNotExists(amazonS3, storeName, region);
     }
 

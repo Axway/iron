@@ -5,9 +5,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import io.axway.iron.spi.SpiTest;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisTransactionStoreFactory;
-import io.axway.iron.spi.aws.s3.AwsS3Properties;
 import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactory;
 import io.axway.iron.spi.jackson.JacksonSerializer;
+
+import static io.axway.iron.spi.aws.AwsProperties.S3_BUCKET_NAME_KEY;
 
 public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
 
@@ -16,7 +17,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
     @BeforeMethod
     public void createBucketAndStream() {
         m_storeName = createRandomStoreName();
-        m_configuration.setProperty(AwsS3Properties.S3_BUCKET_NAME_KEY.getPropertyKey(), m_storeName);
+        m_configuration.setProperty(S3_BUCKET_NAME_KEY.getPropertyKey(), m_storeName);
         createStreamAndWaitActivation(m_storeName);
         createS3Bucket(m_storeName);
     }
