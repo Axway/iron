@@ -107,7 +107,7 @@ public abstract class AbstractStoreTests {
 
     private StoreManager createStoreManager(StoreTest storeTest, String storeName) throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron_tests-" + EXECUTION_ID));
+        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron", "iron-core", "iron_tests-" + EXECUTION_ID));
         StoreManagerFactoryBuilder builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
                 .withSnapshotSerializer(jacksonSerializer) //
                 .withTransactionSerializer(jacksonSerializer) //

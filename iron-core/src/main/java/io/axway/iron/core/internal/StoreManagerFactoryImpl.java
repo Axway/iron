@@ -48,7 +48,7 @@ class StoreManagerFactoryImpl implements StoreManagerFactory {
     @Override
     public StoreManager openStore(String storeName) {
         Preconditions.checkArgument(STORE_NAME_VALIDATOR_PATTERN.matcher(storeName).matches(), "Invalid store name: %s", storeName);
-        Preconditions.checkState(m_openedStores.add(storeName), "Store %s is already open, cannot open it twice");
+        Preconditions.checkState(m_openedStores.add(storeName), "Store %s is already open, cannot open it twice", storeName);
 
         boolean success = false;
         try {

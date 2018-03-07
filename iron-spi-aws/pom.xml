@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.axway.iron</groupId>
+        <artifactId>iron</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>iron-spi-aws</artifactId>
+    <name>${project.artifactId}</name>
+    <description>Iron transaction and snapshot store SPI AWS implementations</description>
+
+    <properties>
+        <bnd.Import-Package>com.google.common.*;version="12.0",*</bnd.Import-Package>
+    </properties>
+
+    <dependencies>
+        <!-- Amazon AWS dependencies -->
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-kinesis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+        </dependency>
+        <!-- third party dep -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <!-- Internal dependencies -->
+        <dependency>
+            <groupId>io.axway.iron</groupId>
+            <artifactId>iron-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.axway.iron</groupId>
+            <artifactId>iron-spi</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

@@ -48,6 +48,10 @@
             <name>Philippe Laplanche</name>
             <url>https://github.com/plaplanche</url>
         </developer>
+        <developer>
+            <name>Guillaume Vauvert</name>
+            <url>https://github.com/gvauvert</url>
+        </developer>
     </developers>
 
     <scm>
@@ -76,8 +80,9 @@
     <modules>
         <module>iron-api</module>
         <module>iron-core</module>
-        <module>iron-sample</module>
+        <module>iron-inttest</module>
         <module>iron-spi</module>
+        <module>iron-spi-aws</module>
         <module>iron-spi-chronicle</module>
         <module>iron-spi-jackson</module>
         <module>iron-spi-kafka</module>
@@ -118,6 +123,18 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>1.0.0</version>
             </dependency>
+            <!-- Amazon AWS -->
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-kinesis</artifactId>
+                <version>1.11.268</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-s3</artifactId>
+                <version>1.11.268</version>
+            </dependency>
+            <!-- Test -->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
@@ -141,7 +158,12 @@
                 <version>3.9.0</version>
                 <scope>test</scope>
             </dependency>
-
+            <dependency>
+                <groupId>org.jmockit</groupId>
+                <artifactId>jmockit</artifactId>
+                <version>1.22</version>
+                <scope>test</scope>
+            </dependency>
             <!-- own modules -->
             <dependency>
                 <groupId>io.axway.iron</groupId>
@@ -155,7 +177,7 @@
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
-                <artifactId>iron-sample</artifactId>
+                <artifactId>iron-inttest</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -176,6 +198,11 @@
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-kafka</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.axway.iron</groupId>
+                <artifactId>iron-spi-aws</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>
@@ -206,6 +233,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -262,6 +294,10 @@
                     <version>2.20.1</version>
                 </plugin>
                 <plugin>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>2.20.1</version>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
                     <version>3.5.0</version>
@@ -308,6 +344,17 @@
                 <configuration>
                     <workingDirectory>${project.build.directory}/test-work</workingDirectory>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>

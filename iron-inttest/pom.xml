@@ -10,7 +10,7 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>iron-sample</artifactId>
+    <artifactId>iron-inttest</artifactId>
     <name>${project.artifactId}</name>
     <description>Iron sample project</description>
 
@@ -28,7 +28,7 @@
         </dependency>
         <dependency>
             <groupId>io.axway.iron</groupId>
-            <artifactId>iron-spi-jackson</artifactId>
+            <artifactId>iron-spi-aws</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -36,6 +36,25 @@
             <artifactId>iron-spi-chronicle</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.axway.iron</groupId>
+            <artifactId>iron-spi-jackson</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>localstack</id>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>
+                            src/test/resources
+                        </directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
 </project>

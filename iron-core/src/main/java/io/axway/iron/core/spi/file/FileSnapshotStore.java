@@ -7,19 +7,28 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.*;
 import java.util.stream.*;
+import javax.annotation.*;
 import io.axway.iron.spi.storage.SnapshotStore;
 
-class FileSnapshotStore implements SnapshotStore {
-    private static final String SNAPSHOT_EXT = "snapshot";
-    private static final String FILENAME_FORMAT = "%020d.%s";
-    private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]{20}).([a-z]+)");
+import static io.axway.iron.core.spi.file.FilenameUtils.*;
+import static java.lang.String.format;
+import static java.nio.file.Files.*;
+import static java.util.stream.Collectors.*;
 
+class FileSnapshotStore implements SnapshotStore {
+
+    private static final String SNAPSHOT_EXT = "snapshot";
+
+    private final String m_filenameFormat;
+    private final Pattern m_filenamePattern;
     private final Path m_snapshotDir;
     private final Path m_snapshotTmpDir;
 
-    FileSnapshotStore(Path snapshotDir, Path snapshotStoreTmpDir) {
+    FileSnapshotStore(Path snapshotDir, Path snapshotStoreTmpDir, @Nullable Integer transactionIdLength) {
         m_snapshotDir = snapshotDir;
         m_snapshotTmpDir = snapshotStoreTmpDir;
+        m_filenamePattern = buildFilenamePattern(transactionIdLength);
+        m_filenameFormat = buildFilenameFormat(transactionIdLength);
     }
 
     @Override
@@ -32,7 +41,7 @@ class FileSnapshotStore implements SnapshotStore {
             @Override
             public void close() throws IOException {
                 super.close();
-                Files.move(tmpSnapshotFile, finalSnapshotFile);
+                move(tmpSnapshotFile, finalSnapshotFile);
             }
         };
     }
@@ -45,14 +54,14 @@ class FileSnapshotStore implements SnapshotStore {
 
     @Override
     public List<BigInteger> listSnapshots() {
-        try (Stream<Path> dirList = Files.list(m_snapshotDir)) {
+        try (Stream<Path> dirList = list(m_snapshotDir)) {
             return dirList //
                     .map(path -> path.getFileName().toString()) //
-                    .map(FILENAME_PATTERN::matcher) //
+                    .map(m_filenamePattern::matcher) //
                     .filter(matcher -> matcher.matches() && SNAPSHOT_EXT.equals(matcher.group(2))) //
-                    .map(matcher -> new BigInteger(matcher.group(1)))
+                    .map(matcher -> new BigInteger(matcher.group(1))) //
                     .sorted() //
-                    .collect(Collectors.toList());
+                    .collect(toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -61,9 +70,9 @@ class FileSnapshotStore implements SnapshotStore {
     @Override
     public void deleteSnapshot(BigInteger transactionId) {
         Path snapshotFile = m_snapshotDir.resolve(getSnapshotFileName(transactionId));
-        if (Files.exists(snapshotFile)) {
+        if (exists(snapshotFile)) {
             try {
-                Files.delete(snapshotFile);
+                delete(snapshotFile);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -72,6 +81,6 @@ class FileSnapshotStore implements SnapshotStore {
     }
 
     private String getSnapshotFileName(BigInteger id) {
-        return String.format(FILENAME_FORMAT, id, SNAPSHOT_EXT);
+        return format(m_filenameFormat, id, SNAPSHOT_EXT);
     }
 }
