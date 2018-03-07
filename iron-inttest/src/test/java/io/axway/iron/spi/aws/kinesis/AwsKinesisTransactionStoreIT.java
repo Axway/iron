@@ -9,10 +9,9 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 /**
  * Test KinesisTransactionStore and FileSnapshotStore
  */
-@Test(enabled = false)
 public class AwsKinesisTransactionStoreIT extends BaseInttest {
 
-    @Test
+    @Test(enabled = false)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
@@ -28,7 +27,7 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         }
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionFileStore() throws Exception {
         String randomStoreName = createRandomStoreName();
         FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();
@@ -38,7 +37,7 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
                                                                                    randomStoreName);
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionKinesisStoreSample() throws Exception {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);

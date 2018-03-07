@@ -11,10 +11,9 @@ import static io.axway.iron.spi.aws.AwsProperties.S3_BUCKET_NAME_KEY;
 /**
  * Test FileTransactionStore and S3SnapshotStore
  */
-@Test(enabled = false)
 public class AwsS3SnapshotIT extends BaseInttest {
 
-    @Test
+    @Test(enabled = false)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String storeName = initStoreName();
         createS3Bucket(storeName);
@@ -29,7 +28,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
         }
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshotsSample() throws Exception {
         String storeName = initStoreName();
         FileStoreFactory ironFileStoreFactory = buildFileStoreFactory();
@@ -39,7 +38,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
                                                                       storeName);
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         String storeName = initStoreName();
         createS3Bucket(storeName);

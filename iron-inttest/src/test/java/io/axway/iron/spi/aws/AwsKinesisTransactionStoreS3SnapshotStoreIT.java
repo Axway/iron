@@ -10,7 +10,7 @@ import io.axway.iron.spi.jackson.JacksonSerializer;
 
 import static io.axway.iron.spi.aws.AwsProperties.S3_BUCKET_NAME_KEY;
 
-@Test(enabled = false)
+
 public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
 
     private String m_storeName;
@@ -29,7 +29,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
         deleteS3Bucket(m_storeName);
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
 
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
@@ -37,14 +37,14 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
                                                       new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
         SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
                                                                       new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStore() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
         SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
