@@ -6,7 +6,7 @@
 
     <groupId>io.axway.iron</groupId>
     <artifactId>iron</artifactId>
-    <version>0.4.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <description>Iron parent POM</description>
@@ -168,42 +168,42 @@
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-api</artifactId>
-                <version>0.4.0-SNAPSHOT</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-core</artifactId>
-                <version>0.4.0-SNAPSHOT</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-inttest</artifactId>
-                <version>0.4.0-SNAPSHOT</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi</artifactId>
-                <version>0.4.0-SNAPSHOT</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-chronicle</artifactId>
-                <version>0.4.0-SNAPSHOT</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-jackson</artifactId>
-                <version>0.4.0-SNAPSHOT</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-kafka</artifactId>
-                <version>0.4.0-SNAPSHOT</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>io.axway.iron</groupId>
                 <artifactId>iron-spi-aws</artifactId>
-                <version>0.4.0-SNAPSHOT</version>
+                <version>${revision}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

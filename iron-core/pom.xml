@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.axway.iron</groupId>
         <artifactId>iron</artifactId>
-        <version>0.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>iron-core</artifactId>
