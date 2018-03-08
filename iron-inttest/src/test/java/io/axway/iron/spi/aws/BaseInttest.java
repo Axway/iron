@@ -33,6 +33,7 @@ public abstract class BaseInttest {
     private static final Logger LOG = LoggerFactory.getLogger(BaseInttest.class);
     private static final int DEFAULT_RETRY_DURATION_IN_MILLIS = 5000;
     private static final int DEFAULT_RETRY_COUNT = 5;
+    private static final String AWS_KINESIS_STREAM_NAME_PREFIX = "condor-iron-transaction-store-";
 
     protected final Properties m_configuration = loadConfiguration();
 
@@ -90,13 +91,15 @@ public abstract class BaseInttest {
 
     protected void createStreamAndWaitActivation(String storeName) {
         AmazonKinesis amazonKinesis = buildKinesisClient(m_configuration);
-        createStreamIfNotExists(amazonKinesis, storeName, 1);
-        waitStreamActivation(amazonKinesis, storeName, MIN_3);
+        String streamName = AWS_KINESIS_STREAM_NAME_PREFIX + storeName;
+        createStreamIfNotExists(amazonKinesis, streamName, 1);
+        waitStreamActivation(amazonKinesis, streamName, MIN_3);
     }
 
     protected void deleteKinesisStream(String storeName) {
         AmazonKinesis amazonKinesis = buildKinesisClient(m_configuration);
-        deleteStream(amazonKinesis, storeName);
+        String streamName = AWS_KINESIS_STREAM_NAME_PREFIX + storeName;
+        deleteStream(amazonKinesis, streamName);
     }
 
     protected FileStoreFactory buildFileStoreFactory() {
