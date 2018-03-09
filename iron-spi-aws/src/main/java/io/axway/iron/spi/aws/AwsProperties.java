@@ -13,6 +13,7 @@ public enum AwsProperties implements PropertyMapper {
     KINESIS_PORT_KEY(AWS_KINESIS_PORT_PROPERTY, AWS_KINESIS_PORT_ENVVAR),//
     CLOUDWATCH_ENDPOINT_KEY(AWS_CLOUDWATCH_ENDPOINT_PROPERTY, AWS_CLOUDWATCH_ENDPOINT_ENVVAR),//
     CLOUDWATCH_PORT_KEY(AWS_CLOUDWATCH_PORT_PROPERTY, AWS_CLOUDWATCH_PORT_ENVVAR),//
+    KINESIS_STREAM_NAME_PREFIX(AWS_KINESIS_STREAM_NAME_PREFIX_PROPERTY, AWS_KINESIS_STREAM_NAME_PREFIX_ENVVAR),//
     // AWS S3
     DISABLE_CBOR_KEY(AWS_DISABLE_CBOR_PROPERTY, AWS_CBOR_DISABLE_ENVVAR),//
     S3_ENDPOINT_KEY(AWS_S3_ENDPOINT_PROPERTY, AWS_S3_ENDPOINT_ENVVAR),//
@@ -61,6 +62,8 @@ public enum AwsProperties implements PropertyMapper {
         public static final String AWS_CLOUDWATCH_PORT_ENVVAR = "AWS_CLOUDWATCH_PORT";
         public static final String AWS_DISABLE_CBOR_PROPERTY = "io.axway.iron.spi.aws.kinesis.disable_cbor";
         public static final String AWS_CBOR_DISABLE_ENVVAR = "AWS_CBOR_DISABLE";
+        public static final String AWS_KINESIS_STREAM_NAME_PREFIX_PROPERTY = "io.axway.iron.spi.aws.kinesis.kinesis_stream_name_prefix";
+        public static final String AWS_KINESIS_STREAM_NAME_PREFIX_ENVVAR = "AWS_KINESIS_STREAM_NAME_PREFIX";
         // AWS S3
         public static final String AWS_S3_ENDPOINT_PROPERTY = "io.axway.iron.spi.aws.s3.s3_endpoint";
         public static final String AWS_S3_ENDPOINT_ENVVAR = "AWS_S3_ENDPOINT";

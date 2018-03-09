@@ -29,7 +29,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
         deleteS3Bucket(m_storeName);
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
 
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
@@ -37,14 +37,14 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
                                                       new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
         SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
                                                                       new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStore() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
         SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
