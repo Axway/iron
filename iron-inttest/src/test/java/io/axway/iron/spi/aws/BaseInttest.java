@@ -11,11 +11,18 @@ import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.model.LimitExceededException;
 import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
+import com.amazonaws.services.s3.model.ListVersionsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.S3VersionSummary;
+import com.amazonaws.services.s3.model.VersionListing;
 import com.google.common.base.Preconditions;
 import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisException;
+import io.axway.iron.spi.aws.s3.AwsS3Exception;
 import io.axway.iron.spi.aws.s3.AwsS3Utils;
 
 import static com.amazonaws.SDKGlobalConfiguration.*;
@@ -82,7 +89,72 @@ public abstract class BaseInttest {
 
     protected void deleteS3Bucket(String storeName) {
         AmazonS3 amazonS3 = AwsS3Utils.buildS3Client(m_configuration);
-        AwsS3Utils.deleteBucket(amazonS3, storeName);
+        deleteBucket(amazonS3, storeName);
+    }
+
+    /**
+     * Delete a bucket after emptying it
+     *
+     * @param amazonS3 Amazon S3 client
+     * @param bucketName bucket name
+     * @see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/delete-or-empty-bucket.html#delete-bucket-sdk-java">AWS SDK Doc</a>
+     */
+    private static void deleteBucket(AmazonS3 amazonS3, String bucketName) {
+        try {
+            removeObjectsFromBucket(amazonS3, bucketName);
+            removeVersionsFromBucket(amazonS3, bucketName);
+            LOG.debug(" OK, bucket ready to delete!");
+            amazonS3.deleteBucket(bucketName);
+        } catch (AmazonServiceException e) {
+            throw new AwsS3Exception("Can't remove s3 bucket", args -> args.add("storeName", bucketName), e);
+        }
+    }
+
+    /**
+     * Remove all versions from the bucket.
+     *
+     * @param amazonS3 Amazon S3 client
+     * @param bucketName bucket name
+     */
+    private static void removeVersionsFromBucket(AmazonS3 amazonS3, String bucketName) {
+        LOG.debug(" - removing versions from bucket");
+        try {
+            VersionListing versionListing = amazonS3.listVersions(new ListVersionsRequest().withBucketName(bucketName));
+            while (true) {
+                for (S3VersionSummary vs : versionListing.getVersionSummaries()) {
+                    amazonS3.deleteVersion(bucketName, vs.getKey(), vs.getVersionId());
+                }
+                if (versionListing.isTruncated()) {
+                    versionListing = amazonS3.listNextBatchOfVersions(versionListing);
+                } else {
+                    break;
+                }
+            }
+        } catch (AmazonS3Exception e) {
+            LOG.warn("Can't do s3.listVersions, don't care of this message if you are using localstack since this method is not implemented");
+        }
+    }
+
+    /**
+     * Remove all objects of the S3 bucket
+     *
+     * @param amazonS3 Amazon S3 client
+     * @param bucketName bucket name
+     */
+    private static void removeObjectsFromBucket(AmazonS3 amazonS3, String bucketName) {
+        LOG.debug(" - removing objects from bucket");
+        ObjectListing objectListing = amazonS3.listObjects(bucketName);
+        while (true) {
+            for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
+                amazonS3.deleteObject(bucketName, summary.getKey());
+            }
+            // more objectListing to retrieve?
+            if (objectListing.isTruncated()) {
+                objectListing = amazonS3.listNextBatchOfObjects(objectListing);
+            } else {
+                break;
+            }
+        }
     }
 
     protected void createStreamAndWaitActivation(String storeName) {
