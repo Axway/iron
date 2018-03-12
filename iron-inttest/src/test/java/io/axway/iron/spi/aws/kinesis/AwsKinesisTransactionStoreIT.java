@@ -6,6 +6,8 @@ import io.axway.iron.spi.SpiTest;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
+import static io.axway.iron.spi.aws.AwsTestHelper.buildAwsKinesisTransactionStoreFactory;
+
 /**
  * Test KinesisTransactionStore and FileSnapshotStore
  */
@@ -16,7 +18,7 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
         FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();
-        AwsKinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = new AwsKinesisTransactionStoreFactory(m_configuration);
+        AwsKinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = buildAwsKinesisTransactionStoreFactory(m_configuration);
 
         try {
             JacksonSerializer jacksonSerializer = new JacksonSerializer();
@@ -42,7 +44,7 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
         FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();
-        AwsKinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = new AwsKinesisTransactionStoreFactory(m_configuration);
+        AwsKinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = buildAwsKinesisTransactionStoreFactory(m_configuration);
 
         try {
             JacksonSerializer jacksonSerializer = new JacksonSerializer();

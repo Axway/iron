@@ -10,8 +10,7 @@ import io.axway.iron.spi.storage.TransactionStore;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
 public class FileStoreFactory implements SnapshotStoreFactory, TransactionStoreFactory {
-
-    private static final int DEFAULT_TRANSACTION_ID_LENGTH = 20;
+    public static final int DEFAULT_TRANSACTION_ID_LENGTH = 20;
 
     private final Path m_fileStoreDir;
     @Nullable

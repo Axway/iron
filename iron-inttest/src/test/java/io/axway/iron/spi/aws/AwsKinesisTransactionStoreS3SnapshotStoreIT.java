@@ -4,11 +4,9 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import io.axway.iron.spi.SpiTest;
-import io.axway.iron.spi.aws.kinesis.AwsKinesisTransactionStoreFactory;
-import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactory;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
-import static io.axway.iron.spi.aws.AwsProperties.S3_BUCKET_NAME_KEY;
+import static io.axway.iron.spi.aws.AwsTestHelper.*;
 
 
 public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
@@ -18,7 +16,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
     @BeforeMethod
     public void createBucketAndStream() {
         m_storeName = createRandomStoreName();
-        m_configuration.setProperty(S3_BUCKET_NAME_KEY.getPropertyKey(), m_storeName);
+        m_configuration.setProperty(AwsTestHelper.S3_BUCKET_NAME, m_storeName);
         createStreamAndWaitActivation(m_storeName);
         createS3Bucket(m_storeName);
     }
@@ -33,22 +31,22 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
     public void shouldCreateCompanySequenceBeRight() throws Exception {
 
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatCreateCompanySequenceIsRight(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
-                                                      new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
+        SpiTest.checkThatCreateCompanySequenceIsRight(buildAwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+                                                      buildAwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
     @Test(enabled = false)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
-                                                                      new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
+        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(buildAwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+                                                                      buildAwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
     }
 
     @Test(enabled = false)
     public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStore() throws Exception {
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
-                                                                                   new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer,
+        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(buildAwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
+                                                                                   buildAwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer,
                                                                                    m_storeName);
     }
 }

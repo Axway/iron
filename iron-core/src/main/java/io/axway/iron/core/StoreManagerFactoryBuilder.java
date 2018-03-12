@@ -1,5 +1,6 @@
 package io.axway.iron.core;
 
+import java.util.*;
 import io.axway.iron.Command;
 import io.axway.iron.StoreManagerFactory;
 import io.axway.iron.core.internal.StoreManagerFactoryBuilderImpl;
@@ -11,6 +12,10 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 public interface StoreManagerFactoryBuilder {
     static StoreManagerFactoryBuilder newStoreManagerBuilderFactory() {
         return new StoreManagerFactoryBuilderImpl();
+    }
+
+    static StoreManagerFactoryBuilder newStoreManagerBuilderFactory(Properties properties) {
+        return new StoreManagerFactoryBuilderImpl(properties);
     }
 
     StoreManagerFactoryBuilder withEntityClass(Class<?> entityClass);

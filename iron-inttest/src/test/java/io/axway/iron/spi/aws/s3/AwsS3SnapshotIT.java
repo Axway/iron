@@ -3,10 +3,11 @@ package io.axway.iron.spi.aws.s3;
 import org.testng.annotations.Test;
 import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.spi.SpiTest;
+import io.axway.iron.spi.aws.AwsTestHelper;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.jackson.JacksonSerializer;
 
-import static io.axway.iron.spi.aws.AwsProperties.S3_BUCKET_NAME_KEY;
+import static io.axway.iron.spi.aws.AwsTestHelper.buildAwsS3SnapshotStoreFactory;
 
 /**
  * Test FileTransactionStore and S3SnapshotStore
@@ -17,7 +18,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String storeName = initStoreName();
         createS3Bucket(storeName);
-        AwsS3SnapshotStoreFactory s3SnapshotStoreFactory = new AwsS3SnapshotStoreFactory(m_configuration);
+        AwsS3SnapshotStoreFactory s3SnapshotStoreFactory = buildAwsS3SnapshotStoreFactory(m_configuration);
         FileStoreFactory ironFileStoreFactory = buildFileStoreFactory();
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
 
@@ -42,7 +43,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         String storeName = initStoreName();
         createS3Bucket(storeName);
-        AwsS3SnapshotStoreFactory s3SnapshotStoreFactory = new AwsS3SnapshotStoreFactory(m_configuration);
+        AwsS3SnapshotStoreFactory s3SnapshotStoreFactory = buildAwsS3SnapshotStoreFactory(m_configuration);
         FileStoreFactory ironFileStoreFactory = buildFileStoreFactory();
         JacksonSerializer jacksonSerializer = new JacksonSerializer();
 
@@ -56,7 +57,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
 
     private String initStoreName() {
         String storeName = createRandomStoreName();
-        m_configuration.setProperty(S3_BUCKET_NAME_KEY.getPropertyKey(), storeName);
+        m_configuration.setProperty(AwsTestHelper.S3_BUCKET_NAME, storeName);
         return storeName;
     }
 }

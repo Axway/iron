@@ -32,20 +32,27 @@ public class StoreManagerFactoryBuilderImpl implements StoreManagerFactoryBuilde
     private SnapshotSerializer m_snapshotSerializer;
     private SnapshotStoreFactory m_snapshotStoreFactory;
 
+    public StoreManagerFactoryBuilderImpl() {
+    }
+
+    public StoreManagerFactoryBuilderImpl(Properties properties) {
+        new StoreManagerFactoryBuilderConfigurator().fill(this, properties);
+    }
+
     @Override
-    public StoreManagerFactoryBuilderImpl withEntityClass(Class<?> entityClass) {
+    public StoreManagerFactoryBuilder withEntityClass(Class<?> entityClass) {
         checkState(m_entityClasses.add(entityClass), "Entity class %s has been already added", entityClass.getName());
         return this;
     }
 
     @Override
-    public <T> StoreManagerFactoryBuilderImpl withCommandClass(Class<? extends Command<T>> commandClass) {
+    public <T> StoreManagerFactoryBuilder withCommandClass(Class<? extends Command<T>> commandClass) {
         checkState(m_commandClasses.add(commandClass), "Command class %s has been already added", commandClass.getName());
         return this;
     }
 
     @Override
-    public StoreManagerFactoryBuilderImpl withTransactionSerializer(TransactionSerializer transactionSerializer) {
+    public StoreManagerFactoryBuilder withTransactionSerializer(TransactionSerializer transactionSerializer) {
         checkState(m_transactionSerializer == null, "Transaction serializer has been already set");
         m_transactionSerializer = transactionSerializer;
         return this;
@@ -59,7 +66,7 @@ public class StoreManagerFactoryBuilderImpl implements StoreManagerFactoryBuilde
     }
 
     @Override
-    public StoreManagerFactoryBuilderImpl withSnapshotSerializer(SnapshotSerializer snapshotSerializer) {
+    public StoreManagerFactoryBuilder withSnapshotSerializer(SnapshotSerializer snapshotSerializer) {
         checkState(m_snapshotSerializer == null, "Snapshot serializer has been already set");
         m_snapshotSerializer = snapshotSerializer;
         return this;
