@@ -12,7 +12,6 @@ import static io.axway.iron.spi.aws.AwsProperties.*;
 
 public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
 
-    private String m_directoryName;
     private String m_bucketName;
     private String m_storeName;
 
@@ -20,8 +19,8 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
     public void createBucketAndStream() {
         m_bucketName = createRandomBucketName();
         m_storeName = createRandomStoreName();
-        m_directoryName = createRandomDirectoryName();
-        m_configuration.setProperty(S3_DIRECTORY_NAME_KEY.getPropertyKey(), m_directoryName);
+        String directoryName = createRandomDirectoryName();
+        m_configuration.setProperty(S3_DIRECTORY_NAME_KEY.getPropertyKey(), directoryName);
         m_configuration.setProperty(S3_BUCKET_NAME_KEY.getPropertyKey(), m_bucketName);
         createStreamAndWaitActivation(m_storeName);
         createS3Bucket(m_bucketName);
