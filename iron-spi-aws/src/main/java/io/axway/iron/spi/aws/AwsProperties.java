@@ -18,7 +18,8 @@ public enum AwsProperties implements PropertyMapper {
     DISABLE_CBOR_KEY(AWS_DISABLE_CBOR_PROPERTY, AWS_CBOR_DISABLE_ENVVAR),//
     S3_ENDPOINT_KEY(AWS_S3_ENDPOINT_PROPERTY, AWS_S3_ENDPOINT_ENVVAR),//
     S3_PORT_KEY(AWS_S3_PORT_PROPERTY, AWS_S3_PORT_ENVVAR),//
-    S3_BUCKET_NAME_KEY(AWS_S3_BUCKET_NAME_PROPERTY, AWS_S3_BUCKET_NAME_ENVVAR);
+    S3_BUCKET_NAME_KEY(AWS_S3_BUCKET_NAME_PROPERTY, AWS_S3_BUCKET_NAME_ENVVAR),//
+    S3_DIRECTORY_NAME_KEY(AWS_S3_DIRECTORY_NAME_PROPERTY, AWS_S3_DIRECTORY_NAME_ENVVAR);
 
     private String m_propertyKey;
     private String m_envVarName;
@@ -71,5 +72,7 @@ public enum AwsProperties implements PropertyMapper {
         public static final String AWS_S3_PORT_ENVVAR = "AWS_S3_PORT";
         public static final String AWS_S3_BUCKET_NAME_PROPERTY = "io.axway.iron.spi.aws.s3.bucket_name";
         public static final String AWS_S3_BUCKET_NAME_ENVVAR = "AWS_S3_BUCKET_NAME";
+        public static final String AWS_S3_DIRECTORY_NAME_PROPERTY = "io.axway.iron.spi.aws.aws.s3_directory_name";
+        public static final String AWS_S3_DIRECTORY_NAME_ENVVAR = "AWS_S3_DIRECTORY_NAME";
     }
 }

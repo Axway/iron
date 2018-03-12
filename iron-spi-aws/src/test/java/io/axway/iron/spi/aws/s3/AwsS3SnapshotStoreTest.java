@@ -31,8 +31,9 @@ public class AwsS3SnapshotStoreTest {
             result = listObjectsV2Result;
         }};
         String bucketName = createRandomBucketName();
+        String directoryName = createDirectoryStoreName();
         String storeName = createRandomStoreName();
-        AwsS3SnapshotStore awsS3SnapshotStore = new AwsS3SnapshotStore(m_amazonS3, bucketName, storeName);
+        AwsS3SnapshotStore awsS3SnapshotStore = new AwsS3SnapshotStore(m_amazonS3, bucketName, directoryName, storeName);
         assertThat(awsS3SnapshotStore.listSnapshots())
                 .containsExactly(new BigInteger("123456789012345678901234567890"), new BigInteger("123456789012345678901234567891"));
     }
@@ -43,5 +44,9 @@ public class AwsS3SnapshotStoreTest {
 
     private static String createRandomStoreName() {
         return "iron-store-" + UUID.randomUUID();
+    }
+
+    private static String createDirectoryStoreName() {
+        return "iron-directory-" + UUID.randomUUID();
     }
 }

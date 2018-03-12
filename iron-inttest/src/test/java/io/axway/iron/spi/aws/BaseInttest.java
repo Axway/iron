@@ -50,9 +50,17 @@ public abstract class BaseInttest {
         }
     }
 
+    protected String createRandomBucketName() {
+        String bucketBaseName = "irontest-" + System.getProperty("user.name");
+        return bucketBaseName + "-" + UUID.randomUUID();
+    }
+
     protected String createRandomStoreName() {
-        String storeBaseName = "irontest-" + System.getProperty("user.name");
-        return storeBaseName + "-" + UUID.randomUUID();
+        return "store" + "-" + UUID.randomUUID();
+    }
+
+    protected String createRandomDirectoryName() {
+        return "directory" + "-" + UUID.randomUUID();
     }
 
     protected void createS3Bucket(String storeName) {
@@ -87,9 +95,9 @@ public abstract class BaseInttest {
         }
     }
 
-    protected void deleteS3Bucket(String storeName) {
+    protected void deleteS3Bucket(String bucketName) {
         AmazonS3 amazonS3 = AwsS3Utils.buildS3Client(m_configuration);
-        deleteBucket(amazonS3, storeName);
+        deleteBucket(amazonS3, bucketName);
     }
 
     /**
