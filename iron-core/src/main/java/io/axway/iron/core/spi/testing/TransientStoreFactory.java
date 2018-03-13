@@ -6,6 +6,10 @@ import io.axway.iron.spi.storage.TransactionStore;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
 public class TransientStoreFactory implements SnapshotStoreFactory, TransactionStoreFactory {
+
+    TransientStoreFactory() {
+    }
+
     @Override
     public SnapshotStore createSnapshotStore(String storeName) {
         return new TransientSnapshotStore();

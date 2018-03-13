@@ -3,10 +3,12 @@ package io.axway.iron.spi.aws;
 import java.util.*;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.s3.AmazonS3;
-import io.axway.iron.spi.aws.kinesis.AwsKinesisTransactionStoreFactory;
+import io.axway.iron.spi.aws.kinesis.AwsKinesisTransactionStoreFactoryBuilder;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisUtils;
-import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactory;
+import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactoryBuilder;
 import io.axway.iron.spi.aws.s3.AwsS3Utils;
+import io.axway.iron.spi.storage.SnapshotStoreFactory;
+import io.axway.iron.spi.storage.TransactionStoreFactory;
 
 import static com.amazonaws.SDKGlobalConfiguration.*;
 
@@ -43,21 +45,25 @@ public class AwsTestHelper {
                                         configuration.getProperty(S3_REGION));
     }
 
-    public static AwsKinesisTransactionStoreFactory buildAwsKinesisTransactionStoreFactory(Properties configuration) {
-        return new AwsKinesisTransactionStoreFactory(configuration.getProperty(KINESIS_ACCESS_KEY), //
-                                                     configuration.getProperty(KINESIS_SECRET_KEY), //
-                                                     configuration.getProperty(KINESIS_ENDPOINT), //
-                                                     Integer.valueOf(configuration.getProperty(KINESIS_PORT)), //
-                                                     configuration.getProperty(KINESIS_REGION));
+    public static TransactionStoreFactory buildAwsKinesisTransactionStoreFactory(Properties configuration) {
+        return new AwsKinesisTransactionStoreFactoryBuilder() //
+                .setAccessKey(configuration.getProperty(KINESIS_ACCESS_KEY)) //
+                .setSecretKey(configuration.getProperty(KINESIS_SECRET_KEY)) //
+                .setEndpoint(configuration.getProperty(KINESIS_ENDPOINT)) //
+                .setPort(Integer.valueOf(configuration.getProperty(KINESIS_PORT))) //
+                .setRegion(configuration.getProperty(KINESIS_REGION)) //
+                .get();
     }
 
-    public static AwsS3SnapshotStoreFactory buildAwsS3SnapshotStoreFactory(Properties configuration) {
-        return new AwsS3SnapshotStoreFactory(configuration.getProperty(S3_ACCESS_KEY), //
-                                             configuration.getProperty(S3_SECRET_KEY), //
-                                             configuration.getProperty(S3_ENDPOINT), //
-                                             Integer.valueOf(configuration.getProperty(S3_PORT)), //
-                                             configuration.getProperty(S3_REGION), //
-                                             configuration.getProperty(S3_BUCKET_NAME));
+    public static SnapshotStoreFactory buildAwsS3SnapshotStoreFactory(Properties configuration) {
+        return new AwsS3SnapshotStoreFactoryBuilder() //
+                .setAccessKey(configuration.getProperty(S3_ACCESS_KEY)) //
+                .setSecretKey(configuration.getProperty(S3_SECRET_KEY)) //
+                .setEndpoint(configuration.getProperty(S3_ENDPOINT)) //
+                .setPort(Integer.valueOf(configuration.getProperty(S3_PORT))) //
+                .setRegion(configuration.getProperty(S3_REGION)) //
+                .setBucketName(configuration.getProperty(S3_BUCKET_NAME)) //
+                .get();
     }
 
     public static void handleLocalStackConfigurationForLocalTesting(Properties configuration) {

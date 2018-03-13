@@ -1,5 +1,6 @@
 package io.axway.iron.sample;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -13,7 +14,6 @@ import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.StoreManagerFactory;
-import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.sample.command.ChangeCompanyAddress;
 import io.axway.iron.sample.command.CreateCompany;
 import io.axway.iron.sample.command.CreatePerson;
@@ -23,12 +23,15 @@ import io.axway.iron.sample.command.PersonLeaveCompany;
 import io.axway.iron.sample.command.PersonRaiseSalary;
 import io.axway.iron.sample.model.Company;
 import io.axway.iron.sample.model.Person;
-import io.axway.iron.spi.chronicle.ChronicleTransactionStoreFactory;
-import io.axway.iron.spi.jackson.JacksonSerializer;
+import io.axway.iron.spi.serializer.SnapshotSerializer;
+import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
 import static io.axway.iron.core.StoreManagerFactoryBuilder.newStoreManagerBuilderFactory;
+import static io.axway.iron.spi.chronicle.ChronicleTestHelper.buildChronicleTransactionStoreFactory;
+import static io.axway.iron.spi.file.FileTestHelper.*;
+import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SampleTest {
@@ -37,26 +40,30 @@ public class SampleTest {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron", "iron-sample"));
-        ChronicleTransactionStoreFactory chronicleTransactionStoreFactory = new ChronicleTransactionStoreFactory(Paths.get("iron", "iron-sample"));
+        Path filePath = Paths.get("iron", "iron-sample");
+        SnapshotStoreFactory fileSnapshotStoreFactory = buildFileSnapshotStoreFactory(filePath);
+        TransactionStoreFactory fileTransactionStoreFactory = buildFileTransactionStoreFactory(filePath);
+
+        TransactionStoreFactory chronicleTransactionStoreFactory = buildChronicleTransactionStoreFactory(filePath);
 
         String storeBaseName = "irontest-" + System.getProperty("user.name");
 
         return new Object[][]{ //
-                {chronicleTransactionStoreFactory, fileStoreFactory, storeBaseName + "-" + UUID.randomUUID()}, //
-                {fileStoreFactory, fileStoreFactory, storeBaseName + "-" + UUID.randomUUID()}, //
+                {chronicleTransactionStoreFactory, fileSnapshotStoreFactory, storeBaseName + "-" + UUID.randomUUID()}, //
+                {fileTransactionStoreFactory, fileSnapshotStoreFactory, storeBaseName + "-" + UUID.randomUUID()}, //
         };
     }
 
     @Test(dataProvider = "stores")
     public void testCreateCompany(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory, String storeName)
             throws Exception {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
 
         StoreManagerFactory storeManagerFactory = newStoreManagerBuilderFactory() //
-                .withTransactionSerializer(jacksonSerializer) //
+                .withTransactionSerializer(transactionSerializer) //
                 .withTransactionStoreFactory(transactionStoreFactory) //
-                .withSnapshotSerializer(jacksonSerializer) //
+                .withSnapshotSerializer(snapshotSerializer) //
                 .withSnapshotStoreFactory(snapshotStoreFactory) //
                 .withEntityClass(Company.class) //
                 .withEntityClass(Person.class) //

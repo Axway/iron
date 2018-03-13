@@ -1,6 +1,7 @@
 package io.axway.iron.spi.aws.s3;
 
 import java.util.function.*;
+import javax.annotation.*;
 import javax.xml.bind.annotation.*;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 
@@ -14,28 +15,34 @@ public class AwsS3SnapshotStoreFactoryBuilder implements Supplier<SnapshotStoreF
     private String m_bucketName;
     private String m_region;
 
-    public void setAccessKey(String accessKey) {
+    public AwsS3SnapshotStoreFactoryBuilder setAccessKey(@Nullable String accessKey) {
         m_accessKey = accessKey;
+        return this;
     }
 
-    public void setSecretKey(String secretKey) {
+    public AwsS3SnapshotStoreFactoryBuilder setSecretKey(@Nullable String secretKey) {
         m_secretKey = secretKey;
+        return this;
     }
 
-    public void setEndpoint(String endpoint) {
+    public AwsS3SnapshotStoreFactoryBuilder setEndpoint(@Nullable String endpoint) {
         m_endpoint = endpoint;
+        return this;
     }
 
-    public void setPort(Integer port) {
+    public AwsS3SnapshotStoreFactoryBuilder setPort(@Nullable Integer port) {
         m_port = port;
+        return this;
     }
 
-    public void setBucketName(String bucketName) {
+    public AwsS3SnapshotStoreFactoryBuilder setBucketName(String bucketName) {
         m_bucketName = bucketName;
+        return this;
     }
 
-    public void setRegion(String region) {
+    public AwsS3SnapshotStoreFactoryBuilder setRegion(@Nullable String region) {
         m_region = region;
+        return this;
     }
 
     @Override

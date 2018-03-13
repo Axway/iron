@@ -1,6 +1,7 @@
 package io.axway.iron.spi.aws;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.*;
@@ -17,7 +18,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.google.common.base.Preconditions;
-import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisException;
 import io.axway.iron.spi.aws.s3.AwsS3Utils;
 
@@ -36,8 +36,8 @@ public abstract class BaseInttest {
     protected final Properties m_configuration = loadConfiguration("configuration.properties");
 
     @BeforeClass
-    public void handleLocalStackConfigurationForLocalTesting() {
-        AwsTestHelper.handleLocalStackConfigurationForLocalTesting(m_configuration);
+    public void localTesting() {
+        handleLocalStackConfigurationForLocalTesting(m_configuration);
     }
 
     protected String createRandomStoreName() {
@@ -93,12 +93,8 @@ public abstract class BaseInttest {
         deleteStream(amazonKinesis, storeName);
     }
 
-    protected FileStoreFactory buildFileStoreFactory() {
-        return new FileStoreFactory(Paths.get("iron", "iron-spi-aws-inttest"));
-    }
-
-    protected FileStoreFactory buildFileStoreFactoryNoLimitedSize() {
-        return new FileStoreFactory(Paths.get("iron", "iron-spi-aws-inttest"), null);
+    protected Path getIronSpiAwsInttestFilePath() {
+        return Paths.get("iron", "iron-spi-aws-inttest");
     }
 
     public static Properties loadConfiguration(String resourceName) {

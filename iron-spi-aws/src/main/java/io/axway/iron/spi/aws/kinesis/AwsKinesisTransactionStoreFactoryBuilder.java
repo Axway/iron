@@ -1,6 +1,7 @@
 package io.axway.iron.spi.aws.kinesis;
 
 import java.util.function.*;
+import javax.annotation.*;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
 public class AwsKinesisTransactionStoreFactoryBuilder implements Supplier<TransactionStoreFactory> {
@@ -11,24 +12,29 @@ public class AwsKinesisTransactionStoreFactoryBuilder implements Supplier<Transa
     private Integer m_port;
     private String m_region;
 
-    public void setAccessKey(String accessKey) {
+    public AwsKinesisTransactionStoreFactoryBuilder setAccessKey(@Nullable String accessKey) {
         m_accessKey = accessKey;
+        return this;
     }
 
-    public void setSecretKey(String secretKey) {
+    public AwsKinesisTransactionStoreFactoryBuilder setSecretKey(@Nullable String secretKey) {
         m_secretKey = secretKey;
+        return this;
     }
 
-    public void setEndpoint(String endpoint) {
+    public AwsKinesisTransactionStoreFactoryBuilder setEndpoint(@Nullable String endpoint) {
         m_endpoint = endpoint;
+        return this;
     }
 
-    public void setPort(Integer port) {
+    public AwsKinesisTransactionStoreFactoryBuilder setPort(@Nullable Integer port) {
         m_port = port;
+        return this;
     }
 
-    public void setRegion(String region) {
+    public AwsKinesisTransactionStoreFactoryBuilder setRegion(@Nullable String region) {
         m_region = region;
+        return this;
     }
 
     @Override

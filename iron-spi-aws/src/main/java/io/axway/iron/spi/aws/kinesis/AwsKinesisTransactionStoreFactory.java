@@ -23,7 +23,7 @@ public class AwsKinesisTransactionStoreFactory implements TransactionStoreFactor
      * (+) to configure the access, both access key and secret key must be provided.
      * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
      */
-    public AwsKinesisTransactionStoreFactory(String accessKey, String secretKey, String endpoint, Integer port, String region) {
+    AwsKinesisTransactionStoreFactory(String accessKey, String secretKey, String endpoint, Integer port, String region) {
         m_kinesisClient = AwsKinesisUtils.buildKinesisClient(accessKey, secretKey, endpoint, port, region);
     }
 

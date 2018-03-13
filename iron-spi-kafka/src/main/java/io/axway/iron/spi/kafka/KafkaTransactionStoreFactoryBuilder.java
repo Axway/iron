@@ -7,8 +7,9 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 public class KafkaTransactionStoreFactoryBuilder implements Supplier<TransactionStoreFactory> {
     private Properties m_properties;
 
-    public void setProperties(Properties properties) {
+    public KafkaTransactionStoreFactoryBuilder setProperties(Properties properties) {
         m_properties = properties;
+        return this;
     }
 
     @Override

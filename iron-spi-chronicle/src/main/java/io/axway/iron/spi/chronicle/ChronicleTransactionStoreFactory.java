@@ -9,7 +9,7 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 public class ChronicleTransactionStoreFactory implements TransactionStoreFactory {
     private final Path m_chronicleStoreDir;
 
-    public ChronicleTransactionStoreFactory(Path chronicleStoreDir) {
+    ChronicleTransactionStoreFactory(Path chronicleStoreDir) {
         m_chronicleStoreDir = ensureDirectoryExists(chronicleStoreDir);
     }
 

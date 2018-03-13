@@ -7,8 +7,9 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 public class ChronicleTransactionStoreFactoryBuilder implements Supplier<TransactionStoreFactory> {
     private Path m_dir;
 
-    public void setDir(Path dir) {
+    public ChronicleTransactionStoreFactoryBuilder setDir(Path dir) {
         m_dir = dir;
+        return this;
     }
 
     @Override

@@ -2,20 +2,21 @@ package io.axway.iron.core.spi.file;
 
 import java.nio.file.Path;
 import java.util.function.*;
+import javax.annotation.*;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
-
-import static io.axway.iron.core.spi.file.FileStoreFactory.DEFAULT_TRANSACTION_ID_LENGTH;
 
 public class FileTransactionStoreFactoryBuilder implements Supplier<TransactionStoreFactory> {
     private Path m_dir;
-    private Integer m_limitedSize = DEFAULT_TRANSACTION_ID_LENGTH;
+    private Integer m_limitedSize = 20;
 
-    public void setDir(Path dir) {
+    public FileTransactionStoreFactoryBuilder setDir(Path dir) {
         m_dir = dir;
+        return this;
     }
 
-    public void setLimitedSize(Integer limitedSize) {
+    public FileTransactionStoreFactoryBuilder setLimitedSize(@Nullable Integer limitedSize) {
         m_limitedSize = limitedSize;
+        return this;
     }
 
     @Override

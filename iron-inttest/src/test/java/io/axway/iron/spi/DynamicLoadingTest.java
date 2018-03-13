@@ -37,7 +37,7 @@ public class DynamicLoadingTest {
     public void shouldConfigureAndSetTheRightsImplementations(String configurationFilename) {
         Properties configuration = loadConfiguration(configurationFilename);
         if (configuration.size() == 0) {
-            throw new RuntimeException("Please use a valid property file");
+            throw new IllegalArgumentException("Please use a valid property file");
         }
         AwsTestHelper.handleLocalStackConfigurationForLocalTesting(configuration); // needed for AWS localstack tests
         FakeStoreManagerFactoryBuilderImpl factoryBuilder = new FakeStoreManagerFactoryBuilderImpl();
