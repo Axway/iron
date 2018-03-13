@@ -72,7 +72,7 @@ public enum AwsProperties implements PropertyMapper {
         public static final String AWS_S3_PORT_ENVVAR = "AWS_S3_PORT";
         public static final String AWS_S3_BUCKET_NAME_PROPERTY = "io.axway.iron.spi.aws.s3.bucket_name";
         public static final String AWS_S3_BUCKET_NAME_ENVVAR = "AWS_S3_BUCKET_NAME";
-        public static final String AWS_S3_DIRECTORY_NAME_PROPERTY = "io.axway.iron.spi.aws.aws.s3_directory_name";
+        public static final String AWS_S3_DIRECTORY_NAME_PROPERTY = "io.axway.iron.spi.aws.s3.directory_name";
         public static final String AWS_S3_DIRECTORY_NAME_ENVVAR = "AWS_S3_DIRECTORY_NAME";
     }
 }
