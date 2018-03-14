@@ -74,10 +74,10 @@ public class StoreManagerFactoryBuilderConfigurator {
                     if (parameterTypes.length == 1) {
                         String propertyName = method.getName().substring(3);
                         Object value = getPropertyValue(parameterTypes[0], properties, baseName, propertyName);
-                        if (isMandatory(method) && (value == null || value == UNKNOWN_KEY)) {
+                        if (isMandatory(method) && (value == null || UNKNOWN_KEY.equals(value))) {
                             throw new ConfigurationException(
                                     "Parameter '" + propertyName + "' for '" + componentBuilderClazz.getClass().getCanonicalName() + "' is mandatory!");
-                        } else if (value != UNKNOWN_KEY) { // do not call setter if the key was absent from properties
+                        } else if (!UNKNOWN_KEY.equals(value)) { // do not call setter if the key was absent from properties
                             method.invoke(builder, value);
                         }
                     } else {
