@@ -12,11 +12,11 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 public class FileStoreFactory implements SnapshotStoreFactory, TransactionStoreFactory {
     private final Path m_fileStoreDir;
     @Nullable
-    private Integer m_limitedSize;
+    private Integer m_transactionIdPaddingLength;
 
-    FileStoreFactory(Path fileStoreDir, @Nullable Integer limitedSize) {
+    FileStoreFactory(Path fileStoreDir, @Nullable Integer transactionIdPaddingLength) {
         m_fileStoreDir = ensureDirectoryExists(fileStoreDir);
-        m_limitedSize = limitedSize;
+        m_transactionIdPaddingLength = transactionIdPaddingLength;
     }
 
     @Override
@@ -24,7 +24,7 @@ public class FileStoreFactory implements SnapshotStoreFactory, TransactionStoreF
         // store name is already enforced to be securely usable for file name thanks to io.axway.iron.StoreManagerFactory.STORE_NAME_VALIDATOR_PATTERN
         Path snapshotStoreDir = ensureDirectoryExists(m_fileStoreDir.resolve(storeName).resolve("snapshot"));
         Path snapshotStoreTmpDir = ensureDirectoryExists(snapshotStoreDir.resolve(".tmp"));
-        return new FileSnapshotStore(snapshotStoreDir, snapshotStoreTmpDir, m_limitedSize);
+        return new FileSnapshotStore(snapshotStoreDir, snapshotStoreTmpDir, m_transactionIdPaddingLength);
     }
 
     @Override

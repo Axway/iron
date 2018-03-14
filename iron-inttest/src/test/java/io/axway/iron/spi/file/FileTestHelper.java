@@ -16,11 +16,11 @@ public class FileTestHelper {
         return new FileTransactionStoreFactoryBuilder().setDir(filePath).get();
     }
 
-    public static SnapshotStoreFactory buildFileSnapshotStoreFactory(Path filePath, Integer limitedSize) {
-        return new FileSnapshotStoreFactoryBuilder().setDir(filePath).setLimitedSize(limitedSize).get();
+    public static SnapshotStoreFactory buildFileSnapshotStoreFactory(Path filePath, Integer transactionIdPaddingLength) {
+        return new FileSnapshotStoreFactoryBuilder().setDir(filePath).setTransactionIdPaddingLength(transactionIdPaddingLength).get();
     }
 
-    public static TransactionStoreFactory buildFileTransactionStoreFactory(Path filePath, Integer limitedSize) {
-        return new FileTransactionStoreFactoryBuilder().setDir(filePath).setLimitedSize(limitedSize).get();
+    public static TransactionStoreFactory buildFileTransactionStoreFactory(Path filePath, Integer transactionIdPaddingLength) {
+        return new FileTransactionStoreFactoryBuilder().setDir(filePath).setTransactionIdPaddingLength(transactionIdPaddingLength).get();
     }
 }

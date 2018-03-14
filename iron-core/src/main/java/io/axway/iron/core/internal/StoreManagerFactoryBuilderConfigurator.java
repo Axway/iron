@@ -27,6 +27,7 @@ public class StoreManagerFactoryBuilderConfigurator {
     private static final Logger LOG = LoggerFactory.getLogger(StoreManagerFactoryBuilderConfigurator.class);
     private static final String ENV_PREFIX = "env:".toLowerCase();
     private static final Pattern VARIABLE_REGEX_PATTERN = Pattern.compile("\\$\\{(.*?)\\}");
+    private static final Object UNKNOWN_KEY = new Object();
 
     public void fill(StoreManagerFactoryBuilder storeManagerFactoryBuilder, Properties properties) {
         Map<Type, BuilderImplConfig> componentBuilders = findComponentBuilders(properties);
@@ -73,13 +74,16 @@ public class StoreManagerFactoryBuilderConfigurator {
                     if (parameterTypes.length == 1) {
                         String propertyName = method.getName().substring(3);
                         Object value = getPropertyValue(parameterTypes[0], properties, baseName, propertyName);
-                        if (value != null) { // do not call setter if value is null
+                        if (isMandatory(method) && (value == null || value == UNKNOWN_KEY)) {
+                            throw new ConfigurationException(
+                                    "Parameter '" + propertyName + "' for '" + componentBuilderClazz.getClass().getCanonicalName() + "' is mandatory!");
+                        } else if (value != UNKNOWN_KEY) { // do not call setter if the key was absent from properties
                             method.invoke(builder, value);
-                        } else if (isMandatory(method)) {
-                            throw new ConfigurationException("Parameter '" + propertyName + "' for '"+ componentBuilderClazz.getClass().getCanonicalName()+"' is mandatory!");
                         }
                     } else {
-                        LOG.error("The configured builder has setters with more than one parameter {{}.{}}", componentBuilderClazz.getName(), method.getName());
+                        throw new ConfigurationException(
+                                "The configured builder has setters with more than one parameter" + " {" + componentBuilderClazz.getName() + "." + method
+                                        .getName() + "}");
                     }
                 }
             }
@@ -94,17 +98,22 @@ public class StoreManagerFactoryBuilderConfigurator {
     }
 
     @Nullable
-    private <T> T getPropertyValue(Class<T> clazz, Properties properties, String baseName, String propertyName) {
+    private <T> Object getPropertyValue(Class<T> clazz, Properties properties, String baseName, String propertyName) {
         if (clazz.isAssignableFrom(Properties.class)) {
-            return extractProperties(clazz, properties, baseName);
+            return extractProperties(properties, baseName);
         } else {
             String fullName = baseName + "." + camelCaseToLowerCaseUnderscore(propertyName);
-            if (clazz.isAssignableFrom(Path.class)) {
-                return extractPath(clazz, properties, fullName);
-            } else if (clazz.isAssignableFrom(String.class)) {
-                return clazz.cast(getProperty(properties, fullName));
+            if (!properties.containsKey(fullName)) {
+                return UNKNOWN_KEY;
             } else {
-                return extractStandardTypes(clazz, properties, fullName);
+                String propertyValue = getProperty(properties, fullName);
+                if (propertyValue == null || clazz.isAssignableFrom(String.class)) {
+                    return propertyValue;
+                } else if (clazz.isAssignableFrom(Path.class)) {
+                    return extractPath(propertyValue);
+                } else {
+                    return extractStandardTypes(clazz, propertyValue);
+                }
             }
         }
     }
@@ -114,16 +123,15 @@ public class StoreManagerFactoryBuilderConfigurator {
     }
 
     @Nullable
-    private <T> T extractPath(Class<T> clazz, Properties properties, String fullName) {
+    private Path extractPath(String value) {
         try {
-            String value = getProperty(properties, fullName);
-            return value != null ? clazz.cast(Paths.get(value)) : null;
+            return value.isEmpty() ? null : Paths.get(value);
         } catch (InvalidPathException e) {
             throw new ConfigurationException(e);
         }
     }
 
-    private <T> T extractProperties(Class<T> clazz, Properties properties, String baseName) {
+    private Properties extractProperties(Properties properties, String baseName) {
         Properties value = new Properties();
         int basenameLength = baseName.length() + 1;
         for (String name : properties.stringPropertyNames()) {
@@ -131,14 +139,13 @@ public class StoreManagerFactoryBuilderConfigurator {
                 value.put(name.substring(basenameLength), getProperty(properties, name)); // There can't be null value here
             }
         }
-        return clazz.cast(value);
+        return value;
     }
 
     @Nullable
-    private <T> T extractStandardTypes(Class<T> clazz, Properties properties, String fullName) {
+    private <T> Object extractStandardTypes(Class<T> clazz, String value) {
         try {
-            String value = getProperty(properties, fullName);
-            return value != null ? clazz.cast(clazz.getDeclaredMethod("valueOf", String.class).invoke(null, value)) : null;
+            return value.isEmpty() ? null : clazz.getDeclaredMethod("valueOf", String.class).invoke(null, value);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new ConfigurationException(e);
         }
