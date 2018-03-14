@@ -6,28 +6,35 @@ import io.axway.iron.StoreManager;
 import io.axway.iron.StoreManagerFactory;
 import io.axway.iron.core.model.simple.SimpleCommand;
 import io.axway.iron.core.model.simple.SimpleEntity;
-import io.axway.iron.core.spi.testing.TransientStoreFactory;
-import io.axway.iron.spi.jackson.JacksonSerializer;
+import io.axway.iron.spi.serializer.SnapshotSerializer;
+import io.axway.iron.spi.serializer.TransactionSerializer;
+import io.axway.iron.spi.storage.SnapshotStoreFactory;
+import io.axway.iron.spi.storage.TransactionStoreFactory;
+
+import static io.axway.iron.core.bugs.IronTestHelper.*;
 
 public class StoreManagerFactoryTest {
 
     @DataProvider(name = "duplicates")
     public Object[][] providesDuplicates() {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        TransientStoreFactory transientStoreFactory = new TransientStoreFactory();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotStoreFactory snapshotStoreFactory = buildTransientSnapshotStoreFactory();
+        TransactionStoreFactory transactionStoreFactory = buildTransientTransactionStoreFactory();
+
         StoreManagerFactoryBuilder b = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory();
 
-        return new Runnable[][]{{() -> b.withSnapshotSerializer(jacksonSerializer)}, //
-                {() -> b.withTransactionSerializer(jacksonSerializer)}, //
-                {() -> b.withSnapshotStoreFactory(transientStoreFactory)}, //
-                {() -> b.withTransactionStoreFactory(transientStoreFactory)}, //
+        return new Runnable[][]{{() -> b.withSnapshotSerializer(snapshotSerializer)}, //
+                {() -> b.withTransactionSerializer(transactionSerializer)}, //
+                {() -> b.withSnapshotStoreFactory(snapshotStoreFactory)}, //
+                {() -> b.withTransactionStoreFactory(transactionStoreFactory)}, //
                 {() -> b.withCommandClass(SimpleCommand.class)}, //
                 {() -> b.withEntityClass(SimpleEntity.class)}, //
         };
     }
 
     @Test(dataProvider = "duplicates", expectedExceptions = IllegalStateException.class)
-    public void shouldBuilderNotAcceptDuplicateCalls(Runnable r) throws Exception {
+    public void shouldBuilderNotAcceptDuplicateCalls(Runnable r) {
         r.run();
         r.run();
     }
@@ -43,23 +50,26 @@ public class StoreManagerFactoryTest {
 
     @Test(dataProvider = "configuredElements", expectedExceptions = IllegalStateException.class)
     public void shouldBuilderNotAcceptIncompleteConfiguration(boolean b1, boolean b2, boolean b3, boolean b4) {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        TransientStoreFactory transientStoreFactory = new TransientStoreFactory();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotStoreFactory snapshotStoreFactory = buildTransientSnapshotStoreFactory();
+        TransactionStoreFactory transactionStoreFactory = buildTransientTransactionStoreFactory();
+
         StoreManagerFactoryBuilder builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory();
         if (b1) {
-            builder.withSnapshotSerializer(jacksonSerializer);
+            builder.withSnapshotSerializer(snapshotSerializer);
         }
 
         if (b2) {
-            builder.withTransactionSerializer(jacksonSerializer);
+            builder.withTransactionSerializer(transactionSerializer);
         }
 
         if (b3) {
-            builder.withSnapshotStoreFactory(transientStoreFactory);
+            builder.withSnapshotStoreFactory(snapshotStoreFactory);
         }
 
         if (b4) {
-            builder.withTransactionStoreFactory(transientStoreFactory);
+            builder.withTransactionStoreFactory(transactionStoreFactory);
         }
 
         builder.withCommandClass(SimpleCommand.class) //
@@ -68,13 +78,16 @@ public class StoreManagerFactoryTest {
     }
 
     private StoreManagerFactory createStoreManagerFactory() {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        TransientStoreFactory transientStoreFactory = new TransientStoreFactory();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotStoreFactory snapshotStoreFactory = buildTransientSnapshotStoreFactory();
+        TransactionStoreFactory transactionStoreFactory = buildTransientTransactionStoreFactory();
+
         return StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
-                .withSnapshotSerializer(jacksonSerializer) //
-                .withTransactionSerializer(jacksonSerializer) //
-                .withSnapshotStoreFactory(transientStoreFactory) //
-                .withTransactionStoreFactory(transientStoreFactory) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withTransactionSerializer(transactionSerializer) //
+                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withTransactionStoreFactory(transactionStoreFactory) //
                 .withCommandClass(SimpleCommand.class) //
                 .withEntityClass(SimpleEntity.class) //
                 .build();

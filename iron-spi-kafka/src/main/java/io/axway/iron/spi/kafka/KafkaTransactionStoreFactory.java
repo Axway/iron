@@ -8,7 +8,7 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 public class KafkaTransactionStoreFactory implements TransactionStoreFactory {
     private final Properties m_kafkaProperties;
 
-    public KafkaTransactionStoreFactory(Properties kafkaProperties) {
+    KafkaTransactionStoreFactory(Properties kafkaProperties) {
         m_kafkaProperties = kafkaProperties;
     }
 

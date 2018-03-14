@@ -1,6 +1,7 @@
 package io.axway.iron.spi.aws;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.*;
@@ -17,13 +18,11 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.google.common.base.Preconditions;
-import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisException;
 import io.axway.iron.spi.aws.s3.AwsS3Utils;
 
-import static com.amazonaws.SDKGlobalConfiguration.*;
-import static io.axway.iron.spi.aws.AwsProperties.*;
-import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.*;
+import static io.axway.iron.spi.aws.AwsTestHelper.*;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.ACTIVE_STREAM_STATUS;
 
 /**
  * To run these tests, localstack must be started with Kinesis and S3, and localstack profile must be enabled.
@@ -34,16 +33,11 @@ public abstract class BaseInttest {
     private static final int DEFAULT_RETRY_DURATION_IN_MILLIS = 5000;
     private static final int DEFAULT_RETRY_COUNT = 5;
 
-    protected final Properties m_configuration = loadConfiguration();
+    protected final Properties m_configuration = loadConfiguration("configuration.properties");
 
     @BeforeClass
-    public void handleLocalStackConfigurationForLocalTesting() {
-        if (PropertiesHelper.isSet(m_configuration, DISABLE_VERIFY_CERTIFICATE_KEY)) {
-            System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "");
-        }
-        if (PropertiesHelper.isSet(m_configuration, DISABLE_CBOR_KEY)) {
-            System.setProperty(AWS_CBOR_DISABLE_SYSTEM_PROPERTY, "");
-        }
+    public void localTesting() {
+        handleLocalStackConfigurationForLocalTesting(m_configuration);
     }
 
     protected String createRandomStoreName() {
@@ -52,13 +46,13 @@ public abstract class BaseInttest {
     }
 
     protected void createS3Bucket(String storeName) {
-        AmazonS3 amazonS3 = AwsS3Utils.buildS3Client(m_configuration);
-        String region = PropertiesHelper.getValue(m_configuration, REGION_KEY);
+        AmazonS3 amazonS3 = buildS3Client(m_configuration);
+        String region = m_configuration.getProperty(S3_REGION);
         if (region == null) {
             region = amazonS3.getRegionName();
         }
         Preconditions.checkState(region != null && !region.trim().isEmpty(),
-                                 "Can't find aws region. Please consider setting it in configuration.properties with {} key", REGION_KEY.getPropertyKey());
+                                 "Can't find aws region. Please consider setting it in configuration.properties with {} key", S3_REGION);
         createBucketIfNotExists(amazonS3, storeName, region);
     }
 
@@ -84,7 +78,7 @@ public abstract class BaseInttest {
     }
 
     protected void deleteS3Bucket(String storeName) {
-        AmazonS3 amazonS3 = AwsS3Utils.buildS3Client(m_configuration);
+        AmazonS3 amazonS3 = buildS3Client(m_configuration);
         AwsS3Utils.deleteBucket(amazonS3, storeName);
     }
 
@@ -99,26 +93,23 @@ public abstract class BaseInttest {
         deleteStream(amazonKinesis, storeName);
     }
 
-    protected FileStoreFactory buildFileStoreFactory() {
-        return new FileStoreFactory(Paths.get("iron", "iron-spi-aws-inttest"));
+    protected Path getIronSpiAwsInttestFilePath() {
+        return Paths.get("iron", "iron-spi-aws-inttest");
     }
 
-    protected FileStoreFactory buildFileStoreFactoryNoLimitedSize() {
-        return new FileStoreFactory(Paths.get("iron", "iron-spi-aws-inttest"), null);
-    }
-
-    private Properties loadConfiguration() {
-        String resourceName = "configuration.properties";
+    public static Properties loadConfiguration(String resourceName) {
+        //String resourceName = "configuration.properties";
 
         // Try to read properties from fs
         try (FileInputStream fis = new FileInputStream(resourceName)) {
             Properties properties = new Properties();
             properties.load(fis);
+            LOG.info("Configuration file {} is used", new File(resourceName).getAbsolutePath());
             return properties;
         } catch (FileNotFoundException e) {
-            LOG.warn("Configuration file {} not found, default configuration will be used", resourceName);
+            LOG.info("Configuration file {} not found, trying default location", new File(resourceName).getAbsolutePath());
         } catch (IOException e) {
-            LOG.error("Can't read configuration file {}, error {}", resourceName, e.getMessage());
+            LOG.error("Can't read configuration file {}, error {}", new File(resourceName).getAbsolutePath(), e.getMessage());
         }
 
         // Try to read properties from classpath resources (i.e. to be used with maven's "localstack" profile)
@@ -130,12 +121,13 @@ public abstract class BaseInttest {
                 }
                 Properties properties = new Properties();
                 properties.load(resourceStream);
+                LOG.info("Configuration file {} is used", loader.getResource(resourceName).toExternalForm());
                 return properties;
             }
         } catch (IOException e) {
-            LOG.warn(
-                    "Configuration file {} not found in the classpath, AWS SDK client will be built with default configuration (Ideal to use on an ec2 instance to connect to aws infrastructure). Please consider using maven profile \"localstack\" to test locally with localstack",
-                    resourceName);
+            LOG.error("Configuration file {} not found in the classpath, AWS SDK client will be built with default configuration"
+                              + " (Ideal to use on an ec2 instance to connect to aws infrastructure)."
+                              + " Please consider using maven profile \"localstack\" to test locally with localstack", resourceName);
         }
         return new Properties();
     }

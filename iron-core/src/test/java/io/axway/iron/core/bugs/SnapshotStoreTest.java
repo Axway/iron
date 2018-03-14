@@ -12,9 +12,12 @@ import org.testng.annotations.Test;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerFactoryBuilder;
-import io.axway.iron.core.spi.file.FileStoreFactory;
-import io.axway.iron.spi.jackson.JacksonSerializer;
+import io.axway.iron.spi.serializer.SnapshotSerializer;
+import io.axway.iron.spi.serializer.TransactionSerializer;
+import io.axway.iron.spi.storage.SnapshotStoreFactory;
+import io.axway.iron.spi.storage.TransactionStoreFactory;
 
+import static io.axway.iron.core.bugs.IronTestHelper.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SnapshotStoreTest {
@@ -97,14 +100,17 @@ public class SnapshotStoreTest {
         }
     }
 
-    private StoreManager createOpenStoreManager(String storeName) throws Exception {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(m_tempDir);
+    private StoreManager createOpenStoreManager(String storeName) {
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotStoreFactory snapshotStoreFactory = buildFileSnapshotStoreFactory(m_tempDir);
+        TransactionStoreFactory transactionStoreFactory = buildFileTransactionStoreFactory(m_tempDir);
+
         StoreManagerFactoryBuilder builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
-                .withSnapshotSerializer(jacksonSerializer) //
-                .withTransactionSerializer(jacksonSerializer) //
-                .withSnapshotStoreFactory(fileStoreFactory) //
-                .withTransactionStoreFactory(fileStoreFactory);
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withTransactionSerializer(transactionSerializer) //
+                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withTransactionStoreFactory(transactionStoreFactory);
         builder.withEntityClass(SnapshotStoreEntityWithId.class).withCommandClass(SnapshotStoreCommand.class);
         return builder.build().openStore(storeName);
     }
