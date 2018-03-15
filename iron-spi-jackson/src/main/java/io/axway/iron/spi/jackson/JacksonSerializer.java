@@ -14,7 +14,7 @@ import io.axway.iron.spi.serializer.TransactionSerializer;
 public class JacksonSerializer implements TransactionSerializer, SnapshotSerializer {
     private final ObjectMapper m_objectMapper;
 
-    public JacksonSerializer() {
+    JacksonSerializer() {
         m_objectMapper = new ObjectMapper();
         m_objectMapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector(TypeFactory.defaultInstance()));
         m_objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);

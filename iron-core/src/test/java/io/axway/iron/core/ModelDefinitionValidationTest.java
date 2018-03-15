@@ -62,23 +62,30 @@ import io.axway.iron.core.model.validation.command.InvalidNullableCollectionComm
 import io.axway.iron.core.model.validation.command.InvalidNullablePrimitiveCommand;
 import io.axway.iron.core.model.validation.command.InvalidTransientNonImplementedMethodCommand;
 import io.axway.iron.core.model.validation.command.ValidCommand;
-import io.axway.iron.core.spi.testing.TransientStoreFactory;
 import io.axway.iron.error.InvalidModelException;
-import io.axway.iron.spi.jackson.JacksonSerializer;
+import io.axway.iron.spi.serializer.SnapshotSerializer;
+import io.axway.iron.spi.serializer.TransactionSerializer;
+import io.axway.iron.spi.storage.SnapshotStoreFactory;
+import io.axway.iron.spi.storage.TransactionStoreFactory;
+
+import static io.axway.iron.core.bugs.IronTestHelper.*;
 
 public class ModelDefinitionValidationTest {
 
     private StoreManagerFactoryBuilder m_builder;
 
     @BeforeMethod
-    public void setUp() throws Exception {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        TransientStoreFactory transientStoreFactory = new TransientStoreFactory();
+    public void setUp() {
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotStoreFactory snapshotStoreFactory = buildTransientSnapshotStoreFactory();
+        TransactionStoreFactory transactionStoreFactory = buildTransientTransactionStoreFactory();
+
         m_builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
-                .withSnapshotSerializer(jacksonSerializer) //
-                .withTransactionSerializer(jacksonSerializer) //
-                .withSnapshotStoreFactory(transientStoreFactory) //
-                .withTransactionStoreFactory(transientStoreFactory);
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withTransactionSerializer(transactionSerializer) //
+                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withTransactionStoreFactory(transactionStoreFactory);
     }
 
     @DataProvider(name = "invalidModels")

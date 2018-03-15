@@ -1,6 +1,6 @@
 package io.axway.iron.spi.aws.s3;
 
-import java.util.*;
+import javax.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonServiceException;
@@ -14,7 +14,6 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.S3VersionSummary;
 import com.amazonaws.services.s3.model.VersionListing;
 
-import static io.axway.iron.spi.aws.AwsProperties.*;
 import static io.axway.iron.spi.aws.AwsUtils.setAws;
 
 public class AwsS3Utils {
@@ -22,19 +21,19 @@ public class AwsS3Utils {
 
     /**
      * Create a AwsS3SnapshotStoreFactory with some properties set to configure S3 client:
-     * - aws access key (optional+) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_ACCESS_KEY_ENVVAR}
-     * - aws secret key (optional+) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_SECRET_KEY_ENVVAR}
-     * - aws region (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_REGION_ENVVAR}
-     * - s3 endpoint (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_S3_ENDPOINT_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_S3_ENDPOINT_ENVVAR}
-     * - s3 port (optional*) {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_S3_PORT_PROPERTY} / {@value io.axway.iron.spi.aws.AwsProperties.Constants#AWS_S3_PORT_ENVVAR}
+     *
+     * @param accessKey - aws access key (optional+)
+     * @param secretKey - aws secret key (optional+)
+     * @param endpoint - s3 endpoint (optional*)
+     * @param port- s3 port (optional*)
+     * @param region - aws region (optional*)
      * (+) to configure the access, both access key and secret key must be provided.
      * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
-     *
-     * @param properties the properties
      */
-    public static AmazonS3 buildS3Client(Properties properties) {
+    public static AmazonS3 buildS3Client(@Nullable String accessKey, @Nullable String secretKey, //
+                                         @Nullable String endpoint, @Nullable Integer port, @Nullable String region) {
         AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard();
-        setAws(properties, builder, S3_ENDPOINT_KEY, S3_PORT_KEY);
+        setAws(builder, accessKey, secretKey, endpoint, port, region);
         return builder.build();
     }
 

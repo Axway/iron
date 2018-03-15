@@ -1,10 +1,16 @@
 package io.axway.iron.spi.aws.kinesis;
 
 import org.testng.annotations.Test;
-import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.spi.SpiTest;
 import io.axway.iron.spi.aws.BaseInttest;
-import io.axway.iron.spi.jackson.JacksonSerializer;
+import io.axway.iron.spi.serializer.SnapshotSerializer;
+import io.axway.iron.spi.serializer.TransactionSerializer;
+import io.axway.iron.spi.storage.SnapshotStoreFactory;
+import io.axway.iron.spi.storage.TransactionStoreFactory;
+
+import static io.axway.iron.spi.aws.AwsTestHelper.buildAwsKinesisTransactionStoreFactory;
+import static io.axway.iron.spi.file.FileTestHelper.*;
+import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
 
 /**
  * Test KinesisTransactionStore and FileSnapshotStore
@@ -15,12 +21,14 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
-        FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();
-        AwsKinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = new AwsKinesisTransactionStoreFactory(m_configuration);
+        SnapshotStoreFactory fileSnapshotStoreFactory = buildFileSnapshotStoreFactory(getIronSpiAwsInttestFilePath(), null);
+        TransactionStoreFactory awsKinesisTransactionStoreFactory = buildAwsKinesisTransactionStoreFactory(m_configuration);
 
         try {
-            JacksonSerializer jacksonSerializer = new JacksonSerializer();
-            SpiTest.checkThatCreateCompanySequenceIsRight(awsKinesisTransactionStoreFactory, jacksonSerializer, fileStoreFactory, jacksonSerializer,
+            TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+            SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+            SpiTest.checkThatCreateCompanySequenceIsRight(awsKinesisTransactionStoreFactory, transactionSerializer,  //
+                                                          fileSnapshotStoreFactory, snapshotSerializer,              //
                                                           randomStoreName);
         } finally {
             deleteKinesisStream(randomStoreName);
@@ -30,10 +38,13 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
     @Test(enabled = false)
     public void shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionFileStore() throws Exception {
         String randomStoreName = createRandomStoreName();
-        FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();
+        SnapshotStoreFactory fileSnapshotStoreFactory = buildFileSnapshotStoreFactory(getIronSpiAwsInttestFilePath(), null);
+        TransactionStoreFactory fileTransactionStoreFactory = buildFileTransactionStoreFactory(getIronSpiAwsInttestFilePath(), null);
 
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(fileStoreFactory, jacksonSerializer, fileStoreFactory, jacksonSerializer,
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(fileTransactionStoreFactory, transactionSerializer,         //
+                                                                                   fileSnapshotStoreFactory, snapshotSerializer, //
                                                                                    randomStoreName);
     }
 
@@ -41,13 +52,15 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
     public void shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionKinesisStoreSample() throws Exception {
         String randomStoreName = createRandomStoreName();
         createStreamAndWaitActivation(randomStoreName);
-        FileStoreFactory fileStoreFactory = buildFileStoreFactoryNoLimitedSize();
-        AwsKinesisTransactionStoreFactory awsKinesisTransactionStoreFactory = new AwsKinesisTransactionStoreFactory(m_configuration);
+        SnapshotStoreFactory fileSnapshotStoreFactory = buildFileSnapshotStoreFactory(getIronSpiAwsInttestFilePath(), null);
+        TransactionStoreFactory awsKinesisTransactionStoreFactory = buildAwsKinesisTransactionStoreFactory(m_configuration);
 
         try {
-            JacksonSerializer jacksonSerializer = new JacksonSerializer();
-            SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(awsKinesisTransactionStoreFactory, jacksonSerializer, fileStoreFactory,
-                                                                                       jacksonSerializer, randomStoreName);
+            TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+            SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+            SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(awsKinesisTransactionStoreFactory, transactionSerializer, //
+                                                                                       fileSnapshotStoreFactory, snapshotSerializer, //
+                                                                                       randomStoreName);
         } finally {
             deleteKinesisStream(randomStoreName);
         }

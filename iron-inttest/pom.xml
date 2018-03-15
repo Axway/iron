@@ -41,6 +41,11 @@
             <artifactId>iron-spi-jackson</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.axway.iron</groupId>
+            <artifactId>iron-spi-kafka</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
