@@ -46,5 +46,4 @@ public class AwsS3Utils {
         }
         return bucketName;
     }
-
 }

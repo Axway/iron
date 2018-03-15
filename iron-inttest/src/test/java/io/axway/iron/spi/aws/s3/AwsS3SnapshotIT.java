@@ -1,18 +1,15 @@
 package io.axway.iron.spi.aws.s3;
 
 import org.testng.annotations.Test;
-import io.axway.iron.core.spi.file.FileStoreFactory;
 import io.axway.iron.spi.SpiTest;
-import io.axway.iron.spi.aws.AwsTestHelper;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.file.FileTestHelper;
-import io.axway.iron.spi.jackson.JacksonSerializer;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static io.axway.iron.spi.aws.AwsTestHelper.buildAwsS3SnapshotStoreFactory;
+import static io.axway.iron.spi.aws.AwsTestHelper.*;
 import static io.axway.iron.spi.file.FileTestHelper.buildFileTransactionStoreFactory;
 import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
 
@@ -21,7 +18,7 @@ import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
  */
 public class AwsS3SnapshotIT extends BaseInttest {
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String bucketName = initS3Configuration();
         createS3Bucket(bucketName);
@@ -40,9 +37,9 @@ public class AwsS3SnapshotIT extends BaseInttest {
         }
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshotsSample() throws Exception {
-        String storeName = initStoreName();
+        String storeName = createRandomStoreName();
 
         TransactionStoreFactory transactionStoreFactory = buildFileTransactionStoreFactory(getIronSpiAwsInttestFilePath());
         SnapshotStoreFactory snapshotStoreFactory = FileTestHelper.buildFileSnapshotStoreFactory(getIronSpiAwsInttestFilePath());
@@ -55,7 +52,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
                                                                       storeName);
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         String bucketName = initS3Configuration();
         createS3Bucket(bucketName);
@@ -66,7 +63,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
 
-        String storeName = initStoreName();
+        String storeName = createRandomStoreName();
         try {
             SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStoreFactory, transactionSerializer,    //
                                                                           s3SnapshotStoreFactory, snapshotSerializer,  //
@@ -83,17 +80,13 @@ public class AwsS3SnapshotIT extends BaseInttest {
 
     private String initBucketName() {
         String bucketName = createRandomBucketName();
-        m_configuration.setProperty(AwsTestHelper.S3_BUCKET_NAME, bucketName);
+        m_configuration.setProperty(S3_BUCKET_NAME, bucketName);
         return bucketName;
-    }
-
-    private String initStoreName() {
-        String storeName = createRandomBucketName();
-        return storeName;
     }
 
     private String initDirectoryName() {
         String directoryName = createRandomDirectoryName();
-        m_configuration.setProperty(AwsTestHelper.S3_DIRECTORY_NAME, directoryName);
+        m_configuration.get(S3_DIRECTORY_NAME);
         return directoryName;
-    }}
+    }
+}

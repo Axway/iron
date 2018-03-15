@@ -1,15 +1,13 @@
 package io.axway.iron.spi.aws.kinesis;
 
-import java.util.*;
-import org.slf4j.Logger;
 import javax.annotation.*;
+import org.slf4j.Logger;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
 import com.amazonaws.services.kinesis.model.DescribeStreamResult;
 import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
 
-import static io.axway.iron.spi.aws.AwsProperties.*;
 import static io.axway.iron.spi.aws.AwsUtils.*;
 
 /**
@@ -28,13 +26,13 @@ public class AwsKinesisUtils {
 
     /**
      * Create a AmazonKinesis client configured with some optional properties (can also be configured using environment variables):
+     *
      * @param accessKey - aws access key (optional)
      * @param secretKey - aws secret key (optional)
      * @param endpoint - kinesis endpoint (optional*)
      * @param port - kinesis port (optional*)
      * @param region - aws region (optional*)
      * (*) to configure the endpoint, endpoint, port and region must be provided.
-     *
      * @return a configured AmazonKinesis client
      */
     public static AmazonKinesis buildKinesisClient(@Nullable String accessKey, @Nullable String secretKey, //
@@ -56,10 +54,10 @@ public class AwsKinesisUtils {
         waitStreamActivation(kinesisClient, streamName, MIN_3);
     }
 
-
     /**
      * Create a stream if it does not already exist.
-     *  @param kinesis AmazonKinesis client
+     *
+     * @param kinesis AmazonKinesis client
      * @param streamName the name of the stream
      * @param logger logger
      */

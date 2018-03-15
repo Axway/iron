@@ -13,7 +13,6 @@ import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.*;
  * Kinesis transaction store factory to build Kinesis TransactionStore.
  */
 public class AwsKinesisTransactionStoreFactory implements TransactionStoreFactory {
-    public static final String ACTIVE_STREAM_STATUS = "ACTIVE";//FIXME Why ?
 
     private static final Logger LOG = LoggerFactory.getLogger(AwsKinesisTransactionStoreFactory.class);
 
@@ -28,7 +27,7 @@ public class AwsKinesisTransactionStoreFactory implements TransactionStoreFactor
      * @param endpoint kinesis port (optional*)
      * @param port kinesis endpoint (optional*)
      * @param region aws region (optional*)
-     * @param streamNamePrefix kinesis stream name prefix
+     * @param streamNamePrefix stream name prefix
      * (+) to configure the access, both access key and secret key must be provided.
      * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
      */

@@ -29,7 +29,8 @@ public class AwsS3SnapshotStoreFactory implements SnapshotStoreFactory {
      * (+) to configure the access, both access key and secret key must be provided.
      * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
      */
-    AwsS3SnapshotStoreFactory(String accessKey, String secretKey, String endpoint, Integer port, String region, String bucketName, String directoryName) {// FIXME @Nullable ?
+    AwsS3SnapshotStoreFactory(String accessKey, String secretKey, String endpoint, Integer port, String region, String bucketName,
+                              String directoryName) {// FIXME @Nullable ?
         checkState(bucketName != null && !bucketName.trim().isEmpty());
         m_amazonS3 = buildS3Client(accessKey, secretKey, endpoint, port, region);
         m_bucketName = checkBucketIsAccessible(m_amazonS3, bucketName);

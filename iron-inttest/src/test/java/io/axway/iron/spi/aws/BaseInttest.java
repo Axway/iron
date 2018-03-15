@@ -25,6 +25,7 @@ import io.axway.iron.spi.aws.kinesis.AwsKinesisException;
 import io.axway.iron.spi.aws.s3.AwsS3Exception;
 
 import static io.axway.iron.spi.aws.AwsTestHelper.*;
+import static io.axway.iron.spi.aws.AwsTestHelper.buildKinesisClient;
 import static io.axway.iron.spi.aws.AwsUtils.performAmazonActionWithRetry;
 import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.*;
 
@@ -157,6 +158,7 @@ public abstract class BaseInttest {
             }
         }
     }
+
     protected void createStreamAndWaitActivation(String storeName) {
         AmazonKinesis amazonKinesis = buildKinesisClient(m_configuration);
         String streamName = AWS_KINESIS_STREAM_NAME_PREFIX + storeName;
@@ -173,7 +175,7 @@ public abstract class BaseInttest {
         return Paths.get("iron", "iron-spi-aws-inttest");
     }
 
-    private Properties loadConfiguration(String resourceName) {
+    public static Properties loadConfiguration(String resourceName) {
         // Try to read properties from fs
         try (FileInputStream fis = new FileInputStream(resourceName)) {
             Properties properties = new Properties();

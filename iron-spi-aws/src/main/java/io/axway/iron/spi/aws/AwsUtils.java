@@ -1,8 +1,8 @@
 package io.axway.iron.spi.aws;
 
 import java.util.function.*;
-import org.slf4j.Logger;
 import javax.annotation.*;
+import org.slf4j.Logger;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
@@ -54,5 +54,4 @@ public class AwsUtils {
         } while (retryCount++ < retryLimit);
         throw new LimitExceededException("Can't do " + actionLabel + " after " + retryLimit + " retries");
     }
-
 }
