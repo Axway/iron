@@ -13,6 +13,7 @@ public class AwsS3SnapshotStoreFactoryBuilder implements Supplier<SnapshotStoreF
     private String m_endpoint;
     private Integer m_port;
     private String m_bucketName;
+    private String m_directoryName;
     private String m_region;
 
     public AwsS3SnapshotStoreFactoryBuilder setAccessKey(@Nullable String accessKey) {
@@ -40,6 +41,11 @@ public class AwsS3SnapshotStoreFactoryBuilder implements Supplier<SnapshotStoreF
         return this;
     }
 
+    public AwsS3SnapshotStoreFactoryBuilder setDirectoryName(String directoryName) {
+        m_directoryName = directoryName;
+        return this;
+    }
+
     public AwsS3SnapshotStoreFactoryBuilder setRegion(@Nullable String region) {
         m_region = region;
         return this;
@@ -47,6 +53,6 @@ public class AwsS3SnapshotStoreFactoryBuilder implements Supplier<SnapshotStoreF
 
     @Override
     public SnapshotStoreFactory get() {
-        return new AwsS3SnapshotStoreFactory(m_accessKey, m_secretKey, m_endpoint, m_port, m_region, m_bucketName);
+        return new AwsS3SnapshotStoreFactory(m_accessKey, m_secretKey, m_endpoint, m_port, m_region, m_bucketName, m_directoryName);
     }
 }

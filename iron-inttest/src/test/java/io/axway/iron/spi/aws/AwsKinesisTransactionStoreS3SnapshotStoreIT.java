@@ -12,20 +12,24 @@ import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
 
 public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
 
+    private String m_bucketName;
     private String m_storeName;
 
     @BeforeMethod
     public void createBucketAndStream() {
+        m_bucketName = createRandomBucketName();
         m_storeName = createRandomStoreName();
-        m_configuration.setProperty(S3_BUCKET_NAME, m_storeName);
+        String directoryName = createRandomDirectoryName();
+        m_configuration.setProperty(S3_DIRECTORY_NAME, directoryName);
+        m_configuration.setProperty(S3_BUCKET_NAME, m_bucketName);
         createStreamAndWaitActivation(m_storeName);
-        createS3Bucket(m_storeName);
+        createS3Bucket(m_bucketName);
     }
 
     @AfterMethod
     public void deleteBucketAndStream() {
         deleteKinesisStream(m_storeName);
-        deleteS3Bucket(m_storeName);
+        deleteS3Bucket(m_bucketName);
     }
 
     @Test(enabled = false)

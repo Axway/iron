@@ -12,6 +12,8 @@ public class AwsKinesisTransactionStoreFactoryBuilder implements Supplier<Transa
     private Integer m_port;
     private String m_region;
 
+    private String m_streamNamePrefix;
+
     public AwsKinesisTransactionStoreFactoryBuilder setAccessKey(@Nullable String accessKey) {
         m_accessKey = accessKey;
         return this;
@@ -37,8 +39,13 @@ public class AwsKinesisTransactionStoreFactoryBuilder implements Supplier<Transa
         return this;
     }
 
+    public AwsKinesisTransactionStoreFactoryBuilder setStreamNamePrefix(String streamNamePrefix) {
+        m_streamNamePrefix = streamNamePrefix;
+        return this;
+    }
+
     @Override
     public TransactionStoreFactory get() {
-        return new AwsKinesisTransactionStoreFactory(m_accessKey, m_secretKey, m_endpoint, m_port, m_region);
+        return new AwsKinesisTransactionStoreFactory(m_accessKey, m_secretKey, m_endpoint, m_port, m_region, m_streamNamePrefix);
     }
 }

@@ -18,7 +18,7 @@ import static java.util.stream.Collectors.*;
  */
 class AwsS3SnapshotStore implements SnapshotStore {
 
-    private static final String DIRECTORYNAME_FORMAT = "%s/snapshot";
+    private static final String DIRECTORYNAME_FORMAT = "%s/%s/snapshot";
     private static final String FILENAME_FORMAT = DIRECTORYNAME_FORMAT + "/%d.snapshot";
     private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]+)\\.snapshot");
     private static final String APPLICATION_JSON_CONTENT_TYPE = "application/json";
@@ -26,6 +26,7 @@ class AwsS3SnapshotStore implements SnapshotStore {
     private final AmazonS3 m_amazonS3;
     private final String m_bucketName;
     private final String m_storeName;
+    private final String m_directoryName;
     private final String m_snapshotDirName;
 
     /**
@@ -33,13 +34,15 @@ class AwsS3SnapshotStore implements SnapshotStore {
      *
      * @param amazonS3 AmazonS3 client
      * @param bucketName Bucket name
+     * @param directoryName Directory name
      * @param storeName Store name
      */
-    AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String storeName) {
+    AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String directoryName, String storeName) {
         m_amazonS3 = amazonS3;
         m_bucketName = bucketName;
         m_storeName = storeName;
-        m_snapshotDirName = getSnapshotDirectoryName();
+        m_directoryName = directoryName;
+        m_snapshotDirName = getSnapshotDirectoryName(directoryName, storeName);
     }
 
     @Override
@@ -87,10 +90,12 @@ class AwsS3SnapshotStore implements SnapshotStore {
     /**
      * Return the snapshot directory name.
      *
+     * @param directoryName
+     * @param storeName
      * @return the snapshot directory name
      */
-    private String getSnapshotDirectoryName() {
-        return String.format(DIRECTORYNAME_FORMAT, m_storeName);
+    private String getSnapshotDirectoryName(String directoryName, String storeName) {
+        return String.format(DIRECTORYNAME_FORMAT, directoryName, storeName);
     }
 
     /**
@@ -100,6 +105,6 @@ class AwsS3SnapshotStore implements SnapshotStore {
      * @return the snapshot file name
      */
     private String getSnapshotFileName(BigInteger transactionId) {
-        return String.format(FILENAME_FORMAT, m_storeName, transactionId);
+        return String.format(FILENAME_FORMAT, m_directoryName, m_storeName, transactionId);
     }
 }

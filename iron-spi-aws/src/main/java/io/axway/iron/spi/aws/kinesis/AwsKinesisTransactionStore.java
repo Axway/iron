@@ -20,8 +20,7 @@ import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
 import io.axway.iron.spi.storage.TransactionStore;
 
-import static com.google.common.base.Preconditions.*;
-import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.doesStreamExist;
+import static com.google.common.base.Preconditions.checkState;
 import static java.math.BigInteger.ZERO;
 
 /**
@@ -48,9 +47,8 @@ class AwsKinesisTransactionStore implements TransactionStore {
      * @param streamName the stream name
      */
     AwsKinesisTransactionStore(AmazonKinesis kinesis, String streamName) {
-        checkArgument(!(m_streamName = streamName.trim()).isEmpty(), "Topic name can't be null");
+        m_streamName = streamName;
         m_kinesis = kinesis;
-        checkState(doesStreamExist(m_kinesis, m_streamName), "The Kinesis Stream %s should already exist.", m_streamName);
         m_shard = getUniqueShard();
     }
 

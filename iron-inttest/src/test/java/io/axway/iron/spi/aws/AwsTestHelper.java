@@ -18,6 +18,7 @@ public class AwsTestHelper {
     public static final String KINESIS_ENDPOINT = "io.axway.iron.spi.aws.kinesis.endpoint";
     public static final String KINESIS_PORT = "io.axway.iron.spi.aws.kinesis.port";
     public static final String KINESIS_REGION = "io.axway.iron.spi.aws.kinesis.region";
+    public static final String KINESIS_STREAM_NAME_PREFIX = "io.axway.iron.spi.aws.kinesis.stream_name_prefix";
 
     public static final String S3_ACCESS_KEY = "io.axway.iron.spi.aws.kinesis.access_key";
     public static final String S3_SECRET_KEY = "io.axway.iron.spi.aws.kinesis.secret_key";
@@ -25,6 +26,7 @@ public class AwsTestHelper {
     public static final String S3_PORT = "io.axway.iron.spi.aws.s3.port";
     public static final String S3_REGION = "io.axway.iron.spi.aws.s3.region";
     public static final String S3_BUCKET_NAME = "io.axway.iron.spi.aws.s3.bucket_name";
+    public static final String S3_DIRECTORY_NAME = "io.axway.iron.spi.aws.s3.directory_name";
 
     public static final String DISABLE_VERIFY_CERTIFICATE = "io.axway.iron.spi.aws.disable_verify_certificate";
     public static final String DISABLE_CBOR = "io.axway.iron.spi.aws.kinesis.disable_cbor";
@@ -52,7 +54,7 @@ public class AwsTestHelper {
                 .setEndpoint(configuration.getProperty(KINESIS_ENDPOINT)) //
                 .setPort(Integer.valueOf(configuration.getProperty(KINESIS_PORT))) //
                 .setRegion(configuration.getProperty(KINESIS_REGION)) //
-                .get();
+                .setStreamNamePrefix(configuration.getProperty(KINESIS_STREAM_NAME_PREFIX)).get();
     }
 
     public static SnapshotStoreFactory buildAwsS3SnapshotStoreFactory(Properties configuration) {
@@ -63,6 +65,7 @@ public class AwsTestHelper {
                 .setPort(Integer.valueOf(configuration.getProperty(S3_PORT))) //
                 .setRegion(configuration.getProperty(S3_REGION)) //
                 .setBucketName(configuration.getProperty(S3_BUCKET_NAME)) //
+                .setDirectoryName(configuration.getProperty(S3_DIRECTORY_NAME)) //
                 .get();
     }
 
