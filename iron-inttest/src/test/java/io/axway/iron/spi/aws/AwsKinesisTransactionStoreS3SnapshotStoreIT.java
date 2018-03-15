@@ -6,9 +6,13 @@ import org.testng.annotations.Test;
 import io.axway.iron.spi.SpiTest;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisTransactionStoreFactory;
 import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactory;
-import io.axway.iron.spi.jackson.JacksonSerializer;
+import io.axway.iron.spi.serializer.SnapshotSerializer;
+import io.axway.iron.spi.serializer.TransactionSerializer;
 
-import static io.axway.iron.spi.aws.AwsProperties.*;
+import static io.axway.iron.spi.aws.AwsTestHelper.*;
+import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
+import static io.axway.iron.spi.aws.AwsTestHelper.*;
+
 
 public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
 
@@ -20,8 +24,8 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
         m_bucketName = createRandomBucketName();
         m_storeName = createRandomStoreName();
         String directoryName = createRandomDirectoryName();
-        m_configuration.setProperty(S3_DIRECTORY_NAME_KEY.getPropertyKey(), directoryName);
-        m_configuration.setProperty(S3_BUCKET_NAME_KEY.getPropertyKey(), m_bucketName);
+        m_configuration.setProperty(S3_DIRECTORY_NAME, directoryName);
+        m_configuration.setProperty(S3_BUCKET_NAME, m_storeName);
         createStreamAndWaitActivation(m_storeName);
         createS3Bucket(m_bucketName);
     }
@@ -34,23 +38,30 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
 
     @Test(enabled = false)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatCreateCompanySequenceIsRight(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
-                                                      new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
+
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+
+        SpiTest.checkThatCreateCompanySequenceIsRight(buildAwsKinesisTransactionStoreFactory(m_configuration), transactionSerializer,
+                                                      buildAwsS3SnapshotStoreFactory(m_configuration), snapshotSerializer, m_storeName);
     }
 
     @Test(enabled = false)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
-                                                                      new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer, m_storeName);
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+
+        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(buildAwsKinesisTransactionStoreFactory(m_configuration), transactionSerializer,
+                                                                      buildAwsS3SnapshotStoreFactory(m_configuration), snapshotSerializer, m_storeName);
     }
 
     @Test(enabled = false)
     public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStore() throws Exception {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(new AwsKinesisTransactionStoreFactory(m_configuration), jacksonSerializer,
-                                                                                   new AwsS3SnapshotStoreFactory(m_configuration), jacksonSerializer,
-                                                                                   m_storeName);
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+
+        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(buildAwsKinesisTransactionStoreFactory(m_configuration),
+                                                                                   transactionSerializer, buildAwsS3SnapshotStoreFactory(m_configuration),
+                                                                                   snapshotSerializer, m_storeName);
     }
 }

@@ -1,5 +1,6 @@
 package io.axway.iron.core.store;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import org.assertj.core.api.Assertions;
@@ -8,8 +9,12 @@ import org.testng.annotations.Test;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerFactoryBuilder;
-import io.axway.iron.core.spi.file.FileStoreFactory;
-import io.axway.iron.spi.jackson.JacksonSerializer;
+import io.axway.iron.spi.serializer.SnapshotSerializer;
+import io.axway.iron.spi.serializer.TransactionSerializer;
+import io.axway.iron.spi.storage.SnapshotStoreFactory;
+import io.axway.iron.spi.storage.TransactionStoreFactory;
+
+import static io.axway.iron.core.bugs.IronTestHelper.*;
 
 public abstract class AbstractStoreTests {
     private static final String EXECUTION_ID;
@@ -106,13 +111,18 @@ public abstract class AbstractStoreTests {
     }
 
     private StoreManager createStoreManager(StoreTest storeTest, String storeName) throws Exception {
-        JacksonSerializer jacksonSerializer = new JacksonSerializer();
-        FileStoreFactory fileStoreFactory = new FileStoreFactory(Paths.get("iron", "iron-core", "iron_tests-" + EXECUTION_ID));
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+
+        Path filePath = Paths.get("iron", "iron-core", "iron_tests-" + EXECUTION_ID);
+        SnapshotStoreFactory snapshotStoreFactory = buildFileSnapshotStoreFactory(filePath);
+        TransactionStoreFactory transactionStoreFactory = buildFileTransactionStoreFactory(filePath);
+
         StoreManagerFactoryBuilder builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
-                .withSnapshotSerializer(jacksonSerializer) //
-                .withTransactionSerializer(jacksonSerializer) //
-                .withSnapshotStoreFactory(fileStoreFactory) //
-                .withTransactionStoreFactory(fileStoreFactory);
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withTransactionSerializer(transactionSerializer) //
+                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withTransactionStoreFactory(transactionStoreFactory);
         storeTest.configure(builder);
         return builder.build().openStore(storeName);
     }
