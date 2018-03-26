@@ -20,6 +20,8 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
         <bnd.Import-Package>*</bnd.Import-Package>
+        <bnd.Export-Package>{local-packages}</bnd.Export-Package>
+        <bnd.Fragment-Host/>
     </properties>
 
     <licenses>
@@ -369,6 +371,8 @@
                             <instructions>
                                 <Bundle-DocURL>${project.url}</Bundle-DocURL>
                                 <Import-Package>javax.annotation.*;resolution:=optional,${bnd.Import-Package}</Import-Package>
+                                <Export-Package>${bnd.Export-Package}</Export-Package>
+                                <Fragment-Host>${bnd.Fragment-Host}</Fragment-Host>
                                 <SCM-Revision>${buildNumber}</SCM-Revision>
                             </instructions>
                         </configuration>
