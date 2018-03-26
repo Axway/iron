@@ -16,6 +16,8 @@
 
     <properties>
         <bnd.Import-Package>com.google.common.*;version="12.0",*</bnd.Import-Package>
+        <bnd.Fragment-Host>io.axway.iron.core</bnd.Fragment-Host>
+        <bnd.Export-Package/>
     </properties>
 
     <dependencies>
