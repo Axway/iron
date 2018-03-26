@@ -1,5 +1,6 @@
 package io.axway.iron.description;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,5 +16,6 @@ import io.axway.iron.error.UniqueConstraintViolationException;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
+@Documented
 public @interface Unique {
 }
