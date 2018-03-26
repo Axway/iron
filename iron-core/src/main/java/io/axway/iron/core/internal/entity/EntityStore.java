@@ -425,6 +425,12 @@ public class EntityStore<E> {
 
     private void recoverInstance(SerializableInstance serializableInstance) {
         long id = serializableInstance.getId();
+
+        if (id >= m_nextId.get()) {
+            throw new UnrecoverableStoreException("Instance id is greater than or equals to nextId",
+                                                  args -> args.add("instanceId", id).add("nextId", m_nextId.get()));
+        }
+
         E object = newInstance(id);
 
         Map<String, Object> values = serializableInstance.getValues();
