@@ -13,7 +13,7 @@ import io.axway.iron.core.internal.utils.proxy.ProxyFactoryBuilder;
 import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.model.transaction.SerializableCommand;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static io.axway.alf.assertion.Assertion.*;
 
 public class CommandProxyFactory {
     private static final String COMMAND_EXECUTE_METHOD = "execute";
@@ -42,7 +42,8 @@ public class CommandProxyFactory {
             throw new StoreException(e);
         }
 
-        checkArgument(executeMethod.isDefault(), "Command %s execute(ReadWriteTransaction) method has no default implementation", commandClass.getName());
+        checkArgument(executeMethod.isDefault(), "Command execute(ReadWriteTransaction) method has no default implementation",
+                      args -> args.add("commandName", commandClass.getName()));
 
         ProxyFactoryBuilder<CommandProxyContext> builder = ProxyFactoryBuilder.<CommandProxyContext>newProxyFactoryBuilder() //
                 .defaultObjectEquals() //
@@ -65,7 +66,7 @@ public class CommandProxyFactory {
     public <C extends Command<?>> C createCommand(Class<C> commandClass, Map<String, Object> parameters) {
         //noinspection unchecked
         ProxyFactory<C, CommandProxyContext> commandProxyFactory = (ProxyFactory<C, CommandProxyContext>) m_commandProxyFactories.get(commandClass);
-        checkArgument(commandProxyFactory != null, "Command %s is unknown", commandClass.getName());
+        checkNotNull(commandProxyFactory, "Command is unknown", args -> args.add("commandClass", commandClass.getName()));
         return commandProxyFactory.createProxy(new CommandProxyContext(parameters));
     }
 

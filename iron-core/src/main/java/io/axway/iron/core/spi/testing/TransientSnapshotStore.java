@@ -4,6 +4,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 import com.google.common.collect.ImmutableList;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.storage.SnapshotStore;
 
 class TransientSnapshotStore implements SnapshotStore {
@@ -20,7 +21,7 @@ class TransientSnapshotStore implements SnapshotStore {
 
     @Override
     public InputStream createSnapshotReader(BigInteger transactionId) throws IOException {
-        throw new IOException("Snapshot for transaction id=" + transactionId + " has not been found");
+        throw new StoreException("Snapshot has not been found", args -> args.add("snapshotTransactionId", transactionId));
     }
 
     @Override

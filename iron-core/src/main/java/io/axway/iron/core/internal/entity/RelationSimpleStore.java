@@ -5,7 +5,7 @@ import io.axway.iron.core.internal.definition.entity.RelationCardinality;
 import io.axway.iron.core.internal.definition.entity.RelationDefinition;
 import io.axway.iron.core.internal.utils.proxy.ProxyFactoryBuilder;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static io.axway.alf.assertion.Assertion.checkArgument;
 
 class RelationSimpleStore extends RelationStore {
     private final Map<Long, Long> m_values = new HashMap<>(); // tailId -> headId

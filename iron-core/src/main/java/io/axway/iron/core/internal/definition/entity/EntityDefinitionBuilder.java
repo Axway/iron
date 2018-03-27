@@ -18,9 +18,8 @@ import io.axway.iron.description.Id;
 import io.axway.iron.description.Unique;
 import io.axway.iron.description.hook.DSLHelper;
 import io.axway.iron.error.InvalidModelException;
-import io.axway.iron.error.StoreException;
 
-import static com.google.common.base.Preconditions.checkState;
+import static io.axway.alf.assertion.Assertion.checkState;
 import static io.axway.iron.core.internal.definition.entity.RelationCardinality.*;
 import static io.axway.iron.core.internal.utils.proxy.ProxyFactory.NO_CONTEXT;
 import static io.axway.iron.core.internal.utils.proxy.ProxyFactoryBuilder.newProxyFactoryBuilder;
@@ -56,9 +55,10 @@ public class EntityDefinitionBuilder {
             String tailRelationName = unboundedReverseRelation.getTailRelationName();
 
             EntityDefinition<?> tailEntityDefinition = entityDefinitions.get(tailEntityClass);
-            checkState(tailEntityDefinition != null, "Cannot find entity definition for entity class %s", tailEntityClass.getName());
+            checkState(tailEntityDefinition != null, "Cannot find entity definition", args -> args.add("tailEntityClass", tailEntityClass.getName()));
             RelationDefinition relationDefinition = tailEntityDefinition.getRelations().get(tailRelationName);
-            checkState(relationDefinition != null, "Cannot find relation definition %s#%s", tailEntityClass.getName(), tailRelationName);
+            checkState(relationDefinition != null, "Cannot find relation definition",
+                       args -> args.add("tailEntityClass", tailEntityClass.getName()).add("tailRelationName", tailRelationName));
 
             ReverseRelationDefinition existingReverseRelationDefinition = relationDefinition.getReverseRelationDefinition();
             if (existingReverseRelationDefinition != null) {
@@ -216,7 +216,7 @@ public class EntityDefinitionBuilder {
         try {
             defaultMethod.invoke(proxy);
         } catch (ReflectiveOperationException e) {
-            throw new StoreException(e);
+            throw new InvalidModelException(e);
         } finally {
             DSLHelper.THREAD_LOCAL_DSL_HELPER.set(null);
         }
@@ -239,7 +239,7 @@ public class EntityDefinitionBuilder {
             tailMethod = tailEntityClass.getMethod(tailMethodName);
         } catch (NoSuchMethodException e) {
             // should not happen since we retrieve the method name from the method reference
-            throw new StoreException(e);
+            throw new InvalidModelException(e);
         }
 
         Class<?> resolvedHeadEntityClass = tailMethod.getReturnType();

@@ -1,7 +1,6 @@
 package io.axway.iron.core.internal;
 
 import java.util.*;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import io.axway.iron.Command;
 import io.axway.iron.StoreManager;
@@ -20,6 +19,8 @@ import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStore;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
+
+import static io.axway.alf.assertion.Assertion.*;
 
 class StoreManagerFactoryImpl implements StoreManagerFactory {
     private final TransactionSerializer m_transactionSerializer;
@@ -47,8 +48,8 @@ class StoreManagerFactoryImpl implements StoreManagerFactory {
 
     @Override
     public StoreManager openStore(String storeName) {
-        Preconditions.checkArgument(STORE_NAME_VALIDATOR_PATTERN.matcher(storeName).matches(), "Invalid store name: %s", storeName);
-        Preconditions.checkState(m_openedStores.add(storeName), "Store %s is already open, cannot open it twice", storeName);
+        checkArgument(STORE_NAME_VALIDATOR_PATTERN.matcher(storeName).matches(), "Invalid store name", args -> args.add("storeName", storeName));
+        checkState(m_openedStores.add(storeName), "Store is already open, cannot open it twice", args -> args.add("storeName", storeName));
 
         boolean success = false;
         try {

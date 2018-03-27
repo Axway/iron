@@ -135,11 +135,25 @@
                 <artifactId>aws-java-sdk-s3</artifactId>
                 <version>1.11.301</version>
             </dependency>
+
+            <dependency>
+                <groupId>io.axway.alf</groupId>
+                <artifactId>alf-api</artifactId>
+                <version>0.7.0</version>
+            </dependency>
+
             <!-- Test -->
+            <dependency>
+                <groupId>io.axway.alf</groupId>
+                <artifactId>alf-slf4j</artifactId>
+                <version>0.7.0</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>1.7.25</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -215,8 +229,8 @@
             <artifactId>jsr305</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>io.axway.alf</groupId>
+            <artifactId>alf-api</artifactId>
         </dependency>
 
         <!-- test dependencies -->
@@ -228,6 +242,16 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.axway.alf</groupId>
+            <artifactId>alf-slf4j</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

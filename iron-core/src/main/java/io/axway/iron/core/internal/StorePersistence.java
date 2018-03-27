@@ -5,14 +5,15 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
+import io.axway.alf.log.Logger;
+import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.Command;
 import io.axway.iron.core.internal.command.CommandProxyFactory;
 import io.axway.iron.core.internal.definition.command.CommandDefinition;
 import io.axway.iron.core.internal.entity.EntityStore;
 import io.axway.iron.error.StoreException;
+import io.axway.iron.error.UnrecoverableStoreException;
 import io.axway.iron.spi.model.snapshot.SerializableSnapshot;
 import io.axway.iron.spi.model.transaction.SerializableCommand;
 import io.axway.iron.spi.model.transaction.SerializableTransaction;
@@ -21,7 +22,7 @@ import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.TransactionStore;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static io.axway.alf.assertion.Assertion.checkArgument;
 import static io.axway.iron.spi.model.snapshot.SerializableSnapshot.SNAPSHOT_MODEL_VERSION;
 import static io.axway.iron.spi.model.transaction.SerializableTransaction.TRANSACTION_MODEL_VERSION;
 import static java.util.concurrent.TimeUnit.*;
@@ -59,7 +60,7 @@ class StorePersistence {
         try (OutputStream out = m_snapshotStore.createSnapshotWriter(txId)) {
             m_snapshotSerializer.serializeSnapshot(out, serializableSnapshot);
         } catch (IOException e) {
-            throw new UncheckedIOException("Error when creating the store snapshot for transaction " + txId, e);
+            throw new StoreException("Error when creating the store snapshot", args -> args.add("transactionId", txId), e);
         }
     }
 
@@ -67,30 +68,31 @@ class StorePersistence {
         Optional<BigInteger> latestSnapshotTxId = m_snapshotStore.listSnapshots().stream().max(BigInteger::compareTo);
         if (latestSnapshotTxId.isPresent()) {
             BigInteger latestTxId = latestSnapshotTxId.get();
-            LOG.info("Recovering store from snapshot {transactionId={}}", latestTxId);
+            LOG.info("Recovering store from snapshot", args -> args.add("transactionId", latestTxId));
 
             SerializableSnapshot serializableSnapshot;
             try (InputStream in = m_snapshotStore.createSnapshotReader(latestTxId)) {
                 serializableSnapshot = m_snapshotSerializer.deserializeSnapshot(in);
             } catch (IOException e) {
-                throw new UncheckedIOException("Error occurred when recovering from latest snapshot", e);
+                throw new UnrecoverableStoreException("Error occurred when recovering from latest snapshot", e);
             }
 
             if (serializableSnapshot.getSnapshotModelVersion() != SNAPSHOT_MODEL_VERSION) {
-                throw new IllegalStateException(
-                        "Snapshot serializable model version " + serializableSnapshot.getSnapshotModelVersion() + " is not supported. Version "
-                                + SNAPSHOT_MODEL_VERSION + " is expected");
+                throw new UnrecoverableStoreException("Snapshot serializable model version is not supported",
+                                                      args -> args.add("version", serializableSnapshot.getSnapshotModelVersion())
+                                                              .add("expectedVersion", SNAPSHOT_MODEL_VERSION));
             }
 
             if (!latestTxId.equals(serializableSnapshot.getTransactionId())) {
-                throw new IllegalStateException(
-                        "Snapshot transaction id " + serializableSnapshot.getTransactionId() + " mismatch with request transaction id " + latestTxId);
+                throw new UnrecoverableStoreException("Snapshot transaction id  mismatch with request transaction id",
+                                                      args -> args.add("snapshotTransactionId", serializableSnapshot.getTransactionId())
+                                                              .add("requestTransactionId", latestTxId));
             }
 
             serializableSnapshot.getEntities().forEach(serializableEntityInstances -> {
                 String entityName = serializableEntityInstances.getEntityName();
                 EntityStore<?> entityStore = entityStoreByName.apply(entityName);
-                checkArgument(entityStore != null, "Entity name %s has not be registered in the store", entityName);
+                checkArgument(entityStore != null, "Entity has not be registered in the store", args -> args.add("entityName", entityName));
 
                 entityStore.recover(serializableEntityInstances);
             });
@@ -129,15 +131,15 @@ class StorePersistence {
             }
 
             if (serializableTransaction.getTransactionModelVersion() != TRANSACTION_MODEL_VERSION) {
-                throw new IllegalStateException(
-                        "Transaction serializable model version " + serializableTransaction.getTransactionModelVersion() + " is not supported. Version "
-                                + TRANSACTION_MODEL_VERSION + " is expected");
+                throw new StoreException("Transaction serializable model version is not supported",
+                                         args -> args.add("version", serializableTransaction.getTransactionModelVersion())
+                                                 .add("expectedVersion", TRANSACTION_MODEL_VERSION));
             }
 
             List<Command<?>> commands = serializableTransaction.getCommands().stream().map(serializableCommand -> {
                 String commandName = serializableCommand.getCommandName();
                 CommandDefinition<? extends Command<?>> commandDefinition = m_commandDefinitions.get(commandName);
-                checkArgument(commandDefinition != null, "Command name %s has not be registered in the store", commandName);
+                checkArgument(commandDefinition != null, "Command has not be registered in the store", args -> args.add("commandName", commandName));
 
                 Class<? extends Command<?>> commandClass = commandDefinition.getCommandClass();
                 return m_commandProxyFactory.createCommand(commandClass, serializableCommand.getParameters());

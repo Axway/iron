@@ -1,11 +1,10 @@
 package io.axway.iron.spi.aws;
 
 import java.io.*;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.kinesis.AmazonKinesis;
@@ -20,10 +19,12 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.S3VersionSummary;
 import com.amazonaws.services.s3.model.VersionListing;
-import com.google.common.base.Preconditions;
+import io.axway.alf.log.Logger;
+import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisException;
 import io.axway.iron.spi.aws.s3.AwsS3Exception;
 
+import static io.axway.alf.assertion.Assertion.checkState;
 import static io.axway.iron.spi.aws.AwsTestHelper.*;
 import static io.axway.iron.spi.aws.AwsTestHelper.buildKinesisClient;
 import static io.axway.iron.spi.aws.AwsUtils.performAmazonActionWithRetry;
@@ -63,8 +64,8 @@ public abstract class BaseInttest {
         if (region == null) {
             region = amazonS3.getRegionName();
         }
-        Preconditions.checkState(region != null && !region.trim().isEmpty(),
-                                 "Can't find aws region. Please consider setting it in configuration.properties with {} key", S3_REGION);
+        checkState(region != null && !region.trim().isEmpty(),
+                   "Can't find aws region. Please consider setting it in configuration.properties with " + S3_REGION + " key");
         createBucketIfNotExists(amazonS3, storeName, region);
     }
 
@@ -162,7 +163,7 @@ public abstract class BaseInttest {
     protected void createStreamAndWaitActivation(String storeName) {
         AmazonKinesis amazonKinesis = buildKinesisClient(m_configuration);
         String streamName = AWS_KINESIS_STREAM_NAME_PREFIX + storeName;
-        ensureStreamExists(amazonKinesis, streamName, LOG);
+        ensureStreamExists(amazonKinesis, streamName);
     }
 
     protected void deleteKinesisStream(String storeName) {
@@ -180,32 +181,33 @@ public abstract class BaseInttest {
         try (FileInputStream fis = new FileInputStream(resourceName)) {
             Properties properties = new Properties();
             properties.load(fis);
-            LOG.info("Configuration file {} is used", new File(resourceName).getAbsolutePath());
+            LOG.info("Configuration file loaded", args -> args.add("path", new File(resourceName).getAbsolutePath()));
             return properties;
         } catch (FileNotFoundException e) {
-            LOG.info("Configuration file {} not found, trying default location", new File(resourceName).getAbsolutePath());
+            LOG.info("Configuration file not found, trying default location", args -> args.add("path", new File(resourceName).getAbsolutePath()));
         } catch (IOException e) {
-            LOG.error("Can't read configuration file {}, error {}", new File(resourceName).getAbsolutePath(), e.getMessage());
+            throw new UncheckedIOException(e);
         }
 
         // Try to read properties from classpath resources (i.e. to be used with maven's "localstack" profile)
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        try {
-            try (InputStream resourceStream = loader.getResourceAsStream(resourceName)) {
-                if (resourceStream == null) {
-                    throw new IOException("Can't file configuration file on the classpath");
-                }
-                Properties properties = new Properties();
-                properties.load(resourceStream);
-                LOG.info("Configuration file {} is used", loader.getResource(resourceName).toExternalForm());
-                return properties;
-            }
-        } catch (IOException e) {
-            LOG.error("Configuration file {} not found in the classpath, AWS SDK client will be built with default configuration"
+        URL resource = loader.getResource(resourceName);
+        if (resource == null) {
+            LOG.error("Configuration file not found in the classpath, AWS SDK client will be built with default configuration"
                               + " (Ideal to use on an ec2 instance to connect to aws infrastructure)."
-                              + " Please consider using maven profile \"localstack\" to test locally with localstack", resourceName);
+                              + " Please consider using maven profile \"localstack\" to test locally with localstack",
+                      args -> args.add("resourceName", resourceName));
+            return new Properties();
         }
-        return new Properties();
+
+        try (InputStream resourceStream = loader.getResourceAsStream(resourceName)) {
+            Properties properties = new Properties();
+            properties.load(resourceStream);
+            LOG.info("Configuration file loaded", args -> args.add("resourceURL", resource.toExternalForm()));
+            return properties;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -223,13 +225,13 @@ public abstract class BaseInttest {
             try {
                 int httpStatusCode = kinesis.deleteStream(streamName).getSdkHttpMetadata().getHttpStatusCode();
                 if (200 != httpStatusCode) {
-                    throw new AwsKinesisException("Can't perform the action because the http status code not 200 ",
+                    throw new AwsKinesisException("Can't perform the action because the http status code is not 200 ",
                                                   args -> args.add("storeName", streamName).add("action", actionLabel).add("httpStatusCode", httpStatusCode));
                 }
             } catch (ResourceNotFoundException rnfe) {
                 // No need to delete resource doesn't even exists
             }
             return null;
-        }, DEFAULT_RETRY_COUNT, DEFAULT_RETRY_DURATION_IN_MILLIS, LOG);
+        }, DEFAULT_RETRY_COUNT, DEFAULT_RETRY_DURATION_IN_MILLIS);
     }
 }

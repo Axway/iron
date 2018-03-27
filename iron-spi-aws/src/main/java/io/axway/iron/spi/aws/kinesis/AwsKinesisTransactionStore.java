@@ -20,7 +20,7 @@ import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
 import io.axway.iron.spi.storage.TransactionStore;
 
-import static com.google.common.base.Preconditions.checkState;
+import static io.axway.alf.assertion.Assertion.checkState;
 import static java.math.BigInteger.ZERO;
 
 /**
@@ -63,7 +63,8 @@ class AwsKinesisTransactionStore implements TransactionStore {
             throw new AwsKinesisException("Stream does not exist", args -> args.add("streamName", m_streamName));
         }
         List<Shard> shards = describeStreamResult.getStreamDescription().getShards();
-        checkState(shards.size() == 1, "This Kinesis Stream %s should contain a single Shard, but it contains %d shards.", m_streamName, shards.size());
+        checkState(shards.size() == 1, "Kinesis Stream should contain only one shard",
+                   args -> args.add("streamName", m_streamName).add("shardCount", shards.size()));
         return shards.get(0);
     }
 
@@ -134,7 +135,7 @@ class AwsKinesisTransactionStore implements TransactionStore {
         if (records.isEmpty()) {
             record = null;
         } else {
-            checkState(records.size() == 1, "Kinesis should not return more than one record, and returns %d records", records.size());
+            checkState(records.size() == 1, "Kinesis should not return more than one record", args -> args.add("recordCount", records.size()));
             record = records.get(0);
         }
         return record;
@@ -153,12 +154,13 @@ class AwsKinesisTransactionStore implements TransactionStore {
                 return getRecordsResult.getRecords();
             } catch (ProvisionedThroughputExceededException e) {
                 // Too much The request rate for the stream is too high, or the requested data is too large for the available throughput. Wait to try again.
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException exception) {
-                    throw new AwsKinesisException("Interrupted while waiting provisioned throughput does no more exceed limit",
-                                                  args -> args.add("streamName", m_streamName).add("shardId", m_shard.getShardId()), exception);
-                }
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new AwsKinesisException("Interrupted while waiting provisioned throughput does no more exceed limit",
+                                              args -> args.add("streamName", m_streamName).add("shardId", m_shard.getShardId()), e);
             }
         }
     }

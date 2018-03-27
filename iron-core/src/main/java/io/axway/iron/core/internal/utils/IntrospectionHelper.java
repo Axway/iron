@@ -10,7 +10,7 @@ import io.axway.iron.core.internal.utils.proxy.ProxyFactoryBuilder;
 import io.axway.iron.error.StoreException;
 import io.axway.iron.functional.Accessor;
 
-import static com.google.common.base.Preconditions.checkState;
+import static io.axway.alf.assertion.Assertion.checkState;
 
 public class IntrospectionHelper {
     private static final Map<Class<?>, Object> DEFAULT_VALUES = ImmutableMap.<Class<?>, Object>builder() //
@@ -66,7 +66,7 @@ public class IntrospectionHelper {
         accessor.get(accessorInstance);
         Method method = methodCallRecorder.getMethod();
         if (method == null) {
-            throw new IllegalStateException("Method reference didn't call any method on the class " + clazz.getName());
+            throw new StoreException("Method reference didn't call any method on the class", args -> args.add("className", clazz.getName()));
         }
         return method;
     }

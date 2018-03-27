@@ -20,7 +20,7 @@ import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static com.google.common.base.Preconditions.checkState;
+import static io.axway.alf.assertion.Assertion.checkState;
 
 public class StoreManagerFactoryBuilderImpl implements StoreManagerFactoryBuilder {
 
@@ -41,13 +41,13 @@ public class StoreManagerFactoryBuilderImpl implements StoreManagerFactoryBuilde
 
     @Override
     public StoreManagerFactoryBuilder withEntityClass(Class<?> entityClass) {
-        checkState(m_entityClasses.add(entityClass), "Entity class %s has been already added", entityClass.getName());
+        checkState(m_entityClasses.add(entityClass), "Entity class has been already added", args -> args.add("entityClass", entityClass.getName()));
         return this;
     }
 
     @Override
     public <T> StoreManagerFactoryBuilder withCommandClass(Class<? extends Command<T>> commandClass) {
-        checkState(m_commandClasses.add(commandClass), "Command class %s has been already added", commandClass.getName());
+        checkState(m_commandClasses.add(commandClass), "Command class %s has been already added", args -> args.add("commandClass", commandClass.getName()));
         return this;
     }
 

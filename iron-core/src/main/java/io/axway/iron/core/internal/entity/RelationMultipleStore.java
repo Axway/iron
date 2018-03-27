@@ -8,7 +8,7 @@ import io.axway.iron.core.internal.definition.entity.RelationCardinality;
 import io.axway.iron.core.internal.definition.entity.RelationDefinition;
 import io.axway.iron.core.internal.utils.proxy.ProxyFactoryBuilder;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static io.axway.alf.assertion.Assertion.checkArgument;
 
 class RelationMultipleStore extends RelationStore {
     private final Multimap<Long, Long> m_values = TreeMultimap.create(); // tailId -> headIds

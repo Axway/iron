@@ -4,7 +4,6 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 import javax.annotation.*;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -15,6 +14,7 @@ import io.axway.iron.core.internal.definition.entity.RelationCardinality;
 import io.axway.iron.core.internal.definition.entity.RelationDefinition;
 import io.axway.iron.core.internal.utils.proxy.ProxyFactory;
 import io.axway.iron.error.NonnullConstraintViolationException;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.error.UniqueConstraintViolationException;
 import io.axway.iron.error.UnrecoverableStoreException;
 import io.axway.iron.spi.model.snapshot.SerializableAttributeDefinition;
@@ -22,6 +22,8 @@ import io.axway.iron.spi.model.snapshot.SerializableEntity;
 import io.axway.iron.spi.model.snapshot.SerializableInstance;
 import io.axway.iron.spi.model.snapshot.SerializableRelationCardinality;
 import io.axway.iron.spi.model.snapshot.SerializableRelationDefinition;
+
+import static io.axway.alf.assertion.Assertion.checkArgument;
 
 public class EntityStore<E> {
     private final EntityDefinition<E> m_entityDefinition;
@@ -84,7 +86,8 @@ public class EntityStore<E> {
             return getById((Long) value);
         }
         Map<?, Long> index = m_uniquesIndex.get(propertyName);
-        Preconditions.checkArgument(index != null, "%s#%s is not unique and cannot be used with get method", m_entityName, propertyName);
+        checkArgument(index != null, "Cannot use get method on a non unique property",
+                      args -> args.add("entityName", m_entityName).add("propertyName", propertyName));
         Long instanceId = index.get(value);
         if (instanceId != null) {
             InstanceProxy instance = m_instancesById.get(instanceId);
@@ -142,7 +145,7 @@ public class EntityStore<E> {
                     oldValue = relationMultipleStore.clear(instance.__id());
                 }
             } else {
-                throw new IllegalStateException(String.format("%s#%s not found or not updatable", m_entityName, propertyName));
+                throw new StoreException("Property not found or not updatable", args -> args.add("entityName", m_entityName).add("propertyName", propertyName));
             }
         }
         return oldValue;

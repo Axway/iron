@@ -12,8 +12,8 @@ import java.util.*;
 import java.util.function.*;
 import java.util.regex.*;
 import javax.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.axway.alf.log.Logger;
+import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.core.StoreManagerFactoryBuilder;
 import io.axway.iron.error.ConfigurationException;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
@@ -49,10 +49,11 @@ public class StoreManagerFactoryBuilderConfigurator {
                     if (Supplier.class.isAssignableFrom(clazz)) {
                         Type type = ((ParameterizedType) clazz.getGenericInterfaces()[0]).getActualTypeArguments()[0];
                         if (map.containsKey(type)) {
-                            LOG.warn("A {} is already configured (with {})", type.getTypeName(), map.get(type).supplierClass().getName());
+                            LOG.warn("Supplier is already defined",
+                                     args -> args.add("supplierType", type.getTypeName()).add("existingSupplier", map.get(type).supplierClass().getName()));
                         }
                         BuilderImplConfig builderImplConfig = new BuilderImplConfig(clazz, propertyName);
-                        LOG.info("Adding the configured class in the builder list: {{}: {}}", type.getTypeName(), className);
+                        LOG.info("Adding a supplier", args -> args.add("supplierType", type.getTypeName()).add("addedSupplier", className));
                         map.put(type, builderImplConfig);
                     }
                 } catch (ClassNotFoundException e) {
@@ -69,21 +70,15 @@ public class StoreManagerFactoryBuilderConfigurator {
             Supplier<?> builder = constructor.newInstance();
 
             for (Method method : componentBuilderClazz.getDeclaredMethods()) {
-                if (method.getName().startsWith("set")) {
-                    Class<?>[] parameterTypes = method.getParameterTypes();
-                    if (parameterTypes.length == 1) {
-                        String propertyName = method.getName().substring(3);
-                        Object value = getPropertyValue(parameterTypes[0], properties, baseName, propertyName);
-                        if (isMandatory(method) && (value == null || UNKNOWN_KEY.equals(value))) {
-                            throw new ConfigurationException(
-                                    "Parameter '" + propertyName + "' for '" + componentBuilderClazz.getClass().getCanonicalName() + "' is mandatory!");
-                        } else if (!UNKNOWN_KEY.equals(value)) { // do not call setter if the key was absent from properties
-                            method.invoke(builder, value);
-                        }
-                    } else {
-                        throw new ConfigurationException(
-                                "The configured builder has setters with more than one parameter" + " {" + componentBuilderClazz.getName() + "." + method
-                                        .getName() + "}");
+                Class<?>[] parameterTypes = method.getParameterTypes();
+                if (method.getName().startsWith("set") && (parameterTypes.length == 1)) {
+                    String propertyName = method.getName().substring(3);
+                    Object value = getPropertyValue(parameterTypes[0], properties, baseName, propertyName);
+                    if (isMandatory(method) && (value == null || UNKNOWN_KEY.equals(value))) {
+                        throw new ConfigurationException("A mandatory parameter is missing for builder", //
+                                                         args -> args.add("builder", componentBuilderClazz.getName()).add("propertyName", propertyName));
+                    } else if (!UNKNOWN_KEY.equals(value)) { // do not call setter if the key was absent from properties
+                        method.invoke(builder, value);
                     }
                 }
             }
@@ -174,7 +169,7 @@ public class StoreManagerFactoryBuilderConfigurator {
     @SuppressWarnings("unchecked")
     private void buildAndAssign(Supplier<?> builder, Type type, StoreManagerFactoryBuilder storeManagerFactoryBuilder) {
         Object component = builder.get();
-        Class typeClass = (Class) type;
+        Class<?> typeClass = (Class<?>) type;
         if (typeClass.isAssignableFrom(TransactionSerializer.class)) {
             storeManagerFactoryBuilder.withTransactionSerializer((TransactionSerializer) component);
         } else if (typeClass.isAssignableFrom(TransactionStoreFactory.class)) {
@@ -184,24 +179,24 @@ public class StoreManagerFactoryBuilderConfigurator {
         } else if (typeClass.isAssignableFrom(SnapshotStoreFactory.class)) {
             storeManagerFactoryBuilder.withSnapshotStoreFactory((SnapshotStoreFactory) component);
         } else {
-            LOG.error("The configured component builder does not provide supported class {}", component.getClass().getName());
+            LOG.error("Supplier type is not supported", args -> args.add("supplierType", typeClass).add("supplier", component.getClass().getName()));
         }
     }
 
-    private class BuilderImplConfig {
+    private static class BuilderImplConfig {
         private Class<Supplier<?>> m_supplierClass;
         private String m_baseName;
 
-        public BuilderImplConfig(Class<Supplier<?>> supplierClass, String baseName) {
+        BuilderImplConfig(Class<Supplier<?>> supplierClass, String baseName) {
             m_supplierClass = supplierClass;
             m_baseName = baseName;
         }
 
-        public Class<Supplier<?>> supplierClass() {
+        Class<Supplier<?>> supplierClass() {
             return m_supplierClass;
         }
 
-        public String baseName() {
+        String baseName() {
             return m_baseName;
         }
     }

@@ -2,13 +2,16 @@ package io.axway.iron.spi.aws;
 
 import java.util.function.*;
 import javax.annotation.*;
-import org.slf4j.Logger;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.kinesis.model.LimitExceededException;
+import io.axway.alf.log.Logger;
+import io.axway.alf.log.LoggerFactory;
 
 public class AwsUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AwsUtils.class);
 
     public static void setAws(AwsClientBuilder builder, //
                               @Nullable String accessKey, @Nullable String secretKey, //
@@ -33,10 +36,9 @@ public class AwsUtils {
      * @param action the action to retry
      * @param retryLimit retry number limit
      * @param durationInMillis duration between each retry
-     * @param logger logger
      * @throws LimitExceededException after retry exhausted
      */
-    public static void performAmazonActionWithRetry(String actionLabel, Supplier<Void> action, int retryLimit, int durationInMillis, Logger logger) {
+    public static void performAmazonActionWithRetry(String actionLabel, Supplier<Void> action, int retryLimit, int durationInMillis) {
         int retryCount = 0;
         do {
             try {
@@ -44,14 +46,15 @@ public class AwsUtils {
                 return;
             } catch (LimitExceededException lee) {
                 // We should just wait a little time before trying again
-                logger.debug("LimitExceededException while doing " + actionLabel + " will retry " + (retryLimit - retryCount) + " times");
+                int remainingRetries = retryLimit - retryCount;
+                LOG.debug("LimitExceededException caught", args -> args.add("action", actionLabel).add("remainingRetryCount", remainingRetries));
             }
             try {
+                LOG.debug("Throttling", args -> args.add("action", actionLabel).add("durationMs", durationInMillis));
                 Thread.sleep(durationInMillis);
-                logger.debug("Throttling {} for {} ms", actionLabel, durationInMillis);
             } catch (InterruptedException ignored) {
             }
         } while (retryCount++ < retryLimit);
-        throw new LimitExceededException("Can't do " + actionLabel + " after " + retryLimit + " retries");
+        throw new AwsException("Limit exceeded, all retries failed", args -> args.add("action", actionLabel).add("retryLimit", retryLimit));
     }
 }
