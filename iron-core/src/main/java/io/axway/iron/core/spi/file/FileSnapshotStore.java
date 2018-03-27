@@ -2,7 +2,6 @@ package io.axway.iron.core.spi.file;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.*;
@@ -37,7 +36,7 @@ class FileSnapshotStore implements SnapshotStore {
         Path tmpSnapshotFile = m_snapshotTmpDir.resolve(snapshotFileName);
         Path finalSnapshotFile = m_snapshotDir.resolve(snapshotFileName);
 
-        return new BufferedOutputStream(Files.newOutputStream(tmpSnapshotFile)) {
+        return new BufferedOutputStream(newOutputStream(tmpSnapshotFile)) {
             @Override
             public void close() throws IOException {
                 super.close();
@@ -49,7 +48,7 @@ class FileSnapshotStore implements SnapshotStore {
     @Override
     public InputStream createSnapshotReader(BigInteger transactionId) throws IOException {
         Path snapshotFile = m_snapshotDir.resolve(getSnapshotFileName(transactionId));
-        return new BufferedInputStream(Files.newInputStream(snapshotFile));
+        return new BufferedInputStream(newInputStream(snapshotFile));
     }
 
     @Override
