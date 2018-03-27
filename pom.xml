@@ -96,7 +96,6 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>3.0.2</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -108,33 +107,33 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.9.4</version>
+                <version>2.9.5</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>2.9.4</version>
+                <version>2.9.5</version>
             </dependency>
             <dependency>
                 <groupId>net.openhft</groupId>
                 <artifactId>chronicle-queue</artifactId>
-                <version>4.6.61</version>
+                <version>4.6.75</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
             <!-- Amazon AWS -->
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-kinesis</artifactId>
-                <version>1.11.268</version>
+                <version>1.11.301</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-s3</artifactId>
-                <version>1.11.268</version>
+                <version>1.11.301</version>
             </dependency>
             <!-- Test -->
             <dependency>
@@ -151,13 +150,13 @@
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
-                <version>6.13.1</version>
+                <version>6.14.2</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
-                <version>3.9.0</version>
+                <version>3.9.1</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -214,7 +213,6 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -269,7 +267,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-help-plugin</artifactId>
-                    <version>2.2</version>
+                    <version>3.0.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
@@ -293,11 +291,11 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.20.1</version>
+                    <version>2.21.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>2.20.1</version>
+                    <version>2.21.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>
@@ -322,7 +320,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.0</version>
+                    <version>0.8.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.sonatype.plugins</groupId>
@@ -369,10 +367,10 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <Bundle-DocURL>${project.url}</Bundle-DocURL>
                                 <Import-Package>javax.annotation.*;resolution:=optional,${bnd.Import-Package}</Import-Package>
                                 <Export-Package>${bnd.Export-Package}</Export-Package>
                                 <Fragment-Host>${bnd.Fragment-Host}</Fragment-Host>
+                                <Bundle-DocURL>${project.url}</Bundle-DocURL>
                                 <SCM-Revision>${buildNumber}</SCM-Revision>
                             </instructions>
                         </configuration>
