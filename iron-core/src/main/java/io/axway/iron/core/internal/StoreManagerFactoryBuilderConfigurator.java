@@ -3,6 +3,7 @@ package io.axway.iron.core.internal;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -19,7 +20,6 @@ import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import static java.util.Arrays.*;
 
@@ -47,7 +47,7 @@ public class StoreManagerFactoryBuilderConfigurator {
                 try {
                     Class clazz = Class.forName(className);
                     if (Supplier.class.isAssignableFrom(clazz)) {
-                        Type type = ((ParameterizedTypeImpl) clazz.getGenericInterfaces()[0]).getActualTypeArguments()[0];
+                        Type type = ((ParameterizedType) clazz.getGenericInterfaces()[0]).getActualTypeArguments()[0];
                         if (map.containsKey(type)) {
                             LOG.warn("A {} is already configured (with {})", type.getTypeName(), map.get(type).supplierClass().getName());
                         }
