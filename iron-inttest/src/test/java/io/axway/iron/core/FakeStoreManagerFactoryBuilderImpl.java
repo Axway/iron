@@ -7,7 +7,7 @@ import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static com.google.common.base.Preconditions.checkState;
+import static io.axway.alf.assertion.Assertion.checkState;
 
 public class FakeStoreManagerFactoryBuilderImpl implements StoreManagerFactoryBuilder {
     public TransactionSerializer m_transactionSerializer;

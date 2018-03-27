@@ -13,7 +13,7 @@ public class AwsS3UtilsTest {
     @Mocked
     private AmazonS3 m_amazonS3;
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Bucket is not accessible \\{bucketName: \"myBucketName\"\\}")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Bucket is not accessible.*")
     public void shouldFindNoS3Bucket() {
         new StrictExpectations() {{
             m_amazonS3.headBucket((HeadBucketRequest) any);
@@ -33,7 +33,7 @@ public class AwsS3UtilsTest {
         AwsS3Utils.checkBucketIsAccessible(m_amazonS3, "myBucketName");
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Bucket is not accessible \\{bucketName: \"myBucketName\"\\}")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Bucket is not accessible.*")
     public void shouldThrowAnExceptionWhenNoS3BucketFound() {
         new StrictExpectations() {{
             m_amazonS3.headBucket((HeadBucketRequest) any);

@@ -6,10 +6,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
 import javax.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.axway.alf.log.Logger;
+import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.Command;
 import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
@@ -19,10 +19,11 @@ import io.axway.iron.core.internal.entity.EntityStoreManager;
 import io.axway.iron.core.internal.transaction.ReadOnlyTransactionImpl;
 import io.axway.iron.core.internal.transaction.ReadWriteTransactionImpl;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
-import io.axway.iron.error.StoreException;
+import io.axway.iron.error.MalformedCommandException;
+import io.axway.iron.error.UnrecoverableStoreException;
 import io.axway.iron.functional.Accessor;
 
-import static com.google.common.base.Preconditions.checkState;
+import static io.axway.alf.assertion.Assertion.checkState;
 
 class StoreManagerImpl implements StoreManager {
     private static final Logger LOG = LoggerFactory.getLogger(io.axway.iron.core.internal.StoreManagerImpl.class);
@@ -71,9 +72,9 @@ class StoreManagerImpl implements StoreManager {
                 m_store.begin().submit().get();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new StoreException(e);
+                throw new UnrecoverableStoreException(e);
             } catch (ExecutionException e) {
-                throw new StoreException(e);
+                throw new UnrecoverableStoreException(e);
             }
             snapshot();
         }
@@ -82,7 +83,7 @@ class StoreManagerImpl implements StoreManager {
             m_transactionRecoveryDone.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new StoreException(e);
+            throw new UnrecoverableStoreException(e);
         }
     }
 
@@ -149,8 +150,9 @@ class StoreManagerImpl implements StoreManager {
                         int activeObjectUpdaterCount = tx.getActiveObjectUpdaterCount();
                         if (activeObjectUpdaterCount > 0) {
                             String commandName = m_commandProxyFactory.getCommandName(command);
-                            throw new IllegalStateException("Command '" + commandName + "' leaves " + activeObjectUpdaterCount
-                                                                    + " active ObjectUpdater. Command need to be fixed, transaction rollback");
+                            throw new MalformedCommandException(
+                                    "Command leaves some active ObjectUpdater. Command need to be fixed. Transaction has been rollbacked",
+                                    args -> args.add("commandName", commandName).add("activeObjectUpdaterCount", activeObjectUpdaterCount));
                         }
                     }
                 } catch (Exception e) {
@@ -162,7 +164,7 @@ class StoreManagerImpl implements StoreManager {
                 }
 
                 if (error != null) {
-                    LOG.info("Transaction failed and rollbacked {transactionId={}}", txId, error);
+                    LOG.info("Transaction failed and rollbacked", args -> args.add("transactionId", txId), error);
                 }
 
                 String synchronizationId = transactionToExecute.getSynchronizationId();
@@ -286,7 +288,8 @@ class StoreManagerImpl implements StoreManager {
 
         private void setParameter(String parameterName, Object value) {
             // TODO ensure value class
-            checkState(m_parameters.putIfAbsent(parameterName, value) == null, "Command parameter %s is already set", parameterName);
+            checkState(m_parameters.putIfAbsent(parameterName, value) == null, "Command parameter is already set",
+                       args -> args.add("parameterName", parameterName));
         }
 
         @Override

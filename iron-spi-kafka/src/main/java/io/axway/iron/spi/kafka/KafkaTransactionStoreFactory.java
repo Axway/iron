@@ -5,6 +5,8 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import io.axway.iron.spi.storage.TransactionStore;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
+import static io.axway.alf.assertion.Assertion.checkNotNullNorEmpty;
+
 public class KafkaTransactionStoreFactory implements TransactionStoreFactory {
     private final Properties m_kafkaProperties;
 
@@ -14,10 +16,13 @@ public class KafkaTransactionStoreFactory implements TransactionStoreFactory {
 
     @Override
     public TransactionStore createTransactionStore(String storeName) {
-        //we create the topic first as a workaround of bug https://issues.apache.org/jira/browse/KAFKA-3727
-        createKafkaTopic(m_kafkaProperties, storeName);
+        String topicName = storeName.trim();
+        checkNotNullNorEmpty(topicName, "Topic name can't be null or empty");
 
-        return new KafkaTransactionStore(m_kafkaProperties, storeName);
+        //we create the topic first as a workaround of bug https://issues.apache.org/jira/browse/KAFKA-3727
+        createKafkaTopic(m_kafkaProperties, topicName);
+
+        return new KafkaTransactionStore(m_kafkaProperties, topicName);
     }
 
     private void createKafkaTopic(Properties kafkaProperties, String topicName) {

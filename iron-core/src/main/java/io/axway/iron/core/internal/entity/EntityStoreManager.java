@@ -12,7 +12,7 @@ public class EntityStoreManager {
 
     public EntityStoreManager(Collection<EntityStore<?>> unsortedEntityStores) {
         List<EntityStore<?>> entityStores = new ArrayList<>(unsortedEntityStores);
-        Collections.sort(entityStores, Comparator.comparing(s -> s.getEntityDefinition().getEntityName()));
+        entityStores.sort(Comparator.comparing(s -> s.getEntityDefinition().getEntityName()));
         m_entityStores = ImmutableList.copyOf(entityStores);
 
         ImmutableMap.Builder<Class<?>, EntityStore<?>> entityStoresByClass = ImmutableMap.builder();
@@ -32,7 +32,7 @@ public class EntityStoreManager {
     public <E> EntityStore<E> getEntityStore(Class<E> entityClass) {
         EntityStore<?> entityStore = m_entityStoresByClass.get(entityClass);
         if (entityStore == null) {
-            throw new StoreException("Unknown entity class: " + entityClass.getName());
+            throw new StoreException("Unknown entity class", args -> args.add("entityClass", entityClass.getName()));
         }
         //noinspection unchecked
         return (EntityStore<E>) entityStore;
@@ -41,7 +41,7 @@ public class EntityStoreManager {
     public EntityStore<?> getEntityStore(String entityName) {
         EntityStore<?> entityStore = m_entityStoresByName.get(entityName);
         if (entityStore == null) {
-            throw new StoreException("Unknown entity name: " + entityName);
+            throw new StoreException("Unknown entity name", args -> args.add("entityName", entityName));
         }
         return entityStore;
     }

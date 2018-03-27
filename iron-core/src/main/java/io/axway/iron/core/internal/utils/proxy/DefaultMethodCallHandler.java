@@ -6,7 +6,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import io.axway.iron.error.StoreException;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static io.axway.alf.assertion.Assertion.checkArgument;
 
 class DefaultMethodCallHandler {
     private static final Constructor<MethodHandles.Lookup> METHOD_HANDLES_LOOKUP_CONSTRUCTOR;
@@ -26,7 +26,7 @@ class DefaultMethodCallHandler {
     }
 
     static <T> MethodCallHandler<T> createDefaultMethodCallHandler(Method defaultMethod) {
-        checkArgument(defaultMethod.isDefault(), "Method %s is not a default method", defaultMethod);
+        checkArgument(defaultMethod.isDefault(), "Method is not a default method", args -> args.add("method", defaultMethod));
 
         Class<?> declaringClass = defaultMethod.getDeclaringClass();
         MethodHandle methodHandle;

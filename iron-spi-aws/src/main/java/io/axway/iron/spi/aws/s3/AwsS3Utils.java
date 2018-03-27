@@ -1,8 +1,6 @@
 package io.axway.iron.spi.aws.s3;
 
 import javax.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -11,7 +9,6 @@ import com.amazonaws.services.s3.model.HeadBucketRequest;
 import static io.axway.iron.spi.aws.AwsUtils.setAws;
 
 public class AwsS3Utils {
-    private static final Logger LOG = LoggerFactory.getLogger(AwsS3Utils.class);
 
     /**
      * Create a AwsS3SnapshotStoreFactory with some properties set to configure S3 client:

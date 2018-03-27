@@ -2,6 +2,8 @@ package io.axway.iron.core;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import io.axway.alf.exception.IllegalArgumentFormattedException;
+import io.axway.alf.exception.IllegalStateFormattedException;
 import io.axway.iron.StoreManager;
 import io.axway.iron.StoreManagerFactory;
 import io.axway.iron.core.model.simple.SimpleCommand;
@@ -33,7 +35,7 @@ public class StoreManagerFactoryTest {
         };
     }
 
-    @Test(dataProvider = "duplicates", expectedExceptions = IllegalStateException.class)
+    @Test(dataProvider = "duplicates", expectedExceptions = IllegalStateFormattedException.class)
     public void shouldBuilderNotAcceptDuplicateCalls(Runnable r) {
         r.run();
         r.run();
@@ -48,7 +50,7 @@ public class StoreManagerFactoryTest {
         };
     }
 
-    @Test(dataProvider = "configuredElements", expectedExceptions = IllegalStateException.class)
+    @Test(dataProvider = "configuredElements", expectedExceptions = IllegalStateFormattedException.class)
     public void shouldBuilderNotAcceptIncompleteConfiguration(boolean b1, boolean b2, boolean b3, boolean b4) {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
@@ -104,7 +106,7 @@ public class StoreManagerFactoryTest {
         };
     }
 
-    @Test(dataProvider = "invalidStoreNames", expectedExceptions = IllegalArgumentException.class)
+    @Test(dataProvider = "invalidStoreNames", expectedExceptions = IllegalArgumentFormattedException.class)
     public void shouldNotOpenStoreWithInvalidName(String storeName) {
         //noinspection EmptyTryBlock
         try (StoreManager ignored = createStoreManagerFactory().openStore(storeName)) {
@@ -118,7 +120,7 @@ public class StoreManagerFactoryTest {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateFormattedException.class)
     public void shouldFailWhenOpeningStoreTwiceAtSameTime() {
         StoreManagerFactory factory = createStoreManagerFactory();
 

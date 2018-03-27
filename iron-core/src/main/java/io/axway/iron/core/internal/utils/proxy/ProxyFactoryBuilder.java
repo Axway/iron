@@ -26,7 +26,7 @@ public class ProxyFactoryBuilder<C> {
 
     private final ImmutableMap.Builder<Method, MethodCallHandler<C>> m_builder = ImmutableMap.builder();
     private MethodCallHandler<C> m_unhandledMethodCallHandler = (ctx, proxy, method, args) -> {
-        throw new IllegalStateException("Method " + method + "  is not implemented by this proxy");
+        throw new StoreException("Method is not implemented by this proxy", a -> a.add("methodName", method));
     };
 
     public static <C> ProxyFactoryBuilder<C> newProxyFactoryBuilder() {

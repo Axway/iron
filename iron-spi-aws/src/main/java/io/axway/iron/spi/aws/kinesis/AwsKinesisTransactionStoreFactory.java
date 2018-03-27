@@ -1,20 +1,16 @@
 package io.axway.iron.spi.aws.kinesis;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import io.axway.iron.spi.storage.TransactionStore;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static io.axway.alf.assertion.Assertion.checkNotNullNorEmpty;
 import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.*;
 
 /**
  * Kinesis transaction store factory to build Kinesis TransactionStore.
  */
 public class AwsKinesisTransactionStoreFactory implements TransactionStoreFactory {
-
-    private static final Logger LOG = LoggerFactory.getLogger(AwsKinesisTransactionStoreFactory.class);
 
     private final AmazonKinesis m_kinesisClient;
     private final String m_streamNamePrefix;
@@ -38,9 +34,10 @@ public class AwsKinesisTransactionStoreFactory implements TransactionStoreFactor
 
     @Override
     public TransactionStore createTransactionStore(String storeName) {
-        checkArgument(!(storeName = storeName.trim()).isEmpty(), "Store name can't be null");
+        storeName = storeName.trim();
+        checkNotNullNorEmpty(storeName, "Store name can't be null or empty");
         String streamName = (m_streamNamePrefix != null ? m_streamNamePrefix : "") + storeName;
-        ensureStreamExists(m_kinesisClient, streamName, LOG);
+        ensureStreamExists(m_kinesisClient, streamName);
         return new AwsKinesisTransactionStore(m_kinesisClient, streamName);
     }
 }

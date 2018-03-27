@@ -1,7 +1,6 @@
 package io.axway.iron.spi.aws.kinesis;
 
 import javax.annotation.*;
-import org.slf4j.Logger;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
@@ -17,7 +16,7 @@ public class AwsKinesisUtils {
     /**
      * Stream Status when the steam is active.
      */
-    public static final String ACTIVE_STREAM_STATUS = "ACTIVE";
+    static final String ACTIVE_STREAM_STATUS = "ACTIVE";
 
     public static final int DEFAULT_RETRY_DURATION_IN_MILLIS = 5000;
     public static final int DEFAULT_RETRY_COUNT = 5;
@@ -47,10 +46,9 @@ public class AwsKinesisUtils {
      *
      * @param kinesisClient Kinesis client
      * @param streamName Stream name
-     * @param logger logger
      */
-    public static void ensureStreamExists(AmazonKinesis kinesisClient, String streamName, Logger logger) {
-        createStreamIfNotExists(kinesisClient, streamName, 1, logger);
+    public static void ensureStreamExists(AmazonKinesis kinesisClient, String streamName) {
+        createStreamIfNotExists(kinesisClient, streamName, 1);
         waitStreamActivation(kinesisClient, streamName, MIN_3);
     }
 
@@ -59,9 +57,8 @@ public class AwsKinesisUtils {
      *
      * @param kinesis AmazonKinesis client
      * @param streamName the name of the stream
-     * @param logger logger
      */
-    private static void createStreamIfNotExists(AmazonKinesis kinesis, String streamName, int shardCount, Logger logger) {
+    private static void createStreamIfNotExists(AmazonKinesis kinesis, String streamName, int shardCount) {
         performAmazonActionWithRetry("createStream", () -> {
             DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest().withStreamName(streamName).withLimit(1);
             try {
@@ -70,7 +67,7 @@ public class AwsKinesisUtils {
                 kinesis.createStream(streamName, shardCount);
             }
             return null;
-        }, DEFAULT_RETRY_COUNT, DEFAULT_RETRY_DURATION_IN_MILLIS, logger);
+        }, DEFAULT_RETRY_COUNT, DEFAULT_RETRY_DURATION_IN_MILLIS);
     }
 
     /**

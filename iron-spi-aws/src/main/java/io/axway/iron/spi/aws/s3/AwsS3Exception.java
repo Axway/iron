@@ -1,23 +1,23 @@
 package io.axway.iron.spi.aws.s3;
 
 import java.util.function.*;
-import io.axway.iron.error.StoreException;
+import io.axway.alf.Arguments;
+import io.axway.iron.spi.aws.AwsException;
 
-public class AwsS3Exception extends StoreException {
-
+public class AwsS3Exception extends AwsException {
     public AwsS3Exception() {
-    }
-
-    public AwsS3Exception(String message) {
-        super(message);
     }
 
     public AwsS3Exception(Throwable cause) {
         super(cause);
     }
 
-    public AwsS3Exception(Throwable cause, String message) {
-        super(cause, message);
+    public AwsS3Exception(String message) {
+        super(message);
+    }
+
+    public AwsS3Exception(String message, Throwable cause) {
+        super(message, cause);
     }
 
     public AwsS3Exception(String message, Consumer<Arguments> args) {

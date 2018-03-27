@@ -8,7 +8,7 @@ import io.axway.iron.core.internal.entity.EntityStoreManager;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.functional.Accessor;
 
-import static com.google.common.base.Preconditions.checkState;
+import static io.axway.alf.assertion.Assertion.checkState;
 
 public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements ReadWriteTransaction {
     private final List<Runnable> m_rollbackActions = new ArrayList<>();

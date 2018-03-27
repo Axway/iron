@@ -4,7 +4,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
 
-import static com.google.common.base.Preconditions.checkState;
 import static io.axway.iron.spi.aws.s3.AwsS3Utils.*;
 
 /**
@@ -31,10 +30,8 @@ public class AwsS3SnapshotStoreFactory implements SnapshotStoreFactory {
      */
     AwsS3SnapshotStoreFactory(String accessKey, String secretKey, String endpoint, Integer port, String region, String bucketName,
                               String directoryName) {// FIXME @Nullable ?
-        checkState(bucketName != null && !bucketName.trim().isEmpty());
         m_amazonS3 = buildS3Client(accessKey, secretKey, endpoint, port, region);
         m_bucketName = checkBucketIsAccessible(m_amazonS3, bucketName);
-        checkState(directoryName != null && !directoryName.trim().isEmpty(), "The directory name [%s] should not be null or empty", directoryName);
         m_directoryName = directoryName;
     }
 

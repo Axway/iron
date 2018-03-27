@@ -13,6 +13,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import io.axway.iron.spi.storage.TransactionStore;
 
+import static io.axway.alf.assertion.Assertion.checkState;
+
 /**
  * TODO check if commit is needed or not<br>
  * TODO check why sometimes polling returns nothing (for a long time) when it shouldn't<br>
@@ -26,16 +28,13 @@ class KafkaTransactionStore implements TransactionStore {
     private static final int PRODUCER_BUFFER_MEMORY = 33554432;
     private static final String CONSUMER_SESSION_TIMEOUT = "30000";
 
-    private final Consumer<Integer, byte[]> m_consumer;
-    private final Producer<Integer, byte[]> m_producer;
     private final String m_topicName;
     private final TopicPartition m_topicPartition;
+    private final Consumer<Integer, byte[]> m_consumer;
+    private final Producer<Integer, byte[]> m_producer;
 
     KafkaTransactionStore(Properties kafkaProperties, String topicName) {
-        m_topicName = topicName.trim();
-        if (m_topicName.isEmpty()) {
-            throw new IllegalArgumentException("Topic name can't be null");
-        }
+        m_topicName = topicName;
         m_topicPartition = new TopicPartition(m_topicName, PARTITION);
 
         UUID uuid = UUID.randomUUID();
@@ -88,9 +87,7 @@ class KafkaTransactionStore implements TransactionStore {
         }
 
         ConsumerRecord<Integer, byte[]> firstRecord = iterator.next();
-        if (iterator.hasNext()) {
-            throw new IllegalStateException("Kafka should not return more than one record");
-        }
+        checkState(!iterator.hasNext(), "Kafka should not return more than one record");
 
         return new TransactionInput() {
             @Override
