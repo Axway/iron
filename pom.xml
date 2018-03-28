@@ -420,6 +420,28 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <configuration>
+                    <flattenMode>ossrh</flattenMode>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <pomElements>
+                        <organization/>
+                        <issueManagement/>
+                        <ciManagement/>
+                    </pomElements>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -439,28 +461,6 @@
                             <execution>
                                 <goals>
                                     <goal>create</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>flatten-maven-plugin</artifactId>
-                        <configuration>
-                            <flattenMode>ossrh</flattenMode>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <pomElements>
-                                <organization/>
-                                <issueManagement/>
-                                <ciManagement/>
-                            </pomElements>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>flatten</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>flatten</goal>
                                 </goals>
                             </execution>
                         </executions>
