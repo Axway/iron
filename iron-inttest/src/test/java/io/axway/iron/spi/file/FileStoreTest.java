@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import org.testng.annotations.Test;
-import io.axway.iron.spi.SpiTest;
+import io.axway.iron.spi.SpiTestHelper;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStoreFactory;
@@ -26,8 +26,8 @@ public class FileStoreTest {
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
 
-        SpiTest.checkThatCreateCompanySequenceIsRight(transactionStoreFactory, transactionSerializer, snapshotStoreFactory, snapshotSerializer,
-                                                      randomStoreName);
+        SpiTestHelper.checkThatCreateCompanySequenceIsRight(transactionStoreFactory, transactionSerializer, snapshotStoreFactory, snapshotSerializer,
+                                                            randomStoreName);
     }
 }
 

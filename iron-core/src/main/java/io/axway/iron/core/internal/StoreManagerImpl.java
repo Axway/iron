@@ -36,7 +36,7 @@ class StoreManagerImpl implements StoreManager {
     private final ReadOnlyTransaction m_readOnlyTransaction;
     private final Thread m_thread;
     private final StoreImpl m_store = new StoreImpl();
-    private final Cache<String, CompletableFuture<List<?>>> m_futuresBySynchronizationId = CacheBuilder.newBuilder().weakValues().build();
+    private final Cache<String, CompletableFuture<List<Object>>> m_futuresBySynchronizationId = CacheBuilder.newBuilder().weakValues().build();
     private final CountDownLatch m_transactionRecoveryDone = new CountDownLatch(1);
 
     private final ReadWriteLock m_readWriteLock = new ReentrantReadWriteLock();
@@ -168,7 +168,7 @@ class StoreManagerImpl implements StoreManager {
                 }
 
                 String synchronizationId = transactionToExecute.getSynchronizationId();
-                CompletableFuture<List<?>> transactionFuture = m_futuresBySynchronizationId.getIfPresent(synchronizationId);
+                CompletableFuture<List<Object>> transactionFuture = m_futuresBySynchronizationId.getIfPresent(synchronizationId);
                 if (transactionFuture != null) {
                     if (error != null) {
                         transactionFuture.completeExceptionally(error);
@@ -246,7 +246,7 @@ class StoreManagerImpl implements StoreManager {
 
     private class TransactionBuilderImpl implements Store.TransactionBuilder {
         private final String m_synchronizationId = UUID.randomUUID().toString();
-        private final CompletableFuture<List<?>> m_future = new CompletableFuture<>();
+        private final CompletableFuture<List<Object>> m_future = new CompletableFuture<>();
         private final List<Command<?>> m_commands = new ArrayList<>();
         private boolean m_valid = true;
 
@@ -261,7 +261,7 @@ class StoreManagerImpl implements StoreManager {
         }
 
         @Override
-        public Future<List<?>> submit() {
+        public Future<List<Object>> submit() {
             checkValid();
             m_valid = false;
             m_futuresBySynchronizationId.put(m_synchronizationId, m_future);
@@ -344,7 +344,7 @@ class StoreManagerImpl implements StoreManager {
         private final Object m_txFuture;
         private final Future<T> m_commandFuture;
 
-        CommandFutureWrapper(CompletableFuture<List<?>> txFuture, int commandIndex) {
+        CommandFutureWrapper(CompletableFuture<List<Object>> txFuture, int commandIndex) {
             m_txFuture = txFuture;
             //noinspection unchecked
             m_commandFuture = txFuture.thenApply(values -> (T) values.get(commandIndex));

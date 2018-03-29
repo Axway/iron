@@ -33,7 +33,7 @@ import io.axway.iron.spi.storage.TransactionStoreFactory;
 import static com.google.common.collect.ImmutableMap.*;
 import static java.util.stream.Collectors.*;
 
-public class SpiTest {
+public class SpiTestHelper {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/mm/yyyy");
 

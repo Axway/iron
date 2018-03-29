@@ -33,26 +33,26 @@ public class StoreManagerFactoryBuilderConfigurator {
         Map<Type, BuilderImplConfig> componentBuilders = findComponentBuilders(properties);
         for (Map.Entry<Type, BuilderImplConfig> entry : componentBuilders.entrySet()) {
             BuilderImplConfig config = entry.getValue();
-            Supplier<?> builder = instantiateBuilder(config.supplierClass(), properties, config.baseName());
+            Supplier<Object> builder = instantiateBuilder(config.supplierClass(), properties, config.baseName());
             buildAndAssign(builder, entry.getKey(), storeManagerFactoryBuilder);
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<Type, BuilderImplConfig> findComponentBuilders(Properties properties) {
         Map<Type, BuilderImplConfig> map = new HashMap<>();  // ComponentBuilder -> property name base
         for (String propertyName : properties.stringPropertyNames()) {
             String className = getProperty(properties, propertyName);
             if (className != null) {
                 try {
-                    Class clazz = Class.forName(className);
+                    Class<?> clazz = Class.forName(className);
                     if (Supplier.class.isAssignableFrom(clazz)) {
+                        @SuppressWarnings("unchecked") Class<Supplier<Object>> supplierClass = (Class<Supplier<Object>>) clazz;
                         Type type = ((ParameterizedType) clazz.getGenericInterfaces()[0]).getActualTypeArguments()[0];
                         if (map.containsKey(type)) {
                             LOG.warn("Supplier is already defined",
                                      args -> args.add("supplierType", type.getTypeName()).add("existingSupplier", map.get(type).supplierClass().getName()));
                         }
-                        BuilderImplConfig builderImplConfig = new BuilderImplConfig(clazz, propertyName);
+                        BuilderImplConfig builderImplConfig = new BuilderImplConfig(supplierClass, propertyName);
                         LOG.info("Adding a supplier", args -> args.add("supplierType", type.getTypeName()).add("addedSupplier", className));
                         map.put(type, builderImplConfig);
                     }
@@ -64,10 +64,10 @@ public class StoreManagerFactoryBuilderConfigurator {
         return map;
     }
 
-    private Supplier<?> instantiateBuilder(Class<Supplier<?>> componentBuilderClazz, Properties properties, String baseName) {
+    private <T> Supplier<T> instantiateBuilder(Class<Supplier<T>> componentBuilderClazz, Properties properties, String baseName) {
         try {
-            Constructor<Supplier<?>> constructor = componentBuilderClazz.getConstructor();
-            Supplier<?> builder = constructor.newInstance();
+            Constructor<Supplier<T>> constructor = componentBuilderClazz.getConstructor();
+            Supplier<T> builder = constructor.newInstance();
 
             for (Method method : componentBuilderClazz.getDeclaredMethods()) {
                 Class<?>[] parameterTypes = method.getParameterTypes();
@@ -166,8 +166,7 @@ public class StoreManagerFactoryBuilderConfigurator {
         return property;
     }
 
-    @SuppressWarnings("unchecked")
-    private void buildAndAssign(Supplier<?> builder, Type type, StoreManagerFactoryBuilder storeManagerFactoryBuilder) {
+    private void buildAndAssign(Supplier<Object> builder, Type type, StoreManagerFactoryBuilder storeManagerFactoryBuilder) {
         Object component = builder.get();
         Class<?> typeClass = (Class<?>) type;
         if (typeClass.isAssignableFrom(TransactionSerializer.class)) {
@@ -184,15 +183,15 @@ public class StoreManagerFactoryBuilderConfigurator {
     }
 
     private static class BuilderImplConfig {
-        private Class<Supplier<?>> m_supplierClass;
+        private Class<Supplier<Object>> m_supplierClass;
         private String m_baseName;
 
-        BuilderImplConfig(Class<Supplier<?>> supplierClass, String baseName) {
+        BuilderImplConfig(Class<Supplier<Object>> supplierClass, String baseName) {
             m_supplierClass = supplierClass;
             m_baseName = baseName;
         }
 
-        Class<Supplier<?>> supplierClass() {
+        Class<Supplier<Object>> supplierClass() {
             return m_supplierClass;
         }
 

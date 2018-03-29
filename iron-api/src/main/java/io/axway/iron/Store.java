@@ -60,7 +60,7 @@ public interface Store {
          *
          * @return a {@code Future} that gives access to the result of all the command, in the same order they have been added in the transaction.
          */
-        Future<List<?>> submit();
+        Future<List<Object>> submit();
     }
 
     interface CommandBuilder<C extends Command<T>, T> {

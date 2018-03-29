@@ -1,7 +1,7 @@
 package io.axway.iron.spi.aws.s3;
 
 import org.testng.annotations.Test;
-import io.axway.iron.spi.SpiTest;
+import io.axway.iron.spi.SpiTestHelper;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.file.FileTestHelper;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
@@ -29,9 +29,9 @@ public class AwsS3SnapshotIT extends BaseInttest {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         String storeName = createRandomStoreName();
         try {
-            SpiTest.checkThatCreateCompanySequenceIsRight(ironFileStoreFactory, transactionSerializer,    //
-                                                          s3SnapshotStoreFactory, snapshotSerializer,  //
-                                                          storeName);
+            SpiTestHelper.checkThatCreateCompanySequenceIsRight(ironFileStoreFactory, transactionSerializer,    //
+                                                                s3SnapshotStoreFactory, snapshotSerializer,  //
+                                                                storeName);
         } finally {
             deleteS3Bucket(bucketName);
         }
@@ -47,9 +47,9 @@ public class AwsS3SnapshotIT extends BaseInttest {
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
 
-        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStoreFactory, transactionSerializer, //
-                                                                      snapshotStoreFactory, snapshotSerializer, //
-                                                                      storeName);
+        SpiTestHelper.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStoreFactory, transactionSerializer, //
+                                                                            snapshotStoreFactory, snapshotSerializer, //
+                                                                            storeName);
     }
 
     @Test(enabled = false)
@@ -65,9 +65,9 @@ public class AwsS3SnapshotIT extends BaseInttest {
 
         String storeName = createRandomStoreName();
         try {
-            SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStoreFactory, transactionSerializer,    //
-                                                                          s3SnapshotStoreFactory, snapshotSerializer,  //
-                                                                          storeName);
+            SpiTestHelper.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStoreFactory, transactionSerializer,    //
+                                                                                s3SnapshotStoreFactory, snapshotSerializer,  //
+                                                                                storeName);
         } finally {
             deleteS3Bucket(bucketName);
         }

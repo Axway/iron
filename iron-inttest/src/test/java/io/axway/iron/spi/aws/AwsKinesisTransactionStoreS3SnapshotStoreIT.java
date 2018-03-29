@@ -3,7 +3,7 @@ package io.axway.iron.spi.aws;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import io.axway.iron.spi.SpiTest;
+import io.axway.iron.spi.SpiTestHelper;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
 
@@ -38,8 +38,8 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
 
-        SpiTest.checkThatCreateCompanySequenceIsRight(buildAwsKinesisTransactionStoreFactory(m_configuration), transactionSerializer,
-                                                      buildAwsS3SnapshotStoreFactory(m_configuration), snapshotSerializer, m_storeName);
+        SpiTestHelper.checkThatCreateCompanySequenceIsRight(buildAwsKinesisTransactionStoreFactory(m_configuration), transactionSerializer,
+                                                            buildAwsS3SnapshotStoreFactory(m_configuration), snapshotSerializer, m_storeName);
     }
 
     @Test(enabled = false)
@@ -47,8 +47,8 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
 
-        SpiTest.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(buildAwsKinesisTransactionStoreFactory(m_configuration), transactionSerializer,
-                                                                      buildAwsS3SnapshotStoreFactory(m_configuration), snapshotSerializer, m_storeName);
+        SpiTestHelper.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(buildAwsKinesisTransactionStoreFactory(m_configuration), transactionSerializer,
+                                                                            buildAwsS3SnapshotStoreFactory(m_configuration), snapshotSerializer, m_storeName);
     }
 
     @Test(enabled = false)
@@ -56,8 +56,8 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
 
-        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(buildAwsKinesisTransactionStoreFactory(m_configuration),
-                                                                                   transactionSerializer, buildAwsS3SnapshotStoreFactory(m_configuration),
-                                                                                   snapshotSerializer, m_storeName);
+        SpiTestHelper.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(buildAwsKinesisTransactionStoreFactory(m_configuration),
+                                                                                         transactionSerializer, buildAwsS3SnapshotStoreFactory(m_configuration),
+                                                                                         snapshotSerializer, m_storeName);
     }
 }
