@@ -139,14 +139,14 @@
             <dependency>
                 <groupId>io.axway.alf</groupId>
                 <artifactId>alf-api</artifactId>
-                <version>0.7.0</version>
+                <version>0.8.0</version>
             </dependency>
 
             <!-- Test -->
             <dependency>
                 <groupId>io.axway.alf</groupId>
                 <artifactId>alf-slf4j</artifactId>
-                <version>0.7.0</version>
+                <version>0.8.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
