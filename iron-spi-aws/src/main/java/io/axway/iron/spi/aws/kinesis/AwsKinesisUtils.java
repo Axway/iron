@@ -87,7 +87,9 @@ public class AwsKinesisUtils {
                 }
                 try {
                     Thread.sleep(100);
-                } catch (Exception ignored) {
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AwsKinesisException("Thread interrupted while waiting for stream activation", args -> args.add("streamName", streamName), e);
                 }
             } catch (ResourceNotFoundException ignored) {
             }

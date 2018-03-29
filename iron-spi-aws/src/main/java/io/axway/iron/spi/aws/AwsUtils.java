@@ -52,7 +52,9 @@ public class AwsUtils {
             try {
                 LOG.debug("Throttling", args -> args.add("action", actionLabel).add("durationMs", durationInMillis));
                 Thread.sleep(durationInMillis);
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AwsException("Thread interrupted while performing action", args -> args.add("action", actionLabel), e);
             }
         } while (retryCount++ < retryLimit);
         throw new AwsException("Limit exceeded, all retries failed", args -> args.add("action", actionLabel).add("retryLimit", retryLimit));
