@@ -9,14 +9,14 @@ public class EntityDefinition<E> {
     private final IdDefinition m_idDefinition;
     private final Map<String, RelationDefinition> m_relations;
     private final Map<String, ReverseRelationDefinition> m_reverseRelations;
-    private final Map<String, AttributeDefinition> m_attributes;
+    private final Map<String, AttributeDefinition<Object>> m_attributes;
     private final List<String> m_uniqueConstraints;
 
     private final Constructor<E> m_instanceProxyConstructor;
 
     EntityDefinition(Class<E> entityClass, @Nullable IdDefinition idDefinition, Map<String, RelationDefinition> relations,
-                     Map<String, ReverseRelationDefinition> reverseRelations, Map<String, AttributeDefinition> attributes, List<String> uniqueConstraints,
-                     Constructor<E> instanceProxyConstructor) {
+                     Map<String, ReverseRelationDefinition> reverseRelations, Map<String, AttributeDefinition<Object>> attributes,
+                     List<String> uniqueConstraints, Constructor<E> instanceProxyConstructor) {
         m_entityClass = entityClass;
         m_idDefinition = idDefinition;
         m_relations = relations;
@@ -47,7 +47,7 @@ public class EntityDefinition<E> {
         return m_reverseRelations;
     }
 
-    public Map<String, AttributeDefinition> getAttributes() {
+    public Map<String, AttributeDefinition<Object>> getAttributes() {
         return m_attributes;
     }
 

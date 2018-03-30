@@ -11,7 +11,6 @@ import io.axway.iron.core.internal.command.CommandProxy;
 import io.axway.iron.core.internal.definition.DataTypeManager;
 import io.axway.iron.core.internal.definition.InterfaceValidator;
 import io.axway.iron.core.internal.definition.InterfaceVisitor;
-import io.axway.iron.core.internal.utils.TypeConverter;
 import io.axway.iron.core.internal.utils.proxy.ProxyConstructorFactory;
 import io.axway.iron.description.Entity;
 import io.axway.iron.description.Id;
@@ -32,7 +31,7 @@ public class CommandDefinitionBuilder {
     }
 
     public <C extends Command<?>> CommandDefinition<C> analyzeCommandClass(Class<C> commandClass) {
-        ImmutableMap.Builder<String, ParameterDefinition> parameterDefinitions = ImmutableMap.builder();
+        ImmutableMap.Builder<String, ParameterDefinition<Object>> parameterDefinitions = ImmutableMap.builder();
 
         m_interfaceValidator.validate("Command", commandClass, new InterfaceVisitor() {
             @Override
@@ -79,11 +78,12 @@ public class CommandDefinitionBuilder {
             }
 
             @Override
-            public void visitMethod(Method method, Class<?> dataType, boolean multiple, boolean nullable) {
+            public <T> void visitMethod(Method method, Class<T> dataType, boolean multiple, boolean nullable) {
                 String methodName = method.getName();
 
                 if (!m_dataTypeManager.isValidDataType(dataType)) {
-                    throw new InvalidModelException("Command method data type is not supported", args -> args.add("commandClassName", commandClass.getName()) //
+                    throw new InvalidModelException("Command method data type is not supported", args -> args //
+                            .add("commandClassName", commandClass.getName()) //
                             .add("methodName", methodName) //
                             .add("dataTypeName", dataType.getName()));
                 }
@@ -100,10 +100,16 @@ public class CommandDefinitionBuilder {
                                                     args -> args.add("commandClassName", commandClass.getName()).add("methodName", methodName));
                 }
 
-                TypeConverter<?> typeConverter = multiple ? //
-                        m_dataTypeManager.getCollectionTypeConverter(dataType) : //
-                        m_dataTypeManager.getTypeConverter(dataType);
-                parameterDefinitions.put(methodName, new ParameterDefinition(method, methodName, dataType, multiple, nullable, typeConverter));
+                ParameterDefinition<?> definition;
+                if (multiple) {
+                    definition = new ParameterDefinition<>(method, methodName, dataType, true, nullable,
+                                                           m_dataTypeManager.getCollectionTypeConverter(dataType));
+                } else {
+                    definition = new ParameterDefinition<>(method, methodName, dataType, false, nullable,
+                                                           m_dataTypeManager.getCollectionTypeConverter(dataType));
+                }
+                //noinspection unchecked
+                parameterDefinitions.put(methodName, (ParameterDefinition<Object>) definition);
             }
         });
 

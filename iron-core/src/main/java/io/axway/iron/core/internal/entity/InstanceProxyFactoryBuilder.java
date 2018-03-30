@@ -54,7 +54,7 @@ class InstanceProxyFactoryBuilder {
             callHandlerBuilder.handle(idDefinition.getIdMethod(), (context, proxy, method, args) -> context.getId());
         }
 
-        for (AttributeDefinition attributeDefinition : entityDefinition.getAttributes().values()) {
+        for (AttributeDefinition<Object> attributeDefinition : entityDefinition.getAttributes().values()) {
             Method attributeMethod = attributeDefinition.getAttributeMethod();
             String name = attributeDefinition.getAttributeName();
             TypeConverter<?> typeConverter = attributeDefinition.getTypeConverter();

@@ -315,7 +315,7 @@ public class EntityStore<E> {
         return result;
     }
 
-    private static SerializableAttributeDefinition toSerializableAttributeDefinition(AttributeDefinition attributeDefinition) {
+    private static SerializableAttributeDefinition toSerializableAttributeDefinition(AttributeDefinition<Object> attributeDefinition) {
         SerializableAttributeDefinition serializableAttributeDefinition = new SerializableAttributeDefinition();
         serializableAttributeDefinition.setDataType(attributeDefinition.getDataType().getName());
         serializableAttributeDefinition.setNullable(attributeDefinition.isNullable());
@@ -378,7 +378,7 @@ public class EntityStore<E> {
         // check that persisted attributes from the snapshot are the same than the Java model
         for (Map.Entry<String, SerializableAttributeDefinition> e : serializableEntity.getAttributes().entrySet()) {
             String attributeName = e.getKey();
-            AttributeDefinition attributeDefinition = m_entityDefinition.getAttributes().get(attributeName);
+            AttributeDefinition<Object> attributeDefinition = m_entityDefinition.getAttributes().get(attributeName);
             if (attributeDefinition == null) {
                 throw new UnrecoverableStoreException("Snapshot contains an attribute which no more exists in the model",
                                                       args -> args.add("entityName", m_entityName).add("attributeName", attributeName));
@@ -402,10 +402,10 @@ public class EntityStore<E> {
         }
 
         // new attributes in the model are automatically accepted except if they are not nullable
-        for (Map.Entry<String, AttributeDefinition> e : m_entityDefinition.getAttributes().entrySet()) {
+        for (Map.Entry<String, AttributeDefinition<Object>> e : m_entityDefinition.getAttributes().entrySet()) {
             String attributeName = e.getKey();
             if (!serializableEntity.getAttributes().containsKey(attributeName)) {
-                AttributeDefinition attributeDefinition = e.getValue();
+                AttributeDefinition<Object> attributeDefinition = e.getValue();
                 if (!attributeDefinition.isNullable()) {
                     throw new UnrecoverableStoreException("Attribute is not present in the snapshot but is not nullable",
                                                           args -> args.add("entityName", m_entityName).add("attributeName", attributeName));

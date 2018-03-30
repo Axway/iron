@@ -11,7 +11,6 @@ import io.axway.iron.core.internal.definition.InterfaceValidator;
 import io.axway.iron.core.internal.definition.InterfaceVisitor;
 import io.axway.iron.core.internal.entity.InstanceProxy;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
-import io.axway.iron.core.internal.utils.TypeConverter;
 import io.axway.iron.core.internal.utils.proxy.ProxyConstructorFactory;
 import io.axway.iron.description.Entity;
 import io.axway.iron.description.Id;
@@ -21,10 +20,11 @@ import io.axway.iron.error.InvalidModelException;
 
 import static io.axway.alf.assertion.Assertion.checkState;
 import static io.axway.iron.core.internal.definition.entity.RelationCardinality.*;
-import static io.axway.iron.core.internal.utils.proxy.ProxyFactory.NO_CONTEXT;
 import static io.axway.iron.core.internal.utils.proxy.ProxyFactoryBuilder.newProxyFactoryBuilder;
 
 public class EntityDefinitionBuilder {
+    private static final Object NO_CONTEXT = new Object();
+
     private final IntrospectionHelper m_introspectionHelper;
     private final ProxyConstructorFactory m_proxyConstructorFactory;
     private final DataTypeManager m_dataTypeManager;
@@ -76,7 +76,7 @@ public class EntityDefinitionBuilder {
 
     private <E> EntityDefinition<E> analyzeEntityClass(AnalyzeContext context, Class<E> entityClass) {
 
-        ImmutableMap.Builder<String, AttributeDefinition> attributes = ImmutableMap.builder();
+        ImmutableMap.Builder<String, AttributeDefinition<Object>> attributes = ImmutableMap.builder();
         ImmutableMap.Builder<String, RelationDefinition> relations = ImmutableMap.builder();
         ImmutableMap.Builder<String, ReverseRelationDefinition> reverseRelations = ImmutableMap.builder();
         List<String> uniqueConstraints = new ArrayList<>();
@@ -103,7 +103,7 @@ public class EntityDefinitionBuilder {
             }
 
             @Override
-            public void visitMethod(Method method, Class<?> dataType, boolean multiple, boolean nullable) {
+            public <T> void visitMethod(Method method, Class<T> dataType, boolean multiple, boolean nullable) {
                 String methodName = method.getName();
 
                 Class<?> returnType = method.getReturnType();
@@ -180,10 +180,16 @@ public class EntityDefinitionBuilder {
                     if (isId) {
                         idDefinitions.add(new IdDefinition(method, methodName));
                     } else {
-                        TypeConverter<?> typeConverter = multiple ? //
-                                m_dataTypeManager.getCollectionTypeConverter(returnType) : //
-                                m_dataTypeManager.getTypeConverter(returnType);
-                        attributes.put(methodName, new AttributeDefinition(method, methodName, returnType, nullable, typeConverter));
+                        AttributeDefinition<?> attributeDefinition;
+                        if (multiple) {
+                            attributeDefinition = new AttributeDefinition<>(method, methodName, returnType, nullable,
+                                                                            m_dataTypeManager.getCollectionTypeConverter(returnType));
+                        } else {
+                            attributeDefinition = new AttributeDefinition<>(method, methodName, returnType, nullable,
+                                                                            m_dataTypeManager.getCollectionTypeConverter(returnType));
+                        }
+                        //noinspection unchecked
+                        attributes.put(methodName, (AttributeDefinition<Object>) attributeDefinition);
                     }
                 } else {
                     throw new InvalidModelException("Entity method is not supported",
