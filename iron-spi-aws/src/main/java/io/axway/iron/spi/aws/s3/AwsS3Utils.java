@@ -8,7 +8,7 @@ import com.amazonaws.services.s3.model.HeadBucketRequest;
 
 import static io.axway.iron.spi.aws.AwsUtils.setAws;
 
-public class AwsS3Utils {
+public final class AwsS3Utils {
 
     /**
      * Create a AwsS3SnapshotStoreFactory with some properties set to configure S3 client:
@@ -42,5 +42,9 @@ public class AwsS3Utils {
             throw new AwsS3Exception("Bucket is not accessible", args -> args.add("bucketName", bucketName), e);
         }
         return bucketName;
+    }
+
+    private AwsS3Utils() {
+        // utility class
     }
 }

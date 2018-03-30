@@ -5,7 +5,7 @@ import javax.annotation.*;
 
 import static java.util.regex.Pattern.*;
 
-class FilenameUtils {
+final class FilenameUtils {
 
     static Pattern buildFilenamePattern(@Nullable Integer transactionIdLength) {
         String cardinality = transactionIdLength == null ? "+" : ("{" + transactionIdLength + "}");
@@ -14,5 +14,9 @@ class FilenameUtils {
 
     static String buildFilenameFormat(@Nullable Integer transactionIdLength) {
         return transactionIdLength == null ? "%d.%s" : ("%0" + transactionIdLength + "d.%s");
+    }
+
+    private FilenameUtils() {
+        // utility class
     }
 }

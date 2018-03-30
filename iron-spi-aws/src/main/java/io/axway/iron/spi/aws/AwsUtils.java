@@ -9,7 +9,7 @@ import com.amazonaws.services.kinesis.model.LimitExceededException;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 
-public class AwsUtils {
+public final class AwsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(AwsUtils.class);
 
@@ -58,5 +58,9 @@ public class AwsUtils {
             }
         } while (retryCount++ < retryLimit);
         throw new AwsException("Limit exceeded, all retries failed", args -> args.add("action", actionLabel).add("retryLimit", retryLimit));
+    }
+
+    private AwsUtils() {
+        // utility class
     }
 }

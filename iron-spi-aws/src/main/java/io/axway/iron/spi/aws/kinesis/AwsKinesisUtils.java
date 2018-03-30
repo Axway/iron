@@ -12,7 +12,7 @@ import static io.axway.iron.spi.aws.AwsUtils.*;
 /**
  * Some AWS Kinesis utils.
  */
-public class AwsKinesisUtils {
+public final class AwsKinesisUtils {
     /**
      * Stream Status when the steam is active.
      */
@@ -97,5 +97,9 @@ public class AwsKinesisUtils {
             throw new AwsKinesisException("Stream never went active",
                                           args -> args.add("streamName", streamName).add("streamCreationTimeoutMillis", streamCreationTimeoutMillis));
         }
+    }
+
+    private AwsKinesisUtils() {
+        // utility class
     }
 }
