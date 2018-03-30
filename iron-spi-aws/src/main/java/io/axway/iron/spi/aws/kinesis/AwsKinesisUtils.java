@@ -85,13 +85,12 @@ public class AwsKinesisUtils {
                 if (streamStatus.equals(ACTIVE_STREAM_STATUS)) {
                     break;
                 }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new AwsKinesisException("Thread interrupted while waiting for stream activation", args -> args.add("streamName", streamName), e);
-                }
+                Thread.sleep(100);
             } catch (ResourceNotFoundException ignored) {
+                // ignored
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AwsKinesisException("Thread interrupted while waiting for stream activation", args -> args.add("streamName", streamName), e);
             }
         } while (System.currentTimeMillis() < endTime);
         if (describeStreamResult == null || streamStatus == null || !streamStatus.equals(ACTIVE_STREAM_STATUS)) {

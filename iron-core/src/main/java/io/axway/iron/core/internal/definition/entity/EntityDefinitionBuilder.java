@@ -186,7 +186,7 @@ public class EntityDefinitionBuilder {
                                                                             m_dataTypeManager.getCollectionTypeConverter(returnType));
                         } else {
                             attributeDefinition = new AttributeDefinition<>(method, methodName, returnType, nullable,
-                                                                            m_dataTypeManager.getCollectionTypeConverter(returnType));
+                                                                            m_dataTypeManager.getTypeConverter(returnType));
                         }
                         //noinspection unchecked
                         attributes.put(methodName, (AttributeDefinition<Object>) attributeDefinition);

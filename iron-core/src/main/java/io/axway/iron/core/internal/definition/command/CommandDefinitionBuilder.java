@@ -105,8 +105,7 @@ public class CommandDefinitionBuilder {
                     definition = new ParameterDefinition<>(method, methodName, dataType, true, nullable,
                                                            m_dataTypeManager.getCollectionTypeConverter(dataType));
                 } else {
-                    definition = new ParameterDefinition<>(method, methodName, dataType, false, nullable,
-                                                           m_dataTypeManager.getCollectionTypeConverter(dataType));
+                    definition = new ParameterDefinition<>(method, methodName, dataType, false, nullable, m_dataTypeManager.getTypeConverter(dataType));
                 }
                 //noinspection unchecked
                 parameterDefinitions.put(methodName, (ParameterDefinition<Object>) definition);
