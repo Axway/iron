@@ -14,8 +14,4 @@
     <name>${project.artifactId}</name>
     <description>Iron Service Provider Interfaces</description>
 
-    <properties>
-        <bnd.Import-Package/>
-    </properties>
-
 </project>

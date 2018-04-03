@@ -19,9 +19,11 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
-        <bnd.Import-Package>*</bnd.Import-Package>
-        <bnd.Export-Package>{local-packages}</bnd.Export-Package>
         <bnd.Fragment-Host/>
+
+        <!-- This is not the latest Guava version, but since we don't need the latest features of Guava this allows us to be compatible with more versions of Guava -->
+        <!-- Iron users can freely overrides that version (with a more recent one) in their pom.xml by declaring Guava with their desired version -->
+        <guava.version>12.0</guava.version>
     </properties>
 
     <licenses>
@@ -100,9 +102,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <!-- This is not the latest Guava version, but since we don't need the latest features of Guava this allows us to be compatible with more versions of Guava -->
-                <!-- Iron users can freely overrides that version (with a more recent one) in their pom.xml by declaring Guava with their desired version -->
-                <version>12.0</version>
+                <version>${guava.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -391,8 +391,7 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <Import-Package>javax.annotation.*;resolution:=optional,${bnd.Import-Package}</Import-Package>
-                                <Export-Package>${bnd.Export-Package}</Export-Package>
+                                <Import-Package>javax.annotation;resolution:=optional,com.google.common.*;version="${guava.version}",*</Import-Package>
                                 <Fragment-Host>${bnd.Fragment-Host}</Fragment-Host>
                                 <Bundle-DocURL>${project.url}</Bundle-DocURL>
                                 <SCM-Revision>${buildNumber}</SCM-Revision>
