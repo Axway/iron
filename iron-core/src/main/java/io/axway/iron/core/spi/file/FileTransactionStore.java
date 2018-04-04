@@ -20,7 +20,9 @@ class FileTransactionStore implements TransactionStore {
 
     private final AtomicLong m_tmpCounter = new AtomicLong();
     private final Object m_commitLock = new Object();
-    private long m_nextTxId = 0;
+    private long m_nextTxId;
+
+    private volatile long m_latestTransaction;
 
     private long m_consumerNextTxId = 0;
 
@@ -29,6 +31,7 @@ class FileTransactionStore implements TransactionStore {
         m_transactionTmpDir = transactionStoreTmpDir;
 
         m_nextTxId = retrieveNextTxId();
+        m_latestTransaction = m_nextTxId - 1;
     }
 
     @Override
@@ -44,6 +47,7 @@ class FileTransactionStore implements TransactionStore {
                     Path txFile = getTxFile(transactionId);
 
                     Files.move(tmpFile, txFile);
+                    m_latestTransaction = transactionId;
                     m_commitLock.notifyAll();
                 }
             }
@@ -60,7 +64,7 @@ class FileTransactionStore implements TransactionStore {
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
         long txId = m_consumerNextTxId;
         Path nextFile = getTxFile(txId);
-        while (!Files.exists(nextFile)) {
+        while (m_latestTransaction < txId) {
             long waitTimeout = deadline - System.currentTimeMillis();
             if (waitTimeout > 0) {
                 try {
