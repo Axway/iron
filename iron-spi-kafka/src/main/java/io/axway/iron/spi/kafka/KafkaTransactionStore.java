@@ -14,6 +14,7 @@ import org.apache.kafka.common.TopicPartition;
 import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.alf.assertion.Assertion.checkState;
+import static java.util.Collections.*;
 
 /**
  * TODO check if commit is needed or not<br>
@@ -60,7 +61,7 @@ class KafkaTransactionStore implements TransactionStore {
         consumerKafkaProperties.put("group.id", "ironGroup-" + uuid);
 
         m_consumer = new KafkaConsumer<>(consumerKafkaProperties);
-        m_consumer.subscribe(Collections.singletonList(m_topicName));
+        m_consumer.subscribe(singletonList(m_topicName));
     }
 
     @Override
@@ -76,6 +77,8 @@ class KafkaTransactionStore implements TransactionStore {
 
     @Override
     public void seekTransactionPoll(BigInteger latestProcessedTransactionId) {
+        // This dummy poll registers the assignments
+        m_consumer.poll(100);
         m_consumer.seek(m_topicPartition, latestProcessedTransactionId.longValueExact() + 1);
     }
 
