@@ -121,7 +121,7 @@ final class KafkaCluster implements AutoCloseable {
                 throw new UncheckedIOException("Cannot start the Zookeeper server", e);
             } catch (InterruptedException e) {
                 currentThread().interrupt();
-                throw new RuntimeException("Thread was interrupted while starting Zookeeper", e);
+                throw new IllegalStateException("Thread was interrupted while starting Zookeeper", e);
             }
         }
 

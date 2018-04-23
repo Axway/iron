@@ -8,7 +8,6 @@ import org.testng.annotations.Test;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.StoreManagerFactory;
-import io.axway.iron.assertions.Assertions;
 import io.axway.iron.core.spi.file.FileSnapshotStoreFactoryBuilder;
 import io.axway.iron.sample.command.ChangeCompanyAddress;
 import io.axway.iron.sample.command.CreateCompany;
@@ -23,6 +22,7 @@ import io.axway.iron.spi.jackson.JacksonSnapshotSerializerBuilder;
 import io.axway.iron.spi.jackson.JacksonTransactionSerializerBuilder;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static io.axway.iron.assertions.Assertions.assertThat;
 import static io.axway.iron.core.StoreManagerFactoryBuilder.newStoreManagerBuilderFactory;
 import static io.axway.iron.spi.kafka.Utils.*;
 import static java.nio.file.Files.createTempDirectory;
@@ -103,10 +103,10 @@ public class SingleKafkaSpiTest {
             storeManager.getStore().query(q -> {
                 Map<Long, Company> companies = q.select(Company.class).all().stream().collect(toMap(Company::id, identity()));
                 assertThat(companies).hasSize(4);
-                Assertions.assertThat(companies.get(0L)).hasName("Google").hasAddress("Palo Alto");
-                Assertions.assertThat(companies.get(1L)).hasName("Microsoft").hasAddress("Seattle");
-                Assertions.assertThat(companies.get(2L)).hasName("Axway").hasAddress("Phoenix");
-                Assertions.assertThat(companies.get(3L)).hasName("Apple").hasAddress("Cupertino");
+                assertThat(companies.get(0L)).hasName("Google").hasAddress("Palo Alto");
+                assertThat(companies.get(1L)).hasName("Microsoft").hasAddress("Seattle");
+                assertThat(companies.get(2L)).hasName("Axway").hasAddress("Phoenix");
+                assertThat(companies.get(3L)).hasName("Apple").hasAddress("Cupertino");
             });
         }
     }
@@ -131,7 +131,7 @@ public class SingleKafkaSpiTest {
             // Then it has the proper values
             storeManager.getStore().query(q -> {
                 Company axway = q.select(Company.class).where(Company::name).equalsTo("Axway");
-                Assertions.assertThat(axway).hasName("Axway").hasAddress("Puteaux").hasCountry("France");
+                assertThat(axway).hasName("Axway").hasAddress("Puteaux").hasCountry("France");
             });
         }
     }
@@ -181,10 +181,10 @@ public class SingleKafkaSpiTest {
             storeManager.getStore().query(q -> {
                 Map<Long, Company> companies = q.select(Company.class).all().stream().collect(toMap(Company::id, identity()));
                 assertThat(companies).hasSize(4);
-                Assertions.assertThat(companies.get(0L)).hasName("Google").hasAddress("Palo Alto");
-                Assertions.assertThat(companies.get(1L)).hasName("Microsoft").hasAddress("Seattle");
-                Assertions.assertThat(companies.get(2L)).hasName("Axway").hasAddress("Phoenix");
-                Assertions.assertThat(companies.get(3L)).hasName("Apple").hasAddress("Cupertino");
+                assertThat(companies.get(0L)).hasName("Google").hasAddress("Palo Alto");
+                assertThat(companies.get(1L)).hasName("Microsoft").hasAddress("Seattle");
+                assertThat(companies.get(2L)).hasName("Axway").hasAddress("Phoenix");
+                assertThat(companies.get(3L)).hasName("Apple").hasAddress("Cupertino");
             });
         }
     }

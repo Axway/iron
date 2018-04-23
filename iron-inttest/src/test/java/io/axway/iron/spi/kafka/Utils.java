@@ -68,7 +68,7 @@ final class Utils {
             timeUnit.sleep(duration);
         } catch (InterruptedException e) {
             currentThread().interrupt();
-            throw new RuntimeException("Thread was stopped while sleeping");
+            throw new IllegalStateException("Thread was stopped while sleeping");
         }
     }
 
@@ -84,7 +84,7 @@ final class Utils {
             return future.get();
         } catch (InterruptedException e) {
             currentThread().interrupt();
-            throw new RuntimeException("Thread was stopped while waiting for the future");
+            throw new IllegalStateException("Thread was stopped while waiting for the future");
         } catch (ExecutionException e) {
             throw new UncheckedExecutionException(e);
         }
@@ -103,7 +103,7 @@ final class Utils {
             return executorService.invokeAll(tasks).stream().map(Utils::futureGet).collect(toList());
         } catch (InterruptedException e) {
             currentThread().interrupt();
-            throw new RuntimeException("Thread was stopped while invoking the tasks");
+            throw new IllegalStateException("Thread was stopped while invoking the tasks");
         }
     }
 
