@@ -12,7 +12,7 @@ import static io.axway.iron.spi.aws.AwsUtils.*;
 /**
  * Some AWS Kinesis utils.
  */
-public class AwsKinesisUtils {
+public final class AwsKinesisUtils {
     /**
      * Stream Status when the steam is active.
      */
@@ -85,16 +85,21 @@ public class AwsKinesisUtils {
                 if (streamStatus.equals(ACTIVE_STREAM_STATUS)) {
                     break;
                 }
-                try {
-                    Thread.sleep(100);
-                } catch (Exception ignored) {
-                }
+                Thread.sleep(100);
             } catch (ResourceNotFoundException ignored) {
+                // ignored
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AwsKinesisException("Thread interrupted while waiting for stream activation", args -> args.add("streamName", streamName), e);
             }
         } while (System.currentTimeMillis() < endTime);
         if (describeStreamResult == null || streamStatus == null || !streamStatus.equals(ACTIVE_STREAM_STATUS)) {
             throw new AwsKinesisException("Stream never went active",
                                           args -> args.add("streamName", streamName).add("streamCreationTimeoutMillis", streamCreationTimeoutMillis));
         }
+    }
+
+    private AwsKinesisUtils() {
+        // utility class
     }
 }

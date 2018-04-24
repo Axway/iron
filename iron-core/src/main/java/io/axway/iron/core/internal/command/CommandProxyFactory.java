@@ -53,7 +53,7 @@ public class CommandProxyFactory {
                 .handle(PROXY_PARAMETERS_METHOD, (context, proxy, method, args) -> Collections.unmodifiableMap(context.getParameters())) //
                 .handleDefaultMethod(executeMethod);
 
-        for (ParameterDefinition parameterDefinition : commandDefinition.getParameters().values()) {
+        for (ParameterDefinition<Object> parameterDefinition : commandDefinition.getParameters().values()) {
             builder.handle(parameterDefinition.getParameterMethod(),
                            (context, proxy, method, args) -> parameterDefinition.getTypeConverter().convert(context.getParameters().get(method.getName())));
         }

@@ -3,14 +3,14 @@ package io.axway.iron.core.internal.definition.entity;
 import java.lang.reflect.Method;
 import io.axway.iron.core.internal.utils.TypeConverter;
 
-public class AttributeDefinition {
+public class AttributeDefinition<T> {
     private final Method m_attributeMethod;
     private final String m_attributeName;
     private final Class<?> m_dataType;
     private final boolean m_nullable;
-    private final TypeConverter<?> m_typeConverter;
+    private final TypeConverter<T> m_typeConverter;
 
-    AttributeDefinition(Method attributeMethod, String attributeName, Class<?> dataType, boolean nullable, TypeConverter<?> typeConverter) {
+    AttributeDefinition(Method attributeMethod, String attributeName, Class<?> dataType, boolean nullable, TypeConverter<T> typeConverter) {
         m_attributeMethod = attributeMethod;
         m_attributeName = attributeName;
         m_dataType = dataType;
@@ -34,7 +34,7 @@ public class AttributeDefinition {
         return m_nullable;
     }
 
-    public TypeConverter<?> getTypeConverter() {
+    public TypeConverter<T> getTypeConverter() {
         return m_typeConverter;
     }
 }

@@ -16,7 +16,6 @@
 
     <properties>
         <bnd.Fragment-Host>io.axway.iron.core</bnd.Fragment-Host>
-        <bnd.Export-Package/>
     </properties>
 
     <dependencies>

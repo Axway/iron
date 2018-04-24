@@ -16,13 +16,20 @@
 
     <properties>
         <bnd.Fragment-Host>io.axway.iron.core</bnd.Fragment-Host>
-        <bnd.Export-Package/>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.axway.iron</groupId>
             <artifactId>iron-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

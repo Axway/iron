@@ -7,5 +7,5 @@ public interface InterfaceVisitor {
 
     boolean shouldVisitMethod(Method method);
 
-    void visitMethod(Method method, Class<?> dataType, boolean multiple, boolean nullable);
+    <T> void visitMethod(Method method, Class<T> dataType, boolean multiple, boolean nullable);
 }

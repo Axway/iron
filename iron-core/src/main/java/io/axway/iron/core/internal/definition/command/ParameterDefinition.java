@@ -3,15 +3,15 @@ package io.axway.iron.core.internal.definition.command;
 import java.lang.reflect.Method;
 import io.axway.iron.core.internal.utils.TypeConverter;
 
-public class ParameterDefinition {
+public class ParameterDefinition<T> {
     private final Method m_parameterMethod;
     private final String m_parameterName;
     private final Class<?> m_dataType;
     private final boolean m_multiple;
     private final boolean m_nullable;
-    private final TypeConverter<?> m_typeConverter;
+    private final TypeConverter<T> m_typeConverter;
 
-    ParameterDefinition(Method parameterMethod, String parameterName, Class<?> dataType, boolean multiple, boolean nullable, TypeConverter<?> typeConverter) {
+    ParameterDefinition(Method parameterMethod, String parameterName, Class<?> dataType, boolean multiple, boolean nullable, TypeConverter<T> typeConverter) {
         m_parameterMethod = parameterMethod;
         m_parameterName = parameterName;
         m_dataType = dataType;
@@ -40,7 +40,7 @@ public class ParameterDefinition {
         return m_nullable;
     }
 
-    public TypeConverter<?> getTypeConverter() {
+    public TypeConverter<T> getTypeConverter() {
         return m_typeConverter;
     }
 }

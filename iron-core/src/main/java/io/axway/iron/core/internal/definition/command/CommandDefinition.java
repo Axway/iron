@@ -6,11 +6,11 @@ import io.axway.iron.Command;
 
 public class CommandDefinition<C extends Command<?>> {
     private final Class<C> m_commandClass;
-    private final Map<String, ParameterDefinition> m_parameters;
+    private final Map<String, ParameterDefinition<Object>> m_parameters;
 
     private final Constructor<C> m_commandProxyConstructor;
 
-    CommandDefinition(Class<C> commandClass, Map<String, ParameterDefinition> parameters, Constructor<C> commandProxyConstructor) {
+    CommandDefinition(Class<C> commandClass, Map<String, ParameterDefinition<Object>> parameters, Constructor<C> commandProxyConstructor) {
         m_commandClass = commandClass;
         m_parameters = parameters;
         m_commandProxyConstructor = commandProxyConstructor;
@@ -20,7 +20,7 @@ public class CommandDefinition<C extends Command<?>> {
         return m_commandClass;
     }
 
-    public Map<String, ParameterDefinition> getParameters() {
+    public Map<String, ParameterDefinition<Object>> getParameters() {
         return m_parameters;
     }
 

@@ -127,8 +127,11 @@ public class InterfaceValidator {
                 }
             }
 
-            visitor.visitMethod(method, collectionElementType != null ? collectionElementType : returnType, collectionElementType != null,
-                                nullableAnnotation != null);
+            if (collectionElementType != null) {
+                visitor.visitMethod(method, collectionElementType, true, false);
+            } else {
+                visitor.visitMethod(method, returnType, false, nullableAnnotation != null);
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 package io.axway.iron.spi.aws.kinesis;
 
 import org.testng.annotations.Test;
-import io.axway.iron.spi.SpiTest;
+import io.axway.iron.spi.SpiTestHelper;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
@@ -27,9 +27,9 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         try {
             TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
             SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
-            SpiTest.checkThatCreateCompanySequenceIsRight(awsKinesisTransactionStoreFactory, transactionSerializer,  //
-                                                          fileSnapshotStoreFactory, snapshotSerializer,              //
-                                                          randomStoreName);
+            SpiTestHelper.checkThatCreateCompanySequenceIsRight(awsKinesisTransactionStoreFactory, transactionSerializer,  //
+                                                                fileSnapshotStoreFactory, snapshotSerializer,              //
+                                                                randomStoreName);
         } finally {
             deleteKinesisStream(randomStoreName);
         }
@@ -43,9 +43,9 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
 
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
-        SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(fileTransactionStoreFactory, transactionSerializer,         //
-                                                                                   fileSnapshotStoreFactory, snapshotSerializer, //
-                                                                                   randomStoreName);
+        SpiTestHelper.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(fileTransactionStoreFactory, transactionSerializer,         //
+                                                                                         fileSnapshotStoreFactory, snapshotSerializer, //
+                                                                                         randomStoreName);
     }
 
     @Test(enabled = false)
@@ -58,9 +58,9 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         try {
             TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
             SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
-            SpiTest.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(awsKinesisTransactionStoreFactory, transactionSerializer, //
-                                                                                       fileSnapshotStoreFactory, snapshotSerializer, //
-                                                                                       randomStoreName);
+            SpiTestHelper.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(awsKinesisTransactionStoreFactory, transactionSerializer, //
+                                                                                             fileSnapshotStoreFactory, snapshotSerializer, //
+                                                                                             randomStoreName);
         } finally {
             deleteKinesisStream(randomStoreName);
         }

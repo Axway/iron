@@ -9,7 +9,7 @@ import com.amazonaws.services.kinesis.model.LimitExceededException;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 
-public class AwsUtils {
+public final class AwsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(AwsUtils.class);
 
@@ -52,9 +52,15 @@ public class AwsUtils {
             try {
                 LOG.debug("Throttling", args -> args.add("action", actionLabel).add("durationMs", durationInMillis));
                 Thread.sleep(durationInMillis);
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AwsException("Thread interrupted while performing action", args -> args.add("action", actionLabel), e);
             }
         } while (retryCount++ < retryLimit);
         throw new AwsException("Limit exceeded, all retries failed", args -> args.add("action", actionLabel).add("retryLimit", retryLimit));
+    }
+
+    private AwsUtils() {
+        // utility class
     }
 }

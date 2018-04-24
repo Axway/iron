@@ -159,6 +159,7 @@ class AwsKinesisTransactionStore implements TransactionStore {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new AwsKinesisException("Interrupted while waiting provisioned throughput does no more exceed limit",
                                               args -> args.add("streamName", m_streamName).add("shardId", m_shard.getShardId()), e);
             }

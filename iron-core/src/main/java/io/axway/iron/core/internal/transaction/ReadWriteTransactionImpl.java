@@ -61,10 +61,6 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
             m_object = object;
         }
 
-        private void checkValid() {
-            checkState(m_valid, "This InsertObjectUpdater is no more usable");
-        }
-
         @Override
         public <V> To<E, V> set(Accessor<E, V> accessor) {
             checkValid();
@@ -91,6 +87,10 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
             m_activeObjectUpdaterCount.decrementAndGet();
             return object;
         }
+
+        private void checkValid() {
+            checkState(m_valid, "This InsertObjectUpdater is no more usable");
+        }
     }
 
     private class UpdateObjectUpdater<E> implements ObjectUpdater<E> {
@@ -102,10 +102,6 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
             m_activeObjectUpdaterCount.incrementAndGet();
             m_entityStore = entityStore;
             m_object = object;
-        }
-
-        private void checkValid() {
-            checkState(m_valid, "This UpdateObjectUpdater is no more usable");
         }
 
         @Override
@@ -132,6 +128,10 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
             m_valid = false;
             m_activeObjectUpdaterCount.decrementAndGet();
             return m_object;
+        }
+
+        private void checkValid() {
+            checkState(m_valid, "This UpdateObjectUpdater is no more usable");
         }
     }
 }
