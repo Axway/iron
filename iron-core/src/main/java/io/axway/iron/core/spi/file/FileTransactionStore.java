@@ -63,7 +63,6 @@ class FileTransactionStore implements TransactionStore {
     public TransactionInput pollNextTransaction(long timeout, TimeUnit unit) {
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
         long txId = m_consumerNextTxId;
-        Path nextFile = getTxFile(txId);
         while (m_latestTransaction < txId) {
             long waitTimeout = deadline - System.currentTimeMillis();
             if (waitTimeout > 0) {
@@ -84,7 +83,7 @@ class FileTransactionStore implements TransactionStore {
         return new TransactionInput() {
             @Override
             public InputStream getInputStream() throws IOException {
-                return new BufferedInputStream(Files.newInputStream(nextFile));
+                return new BufferedInputStream(Files.newInputStream(getTxFile(txId)));
             }
 
             @Override
