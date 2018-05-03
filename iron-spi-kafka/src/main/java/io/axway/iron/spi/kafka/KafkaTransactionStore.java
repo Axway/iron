@@ -11,16 +11,18 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.IntegerDeserializer;
+import org.apache.kafka.common.serialization.IntegerSerializer;
 import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.alf.assertion.Assertion.checkState;
+import static java.util.Collections.*;
+import static org.apache.kafka.clients.CommonClientConfigs.CLIENT_ID_CONFIG;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.*;
+import static org.apache.kafka.clients.producer.ProducerConfig.*;
 
-/**
- * TODO check if commit is needed or not<br>
- * TODO check why sometimes polling returns nothing (for a long time) when it shouldn't<br>
- * TODO write tests with embedded kafka<br>
- * TODO add Logging<br>
- */
 class KafkaTransactionStore implements TransactionStore {
     private static final int PARTITION = 0;
     private static final int CONSTANT_KEY = 0;
@@ -40,31 +42,25 @@ class KafkaTransactionStore implements TransactionStore {
         UUID uuid = UUID.randomUUID();
 
         Properties producerKafkaProperties = (Properties) kafkaProperties.clone();
-        producerKafkaProperties.put("acks", "all");
-        producerKafkaProperties.put("retries", RETRIES);
-        producerKafkaProperties.put("batch.size", 1);
-        producerKafkaProperties.put("linger.ms", 1);
-        producerKafkaProperties.put("buffer.memory", PRODUCER_BUFFER_MEMORY);
-        producerKafkaProperties.put("key.serializer", "org.apache.kafka.common.serialization.IntegerSerializer");
-        producerKafkaProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-        producerKafkaProperties.put("client.id", "ironClient-" + uuid);
-        m_producer = new KafkaProducer<>(producerKafkaProperties);
+        producerKafkaProperties.put(ACKS_CONFIG, "all");
+        producerKafkaProperties.put(RETRIES_CONFIG, RETRIES);
+        producerKafkaProperties.put(BATCH_SIZE_CONFIG, 1);
+        producerKafkaProperties.put(BUFFER_MEMORY_CONFIG, PRODUCER_BUFFER_MEMORY);
+        producerKafkaProperties.put(CLIENT_ID_CONFIG, "ironClient-" + uuid);
+        m_producer = new KafkaProducer<>(producerKafkaProperties, new IntegerSerializer(), new ByteArraySerializer());
 
         Properties consumerKafkaProperties = (Properties) kafkaProperties.clone();
-        consumerKafkaProperties.put("max.poll.records", 1);
-        consumerKafkaProperties.put("auto.offset.reset", "earliest");
-        consumerKafkaProperties.put("enable.auto.commit", "false");
-        consumerKafkaProperties.put("session.timeout.ms", CONSUMER_SESSION_TIMEOUT);
-        consumerKafkaProperties.put("key.deserializer", "org.apache.kafka.common.serialization.IntegerDeserializer");
-        consumerKafkaProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-        consumerKafkaProperties.put("group.id", "ironGroup-" + uuid);
-
-        m_consumer = new KafkaConsumer<>(consumerKafkaProperties);
-        m_consumer.subscribe(Collections.singletonList(m_topicName));
+        consumerKafkaProperties.put(MAX_POLL_RECORDS_CONFIG, 1);
+        consumerKafkaProperties.put(AUTO_OFFSET_RESET_CONFIG, "earliest");
+        consumerKafkaProperties.put(ENABLE_AUTO_COMMIT_CONFIG, "false");
+        consumerKafkaProperties.put(SESSION_TIMEOUT_MS_CONFIG, CONSUMER_SESSION_TIMEOUT);
+        consumerKafkaProperties.put(GROUP_ID_CONFIG, "ironGroup-" + uuid);
+        m_consumer = new KafkaConsumer<>(consumerKafkaProperties, new IntegerDeserializer(), new ByteArrayDeserializer());
+        m_consumer.assign(singletonList(m_topicPartition));
     }
 
     @Override
-    public OutputStream createTransactionOutput() throws IOException {
+    public OutputStream createTransactionOutput() {
         return new ByteArrayOutputStream() {
             @Override
             public void close() throws IOException {
@@ -91,7 +87,7 @@ class KafkaTransactionStore implements TransactionStore {
 
         return new TransactionInput() {
             @Override
-            public InputStream getInputStream() throws IOException {
+            public InputStream getInputStream() {
                 return new ByteArrayInputStream(firstRecord.value());
             }
 

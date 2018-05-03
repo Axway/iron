@@ -2,6 +2,8 @@ package io.axway.iron.spi.kafka;
 
 import java.util.*;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.IntegerDeserializer;
 import io.axway.iron.spi.storage.TransactionStore;
 import io.axway.iron.spi.storage.TransactionStoreFactory;
 
@@ -28,14 +30,10 @@ public class KafkaTransactionStoreFactory implements TransactionStoreFactory {
     private void createKafkaTopic(Properties kafkaProperties, String topicName) {
         Properties localKafkaProperties = (Properties) kafkaProperties.clone();
         localKafkaProperties.put("group.id", "bug-" + UUID.randomUUID());
-        localKafkaProperties.put("key.deserializer", "org.apache.kafka.common.serialization.IntegerDeserializer");
-        localKafkaProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-
-        KafkaConsumer consumer = new KafkaConsumer<>(localKafkaProperties);
-
-        // if topic auto create is on then subscription creates the topic
-        consumer.subscribe(Collections.singletonList(topicName));
-        consumer.poll(100);
-        consumer.close();
+        try (KafkaConsumer consumer = new KafkaConsumer<>(localKafkaProperties, new IntegerDeserializer(), new ByteArrayDeserializer())) {
+            // if topic auto create is on then subscription creates the topic
+            consumer.subscribe(Collections.singletonList(topicName));
+            consumer.poll(100);
+        }
     }
 }
