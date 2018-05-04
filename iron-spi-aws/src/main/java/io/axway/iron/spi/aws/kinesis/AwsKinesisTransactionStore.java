@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import javax.annotation.*;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
@@ -18,6 +19,8 @@ import com.amazonaws.services.kinesis.model.PutRecordRequest;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
+import io.axway.alf.log.Logger;
+import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.alf.assertion.Assertion.checkState;
@@ -29,7 +32,9 @@ import static java.math.BigInteger.ZERO;
  */
 class AwsKinesisTransactionStore implements TransactionStore {
 
-    private static final long MINIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
+    private static final Logger LOG = LoggerFactory.getLogger(AwsKinesisTransactionStore.class);
+
+    private static final long INITIAL_MINIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
     private static final String USELESS_PARTITION_KEY = "uselessPartitionKey";
 
     private final String m_streamName;
@@ -38,6 +43,9 @@ class AwsKinesisTransactionStore implements TransactionStore {
     private BigInteger m_seekTransactionId = null;
     @Nullable
     private Long m_lastGetShardIteratorRequestTime = null;
+
+    private AtomicLong m_minimumDurationBetweenTwoGetShardIteratorRequests = new AtomicLong(INITIAL_MINIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS);
+    private static Random s_random = new Random();
 
     /**
      * Create a KinesisTransactionStore based on an already active Kinesis Stream.
@@ -111,7 +119,7 @@ class AwsKinesisTransactionStore implements TransactionStore {
     private Record getNextRecord() {
         Long currentGetShardIteratorRequestTime = System.currentTimeMillis();
         if (m_lastGetShardIteratorRequestTime != null
-                && (currentGetShardIteratorRequestTime - m_lastGetShardIteratorRequestTime) < MINIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS) {
+                && (currentGetShardIteratorRequestTime - m_lastGetShardIteratorRequestTime) < m_minimumDurationBetweenTwoGetShardIteratorRequests.get()) {
             return null;
         }
         m_lastGetShardIteratorRequestTime = currentGetShardIteratorRequestTime;
@@ -127,7 +135,19 @@ class AwsKinesisTransactionStore implements TransactionStore {
                     .withShardId(m_shard.getShardId())//
                     .withStartingSequenceNumber(m_seekTransactionId.toString());
         }
-        GetShardIteratorResult getShardIteratorResult = m_kinesis.getShardIterator(getShardIteratorRequest);
+
+        GetShardIteratorResult getShardIteratorResult;
+        try {
+            getShardIteratorResult = m_kinesis.getShardIterator(getShardIteratorRequest);
+        } catch (ProvisionedThroughputExceededException e) {
+            int durationRandomModifier = 1 + s_random.nextInt(64);// random duration to make readers out of sync, avoiding simultaneous readings
+            long updatedDuration = m_minimumDurationBetweenTwoGetShardIteratorRequests
+                    .updateAndGet(duration -> duration * 2 // twice the duration
+                            + duration / 10 / durationRandomModifier);// add random duration to avoid simultaneous reads
+            LOG.info("Update of minimum duration between two get shard iterator requests",
+                     args -> args.add("new minimumDurationBetweenTwoGetShardIteratorRequests", updatedDuration));
+            return null;
+        }
         // Suboptimal request, should store records in a list instead. To be fixed.
         GetRecordsRequest getRecordsRequest = new GetRecordsRequest().withShardIterator(getShardIteratorResult.getShardIterator()).withLimit(1);
         List<Record> records = getRecords(getRecordsRequest);
