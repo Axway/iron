@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.function.*;
 import java.util.regex.*;
 import javax.annotation.*;
+import com.google.common.annotations.VisibleForTesting;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.core.StoreManagerFactoryBuilder;
@@ -25,8 +26,7 @@ import static java.util.Arrays.*;
 
 public class StoreManagerFactoryBuilderConfigurator {
     private static final Logger LOG = LoggerFactory.getLogger(StoreManagerFactoryBuilderConfigurator.class);
-    private static final String ENV_PREFIX = "env:".toLowerCase();
-    private static final Pattern VARIABLE_REGEX_PATTERN = Pattern.compile("\\$\\{(.*?)\\}");
+    private static final Pattern VARIABLE_REGEX_PATTERN = Pattern.compile("\\$\\{(?:(?<source>env|ENV|sys|SYS):)?(?<name>[^}].*?)}");
     private static final Object UNKNOWN_KEY = new Object();
 
     public void fill(StoreManagerFactoryBuilder storeManagerFactoryBuilder, Properties properties) {
@@ -146,22 +146,36 @@ public class StoreManagerFactoryBuilderConfigurator {
         }
     }
 
-    private String getProperty(Properties properties, String key) {
+    @VisibleForTesting
+    static String getProperty(Properties properties, String key) {
         String property = properties.getProperty(key);
         if (property != null) {
-            if (property.toLowerCase().startsWith(ENV_PREFIX)) {
-                // If the value retrieved start with the environment prefix, we retrieve the key value from the System environment
-                // e.g: key=ENV:AWS_ACCESS_KEY_ID -> System.getenv("AWS_ACCESS_KEY_ID")
-                String envVarName = property.substring(ENV_PREFIX.length());
-                property = System.getenv(envVarName);
-            } else {
-                // If the value retrieved follow the variable pattern, we extract the value, and use it as a key to retrieve the real value.
-                // e.g: key=${io.iron.configuration.value}  -> properties.getProperty("io.iron.configuration.value")
-                Matcher matcher = VARIABLE_REGEX_PATTERN.matcher(property);
-                if (matcher.find()) {
-                    property = getProperty(properties, matcher.group(1));  // beware recursive call
+            StringBuffer result = new StringBuffer();
+            Matcher matcher = VARIABLE_REGEX_PATTERN.matcher(property);
+            while (matcher.find()) {
+                String name = matcher.group("name");
+                String source = matcher.group("source");
+                String value = null;
+                if (source == null) {
+                    // If the value retrieved follow the variable pattern, we extract the value, and use it as a key to retrieve the real value.
+                    // e.g: key=${io.iron.configuration.value}  -> properties.getProperty("io.iron.configuration.value")
+                    value = getProperty(properties, name);  // beware recursive call
+                } else if (source.equalsIgnoreCase("env")) {
+                    // If the value retrieved start with the environment prefix, we retrieve the key value from the System environment
+                    // e.g: key=ENV:AWS_ACCESS_KEY_ID -> System.getenv("AWS_ACCESS_KEY_ID")
+                    value = System.getenv(name);
+                } else if (source.equalsIgnoreCase("sys")) {
+                    // If the value retrieved start with the environment prefix, we retrieve the key value from the System environment
+                    // e.g: key=SYS:io.axway.aws_access_key_id -> System.getProperty("AWS_ACCESS_KEY_ID")
+                    value = System.getProperty(name);
                 }
+                if (value == null) {
+                    throw new ConfigurationException("Unknown property", args -> args.add("key", key).add("properties", properties));
+                }
+                matcher.appendReplacement(result, Matcher.quoteReplacement(value));
             }
+            matcher.appendTail(result);
+            property = result.toString();
         }
         return property;
     }
