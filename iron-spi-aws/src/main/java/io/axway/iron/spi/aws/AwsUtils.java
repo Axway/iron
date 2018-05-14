@@ -38,12 +38,11 @@ public final class AwsUtils {
      * @param durationInMillis duration between each retry
      * @throws LimitExceededException after retry exhausted
      */
-    public static void performAmazonActionWithRetry(String actionLabel, Supplier<Void> action, int retryLimit, int durationInMillis) {
+    public static <T> T performAmazonActionWithRetry(String actionLabel, Supplier<T> action, int retryLimit, int durationInMillis) {
         int retryCount = 0;
         do {
             try {
-                action.get();
-                return;
+                return action.get();
             } catch (LimitExceededException lee) {
                 // We should just wait a little time before trying again
                 int remainingRetries = retryLimit - retryCount;
