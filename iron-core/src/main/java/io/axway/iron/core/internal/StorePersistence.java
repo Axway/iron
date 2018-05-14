@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
+import javax.annotation.*;
 import com.google.common.collect.ImmutableMap;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
@@ -64,6 +65,7 @@ class StorePersistence {
         }
     }
 
+    @Nullable
     BigInteger recover(Function<String, EntityStore<?>> entityStoreByName) {
         Optional<BigInteger> latestSnapshotTxId = m_snapshotStore.listSnapshots().stream().max(BigInteger::compareTo);
         if (latestSnapshotTxId.isPresent()) {
