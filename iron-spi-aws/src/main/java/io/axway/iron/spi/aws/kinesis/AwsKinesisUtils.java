@@ -5,6 +5,7 @@ import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
 import com.amazonaws.services.kinesis.model.DescribeStreamResult;
+import com.amazonaws.services.kinesis.model.LimitExceededException;
 import com.amazonaws.services.kinesis.model.ResourceNotFoundException;
 
 import static io.axway.iron.spi.aws.AwsUtils.*;
@@ -86,7 +87,7 @@ public final class AwsKinesisUtils {
                     break;
                 }
                 Thread.sleep(100);
-            } catch (ResourceNotFoundException ignored) {
+            } catch (ResourceNotFoundException | LimitExceededException ignored) {
                 // ignored
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
