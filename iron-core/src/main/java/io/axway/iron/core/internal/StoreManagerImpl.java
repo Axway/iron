@@ -113,6 +113,7 @@ class StoreManagerImpl implements StoreManager {
 
     @Override
     public void close() {
+        LOG.debug("A store is going to be closed", args -> args.add("store name", m_thread.getName()));
         ensureOpen();
         m_closed = true;
         try {

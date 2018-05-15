@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import javax.annotation.*;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
@@ -18,9 +19,13 @@ import com.amazonaws.services.kinesis.model.PutRecordRequest;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
+import io.axway.alf.log.Logger;
+import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.alf.assertion.Assertion.checkState;
+import static io.axway.iron.spi.aws.AwsUtils.performAmazonActionWithRetry;
+import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.*;
 import static java.math.BigInteger.ZERO;
 
 /**
@@ -29,7 +34,9 @@ import static java.math.BigInteger.ZERO;
  */
 class AwsKinesisTransactionStore implements TransactionStore {
 
-    private static final long MINIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
+    private static final Logger LOG = LoggerFactory.getLogger(AwsKinesisTransactionStore.class);
+
+    private static final long INITIAL_MINIMAL_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
     private static final String USELESS_PARTITION_KEY = "uselessPartitionKey";
 
     private final String m_streamName;
@@ -38,6 +45,9 @@ class AwsKinesisTransactionStore implements TransactionStore {
     private BigInteger m_seekTransactionId = null;
     @Nullable
     private Long m_lastGetShardIteratorRequestTime = null;
+
+    private AtomicLong m_minimalDurationBetweenTwoGetShardIteratorRequests = new AtomicLong(INITIAL_MINIMAL_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS);
+    private static Random s_random = new Random();
 
     /**
      * Create a KinesisTransactionStore based on an already active Kinesis Stream.
@@ -57,7 +67,9 @@ class AwsKinesisTransactionStore implements TransactionStore {
      */
     private Shard getUniqueShard() {
         DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest().withStreamName(m_streamName).withLimit(1);
-        DescribeStreamResult describeStreamResult = m_kinesis.describeStream(describeStreamRequest);
+        DescribeStreamResult describeStreamResult = performAmazonActionWithRetry("describe stream " + m_streamName,
+                                                                                 () -> m_kinesis.describeStream(describeStreamRequest), DEFAULT_RETRY_COUNT,
+                                                                                 DEFAULT_RETRY_DURATION_IN_MILLIS);
         String streamStatus = describeStreamResult.getStreamDescription().getStreamStatus();
         if (streamStatus == null || !streamStatus.equals(AwsKinesisUtils.ACTIVE_STREAM_STATUS)) {
             throw new AwsKinesisException("Stream does not exist", args -> args.add("streamName", m_streamName));
@@ -109,12 +121,9 @@ class AwsKinesisTransactionStore implements TransactionStore {
 
     @Nullable
     private Record getNextRecord() {
-        Long currentGetShardIteratorRequestTime = System.currentTimeMillis();
-        if (m_lastGetShardIteratorRequestTime != null
-                && (currentGetShardIteratorRequestTime - m_lastGetShardIteratorRequestTime) < MINIMUM_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS) {
+        if (!waitTheMinimalDurationToExecuteTheNextGetShardIteratorRequest()) {
             return null;
         }
-        m_lastGetShardIteratorRequestTime = currentGetShardIteratorRequestTime;
         GetShardIteratorRequest getShardIteratorRequest;
         if (m_seekTransactionId == null || m_seekTransactionId
                 .equals(ZERO)) { // First call to pollNextTransaction, no Snapshot has been created => retrieve the oldest element
@@ -127,7 +136,10 @@ class AwsKinesisTransactionStore implements TransactionStore {
                     .withShardId(m_shard.getShardId())//
                     .withStartingSequenceNumber(m_seekTransactionId.toString());
         }
-        GetShardIteratorResult getShardIteratorResult = m_kinesis.getShardIterator(getShardIteratorRequest);
+        GetShardIteratorResult getShardIteratorResult = tryGetShardIteratorRequest(getShardIteratorRequest);
+        if (getShardIteratorResult == null) {
+            return null;
+        }
         // Suboptimal request, should store records in a list instead. To be fixed.
         GetRecordsRequest getRecordsRequest = new GetRecordsRequest().withShardIterator(getShardIteratorResult.getShardIterator()).withLimit(1);
         List<Record> records = getRecords(getRecordsRequest);
@@ -142,6 +154,50 @@ class AwsKinesisTransactionStore implements TransactionStore {
     }
 
     /**
+     * Try to execute the getShardIteratorRequest.
+     * If not allowed due to a ProvisionedThroughputExceededException, randomly increase the minimal duration between two GetShardIteratorRequests and return {@code null}.
+     *
+     * @param getShardIteratorRequest the GetShardIteratorRequest to execute
+     * @return the GetShardIteratorResult if no ProvisionedThroughputExceededException occurs, else return {@code null}
+     */
+    @Nullable
+    private GetShardIteratorResult tryGetShardIteratorRequest(GetShardIteratorRequest getShardIteratorRequest) {
+        GetShardIteratorResult getShardIteratorResult;
+        try {
+            getShardIteratorResult = m_kinesis.getShardIterator(getShardIteratorRequest);
+        } catch (ProvisionedThroughputExceededException e) {
+            int durationRandomModifier = 1 + s_random.nextInt(64);// random duration to make readers out of sync, avoiding simultaneous readings
+            long updatedDuration = m_minimalDurationBetweenTwoGetShardIteratorRequests.updateAndGet(duration -> duration * 2 // twice the duration
+                    + duration * 2 / durationRandomModifier);// add random duration to avoid simultaneous reads
+            LOG.debug("Update of minimal duration between two get shard iterator requests",
+                     args -> args.add("streamName", m_streamName).add("new minimalDurationBetweenTwoGetShardIteratorRequests", updatedDuration));
+            getShardIteratorResult = null;
+        }
+        return getShardIteratorResult;
+    }
+
+    /**
+     * Wait that the minimum duration between two GetShardIteratorRequests has elapsed.
+     *
+     * @return true if the duration elapsed, false if the thread has been interrupted
+     */
+    private boolean waitTheMinimalDurationToExecuteTheNextGetShardIteratorRequest() {
+        if (m_lastGetShardIteratorRequestTime != null) {
+            long delay = m_minimalDurationBetweenTwoGetShardIteratorRequests.get() - (System.currentTimeMillis() - m_lastGetShardIteratorRequestTime);
+            if (delay > 0) {
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+        }
+        m_lastGetShardIteratorRequestTime = System.currentTimeMillis();
+        return true;
+    }
+
+    /**
      * Retrieves records corresponding to the request.
      *
      * @param getRecordsRequest the request
@@ -153,6 +209,7 @@ class AwsKinesisTransactionStore implements TransactionStore {
                 GetRecordsResult getRecordsResult = m_kinesis.getRecords(getRecordsRequest);
                 return getRecordsResult.getRecords();
             } catch (ProvisionedThroughputExceededException e) {
+                LOG.debug("ProvisionedThroughputExceededException occurs", args -> args.add("streamName", m_streamName));
                 // Too much The request rate for the stream is too high, or the requested data is too large for the available throughput. Wait to try again.
             }
 
