@@ -65,27 +65,27 @@ import io.axway.iron.core.model.validation.command.ValidCommand;
 import io.axway.iron.error.InvalidModelException;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.iron.core.bugs.IronTestHelper.*;
 
 public class ModelDefinitionValidationTest {
 
-    private StoreManagerFactoryBuilder m_builder;
+    private StoreManagerBuilder m_builder;
 
     @BeforeMethod
     public void setUp() {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-        SnapshotStoreFactory snapshotStoreFactory = buildTransientSnapshotStoreFactory();
-        TransactionStoreFactory transactionStoreFactory = buildTransientTransactionStoreFactory();
+        SnapshotStore snapshotStore = buildTransientSnapshotStoreFactory();
+        TransactionStore transactionStore = buildTransientTransactionStoreFactory();
 
-        m_builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
+        m_builder = StoreManagerBuilder.newStoreManagerBuilder() //
                 .withSnapshotSerializer(snapshotSerializer) //
                 .withTransactionSerializer(transactionSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
-                .withTransactionStoreFactory(transactionStoreFactory);
+                .withSnapshotStore(snapshotStore) //
+                .withTransactionStore(transactionStore);
     }
 
     @DataProvider(name = "invalidModels")

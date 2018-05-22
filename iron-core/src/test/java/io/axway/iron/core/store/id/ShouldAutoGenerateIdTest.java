@@ -2,7 +2,7 @@ package io.axway.iron.core.store.id;
 
 import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
-import io.axway.iron.core.StoreManagerFactoryBuilder;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.store.SucceedingStoreTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,7 +12,7 @@ public class ShouldAutoGenerateIdTest implements SucceedingStoreTest {
     private static final String VAL2 = "456";
 
     @Override
-    public void configure(StoreManagerFactoryBuilder builder) throws Exception {
+    public void configure(StoreManagerBuilder builder) throws Exception {
         builder.withEntityClass(SimpleEntityWithId.class).withCommandClass(CommandCreateSimpleEntityWithId.class);
     }
 

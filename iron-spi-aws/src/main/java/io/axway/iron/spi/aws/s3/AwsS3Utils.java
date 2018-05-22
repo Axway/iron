@@ -11,7 +11,7 @@ import static io.axway.iron.spi.aws.AwsUtils.setAws;
 public final class AwsS3Utils {
 
     /**
-     * Create a AwsS3SnapshotStoreFactory with some properties set to configure S3 client:
+     * Create a AwsS3SnapshotStore with some properties set to configure S3 client:
      *
      * @param accessKey - aws access key (optional+)
      * @param secretKey - aws secret key (optional+)

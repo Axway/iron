@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.core.internal.entity.EntityStore;
-import io.axway.iron.core.internal.entity.EntityStoreManager;
+import io.axway.iron.core.internal.entity.EntityStores;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.functional.Accessor;
 
@@ -14,8 +14,8 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
     private final List<Runnable> m_rollbackActions = new ArrayList<>();
     private final AtomicInteger m_activeObjectUpdaterCount = new AtomicInteger();
 
-    public ReadWriteTransactionImpl(IntrospectionHelper introspectionHelper, EntityStoreManager entityStoreManager) {
-        super(introspectionHelper, entityStoreManager);
+    public ReadWriteTransactionImpl(IntrospectionHelper introspectionHelper, EntityStores entityStores) {
+        super(introspectionHelper, entityStores);
     }
 
     public int getActiveObjectUpdaterCount() {
@@ -32,20 +32,20 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
 
     @Override
     public <E> ObjectUpdater<E> insert(Class<E> entityClass) {
-        EntityStore<E> entityStore = m_entityStoreManager.getEntityStore(entityClass);
+        EntityStore<E> entityStore = m_entityStores.getEntityStore(entityClass);
         E object = entityStore.newInstance();
         return new InsertObjectUpdater<>(entityStore, object);
     }
 
     @Override
     public <E> ObjectUpdater<E> update(E object) {
-        EntityStore<E> entityStore = m_entityStoreManager.getEntityStoreByObject(object);
+        EntityStore<E> entityStore = m_entityStores.getEntityStoreByObject(object);
         return new UpdateObjectUpdater<>(entityStore, object);
     }
 
     @Override
     public void delete(Object object) {
-        EntityStore<Object> entityStore = m_entityStoreManager.getEntityStoreByObject(object);
+        EntityStore<Object> entityStore = m_entityStores.getEntityStoreByObject(object);
         entityStore.delete(object);
         m_rollbackActions.add(() -> entityStore.undelete(object));
     }

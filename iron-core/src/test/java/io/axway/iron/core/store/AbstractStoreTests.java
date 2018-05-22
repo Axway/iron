@@ -8,11 +8,11 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
-import io.axway.iron.core.StoreManagerFactoryBuilder;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.iron.core.bugs.IronTestHelper.*;
 
@@ -62,31 +62,31 @@ public abstract class AbstractStoreTests {
         String storeNamePrefix = storeTest.getClass().getSimpleName() + "-";
 
         // provision, execute and check in the same store execution, no final snapshot
-        try (StoreManager storeManager = createStoreManager(storeTest, storeNamePrefix + "1")) {
-            Store store = storeManager.getStore();
+        try (StoreManager storeManager = createStoreManager(storeTest)) {
+            Store store = storeManager.getStore(storeNamePrefix + "1");
             storeTest.provision(store);
             storeTest.execute(store);
             store.query(storeTest::verify);
         }
 
+        // check from a store recovered from tx logs
+        try (StoreManager storeManager = createStoreManager(storeTest)) {
+            Store store = storeManager.getStore(storeNamePrefix + "1");
+            store.query(storeTest::verify);
+        }
+
         // execute and check in the same store execution, with final snapshot
-        try (StoreManager storeManager = createStoreManager(storeTest, storeNamePrefix + "2")) {
-            Store store = storeManager.getStore();
+        try (StoreManager storeManager = createStoreManager(storeTest)) {
+            Store store = storeManager.getStore(storeNamePrefix + "2");
             storeTest.provision(store);
             storeTest.execute(store);
             store.query(storeTest::verify);
             storeManager.snapshot();
         }
 
-        // check from a store recovered from tx logs
-        try (StoreManager storeManager = createStoreManager(storeTest, storeNamePrefix + "1")) {
-            Store store = storeManager.getStore();
-            store.query(storeTest::verify);
-        }
-
         // check from a store recovered from snapshot
-        try (StoreManager storeManager = createStoreManager(storeTest, storeNamePrefix + "2")) {
-            Store store = storeManager.getStore();
+        try (StoreManager storeManager = createStoreManager(storeTest)) {
+            Store store = storeManager.getStore(storeNamePrefix + "2");
             store.query(storeTest::verify);
         }
     }
@@ -96,8 +96,8 @@ public abstract class AbstractStoreTests {
         String storeName = storeTest.getClass().getSimpleName();
 
         // execute and check in the same store execution, no final snapshot
-        try (StoreManager storeManager = createStoreManager(storeTest, storeName)) {
-            Store store = storeManager.getStore();
+        try (StoreManager storeManager = createStoreManager(storeTest)) {
+            Store store = storeManager.getStore(storeName);
             storeTest.provision(store);
             try {
                 storeTest.execute(store);
@@ -110,20 +110,20 @@ public abstract class AbstractStoreTests {
         }
     }
 
-    private StoreManager createStoreManager(StoreTest storeTest, String storeName) throws Exception {
+    private StoreManager createStoreManager(StoreTest storeTest) throws Exception {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
 
-        Path filePath = Paths.get("iron", "iron-core", "iron_tests-" + EXECUTION_ID);
-        SnapshotStoreFactory snapshotStoreFactory = buildFileSnapshotStoreFactory(filePath);
-        TransactionStoreFactory transactionStoreFactory = buildFileTransactionStoreFactory(filePath);
+        Path filePath = Paths.get("tmp-iron-test", "iron-core", "iron_tests-" + EXECUTION_ID);
+        SnapshotStore snapshotStore = buildFileSnapshotStoreFactory(filePath, storeTest.getClass().getSimpleName());
+        TransactionStore transactionStore = buildFileTransactionStoreFactory(filePath, storeTest.getClass().getSimpleName());
 
-        StoreManagerFactoryBuilder builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
+        StoreManagerBuilder builder = StoreManagerBuilder.newStoreManagerBuilder() //
                 .withSnapshotSerializer(snapshotSerializer) //
                 .withTransactionSerializer(transactionSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
-                .withTransactionStoreFactory(transactionStoreFactory);
+                .withSnapshotStore(snapshotStore) //
+                .withTransactionStore(transactionStore);
         storeTest.configure(builder);
-        return builder.build().openStore(storeName);
+        return builder.build();
     }
 }

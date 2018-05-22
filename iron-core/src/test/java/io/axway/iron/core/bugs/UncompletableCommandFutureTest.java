@@ -18,7 +18,7 @@ public class UncompletableCommandFutureTest {
     @Test(timeOut = 20000)
     public void ensureCommandFutureComplete() throws Exception {
         try (StoreManager storeManager = IronTestHelper.createTransientStore()) {
-            Store store = storeManager.getStore();
+            Store store = IronTestHelper.getRandomTransientStore(storeManager);
 
             Future<Void> future = store.createCommand(SimpleCommand.class).submit();
             System.gc();

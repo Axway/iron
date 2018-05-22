@@ -11,13 +11,14 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
-import io.axway.iron.core.StoreManagerFactoryBuilder;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.iron.core.bugs.IronTestHelper.*;
+import static java.math.BigInteger.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SnapshotStoreTest {
@@ -25,32 +26,26 @@ public class SnapshotStoreTest {
     private Path m_tempDir;
 
     @BeforeMethod
-    public void setUp() throws Exception {
-        m_tempDir = Paths.get("iron-" + getClass().getSimpleName() + "-" + UUID.randomUUID());
+    public void setUp() {
+        m_tempDir = Paths.get("tmp-iron-test", "iron-" + getClass().getSimpleName() + "-" + UUID.randomUUID());
     }
 
     @AfterMethod
     public void tearDown() throws Exception {
-        if (Files.isDirectory(m_tempDir)) {
-            Files.walk(m_tempDir) //
-                    .sorted(Comparator.reverseOrder()) //
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
-        }
+        Files.walk(m_tempDir)                            //
+                .sorted(Comparator.reverseOrder())       //
+                .map(Path::toFile)                       //
+                .forEach(File::delete);
     }
 
     @Test
-    public void shouldAllowSnapshotCreationOnNewEmptyStore() throws Exception {
+    public void shouldAllowSnapshotCreationOnNewEmptyStore() {
         // Given: a newly created store
         // When: creating a snapshot while store is still empty
         // Then: creating a snapshot should not fail
 
-        try (StoreManager storeManager = createOpenStoreManager(MY_STORE)) {
+        try (StoreManager storeManager = createOpenStoreManager("shouldAllowSnapshotCreationOnNewEmptyStore")) {
+            storeManager.getStore(MY_STORE);
             storeManager.snapshot();
         }
     }
@@ -62,20 +57,20 @@ public class SnapshotStoreTest {
         // Then: new snapshot should be created with transaction ID >= TxID
         BigInteger transactionCount = BigInteger.TEN;
 
-        try (StoreManager storeManager = createOpenStoreManager(MY_STORE)) {
-            Store store = storeManager.getStore();
+        try (StoreManager storeManager = createOpenStoreManager("shouldInitializeInitialTransactionIdAfterOpeningSnapshot")) {
+            Store store = storeManager.getStore(MY_STORE);
             for (int i = 0; i < transactionCount.longValueExact(); i++) {
                 store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value-" + i).submit().get();
             }
 
             // Create snapshot and close
-            assertThat(storeManager.snapshot()).isEqualTo(transactionCount);
+            assertThat(storeManager.snapshot()).isEqualTo(transactionCount.subtract(ONE));
         }
 
-        try (StoreManager storeManager = createOpenStoreManager(MY_STORE)) {
+        try (StoreManager storeManager = createOpenStoreManager("shouldInitializeInitialTransactionIdAfterOpeningSnapshot")) {
 
             // Should return the proper transaction ID
-            assertThat(storeManager.lastSnapshotTransactionId()).isEqualTo(transactionCount);
+            assertThat(storeManager.lastSnapshotTransactionId()).isEqualTo(transactionCount.subtract(ONE));
 
             // Should not create another snapshot, since current snapshot is already the latest
             assertThat(storeManager.snapshot()).isNull();
@@ -88,30 +83,34 @@ public class SnapshotStoreTest {
         // When: creating another snapshot
         // Then: no snapshot should be created since no modification since the last snapshot call
 
-        try (StoreManager storeManager = createOpenStoreManager(MY_STORE)) {
-            Store store = storeManager.getStore();
+        try (StoreManager storeManager = createOpenStoreManager("shouldBeAbleToCallTwoConsecutiveTakeSnapshot")) {
+            Store store = storeManager.getStore(MY_STORE);
             store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value").submit().get();
 
             // Should create snapshot 1
-            assertThat(storeManager.snapshot()).isEqualTo(BigInteger.ONE);
+            assertThat(storeManager.snapshot()).isEqualTo(BigInteger.ZERO);
 
             // Should not create another snapshot, since snapshot 1 is already the latest
             assertThat(storeManager.snapshot()).isNull();
+
+            store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value2").submit().get();
+
+            assertThat(storeManager.snapshot()).isEqualTo(BigInteger.ONE);
         }
     }
 
-    private StoreManager createOpenStoreManager(String storeName) {
+    private StoreManager createOpenStoreManager(String factoryName) {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-        SnapshotStoreFactory snapshotStoreFactory = buildFileSnapshotStoreFactory(m_tempDir);
-        TransactionStoreFactory transactionStoreFactory = buildFileTransactionStoreFactory(m_tempDir);
+        SnapshotStore snapshotStore = buildFileSnapshotStoreFactory(m_tempDir, factoryName);
+        TransactionStore transactionStore = buildFileTransactionStoreFactory(m_tempDir, factoryName);
 
-        StoreManagerFactoryBuilder builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
+        StoreManagerBuilder builder = StoreManagerBuilder.newStoreManagerBuilder() //
                 .withSnapshotSerializer(snapshotSerializer) //
                 .withTransactionSerializer(transactionSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
-                .withTransactionStoreFactory(transactionStoreFactory);
+                .withSnapshotStore(snapshotStore) //
+                .withTransactionStore(transactionStore);
         builder.withEntityClass(SnapshotStoreEntityWithId.class).withCommandClass(SnapshotStoreCommand.class);
-        return builder.build().openStore(storeName);
+        return builder.build();
     }
 }

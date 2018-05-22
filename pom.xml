@@ -56,6 +56,10 @@
             <name>Guillaume Vauvert</name>
             <url>https://github.com/gvauvert</url>
         </developer>
+        <developer>
+            <name>Romain Revol</name>
+            <url>https://github.com/rrevol</url>
+        </developer>
     </developers>
 
     <scm>
@@ -139,6 +143,7 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>1.0.1</version>
             </dependency>
+
             <!-- Amazon AWS -->
             <dependency>
                 <groupId>com.amazonaws</groupId>

@@ -9,7 +9,7 @@ import com.google.common.collect.ImmutableMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StoreManagerFactoryBuilderConfiguratorTest {
+public class StoreManagerBuilderConfiguratorTest {
 
     //region getProperty
 
@@ -41,7 +41,7 @@ public class StoreManagerFactoryBuilderConfiguratorTest {
     public void test(String message, String mapProperties, String key, String expectedValue) throws IOException {
         Properties properties = new Properties();
         properties.load(new StringReader(mapProperties));
-        assertThat(StoreManagerFactoryBuilderConfigurator.getProperty(properties, key)).as(message).isEqualTo(expectedValue);
+        assertThat(StoreManagerBuilderConfigurator.getProperty(properties, key)).as(message).isEqualTo(expectedValue);
     }
 
     private static void setEnv(Map<String, String> newenv) throws Exception {

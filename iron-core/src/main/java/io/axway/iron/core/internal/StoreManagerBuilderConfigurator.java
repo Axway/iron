@@ -15,26 +15,26 @@ import javax.annotation.*;
 import com.google.common.annotations.VisibleForTesting;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
-import io.axway.iron.core.StoreManagerFactoryBuilder;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.error.ConfigurationException;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
 import static java.util.Arrays.*;
 
-public class StoreManagerFactoryBuilderConfigurator {
-    private static final Logger LOG = LoggerFactory.getLogger(StoreManagerFactoryBuilderConfigurator.class);
+public class StoreManagerBuilderConfigurator {
+    private static final Logger LOG = LoggerFactory.getLogger(StoreManagerBuilderConfigurator.class);
     private static final Pattern VARIABLE_REGEX_PATTERN = Pattern.compile("\\$\\{(?:(?<source>env|ENV|sys|SYS):)?(?<name>[^}].*?)}");
     private static final Object UNKNOWN_KEY = new Object();
 
-    public void fill(StoreManagerFactoryBuilder storeManagerFactoryBuilder, Properties properties) {
+    public void fill(StoreManagerBuilder storeManagerBuilder, String builderName, Properties properties) {
         Map<Type, BuilderImplConfig> componentBuilders = findComponentBuilders(properties);
         for (Map.Entry<Type, BuilderImplConfig> entry : componentBuilders.entrySet()) {
             BuilderImplConfig config = entry.getValue();
-            Supplier<Object> builder = instantiateBuilder(config.supplierClass(), properties, config.baseName());
-            buildAndAssign(builder, entry.getKey(), storeManagerFactoryBuilder);
+            Supplier<Object> builder = instantiateBuilder(config.supplierClass(), properties, builderName, config.baseName());
+            buildAndAssign(builder, entry.getKey(), storeManagerBuilder);
         }
     }
 
@@ -64,10 +64,16 @@ public class StoreManagerFactoryBuilderConfigurator {
         return map;
     }
 
-    private <T> Supplier<T> instantiateBuilder(Class<Supplier<T>> componentBuilderClazz, Properties properties, String baseName) {
+    private <T> Supplier<T> instantiateBuilder(Class<Supplier<T>> componentBuilderClazz, Properties properties, String builderName, String baseName) {
         try {
-            Constructor<Supplier<T>> constructor = componentBuilderClazz.getConstructor();
-            Supplier<T> builder = constructor.newInstance();
+            Supplier<T> builder;
+            try {
+                Constructor<Supplier<T>> constructor = componentBuilderClazz.getConstructor(String.class);
+                builder = constructor.newInstance(builderName);
+            } catch (NoSuchMethodException e) {
+                Constructor<Supplier<T>> constructor = componentBuilderClazz.getConstructor();
+                builder = constructor.newInstance();
+            }
 
             for (Method method : componentBuilderClazz.getDeclaredMethods()) {
                 Class<?>[] parameterTypes = method.getParameterTypes();
@@ -180,17 +186,17 @@ public class StoreManagerFactoryBuilderConfigurator {
         return property;
     }
 
-    private void buildAndAssign(Supplier<Object> builder, Type type, StoreManagerFactoryBuilder storeManagerFactoryBuilder) {
+    private void buildAndAssign(Supplier<Object> builder, Type type, StoreManagerBuilder storeManagerBuilder) {
         Object component = builder.get();
         Class<?> typeClass = (Class<?>) type;
         if (typeClass.isAssignableFrom(TransactionSerializer.class)) {
-            storeManagerFactoryBuilder.withTransactionSerializer((TransactionSerializer) component);
-        } else if (typeClass.isAssignableFrom(TransactionStoreFactory.class)) {
-            storeManagerFactoryBuilder.withTransactionStoreFactory((TransactionStoreFactory) component);
+            storeManagerBuilder.withTransactionSerializer((TransactionSerializer) component);
+        } else if (typeClass.isAssignableFrom(TransactionStore.class)) {
+            storeManagerBuilder.withTransactionStore((TransactionStore) component);
         } else if (typeClass.isAssignableFrom(SnapshotSerializer.class)) {
-            storeManagerFactoryBuilder.withSnapshotSerializer((SnapshotSerializer) component);
-        } else if (typeClass.isAssignableFrom(SnapshotStoreFactory.class)) {
-            storeManagerFactoryBuilder.withSnapshotStoreFactory((SnapshotStoreFactory) component);
+            storeManagerBuilder.withSnapshotSerializer((SnapshotSerializer) component);
+        } else if (typeClass.isAssignableFrom(SnapshotStore.class)) {
+            storeManagerBuilder.withSnapshotStore((SnapshotStore) component);
         } else {
             LOG.error("Supplier type is not supported", args -> args.add("supplierType", typeClass).add("supplier", component.getClass().getName()));
         }

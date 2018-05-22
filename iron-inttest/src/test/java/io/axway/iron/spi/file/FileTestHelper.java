@@ -1,26 +1,26 @@
 package io.axway.iron.spi.file;
 
 import java.nio.file.Path;
-import io.axway.iron.core.spi.file.FileSnapshotStoreFactoryBuilder;
-import io.axway.iron.core.spi.file.FileTransactionStoreFactoryBuilder;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.core.spi.file.FileSnapshotStoreBuilder;
+import io.axway.iron.core.spi.file.FileTransactionStoreBuilder;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
 public class FileTestHelper {
 
-    public static SnapshotStoreFactory buildFileSnapshotStoreFactory(Path filePath) {
-        return new FileSnapshotStoreFactoryBuilder().setDir(filePath).get();
+    public static SnapshotStore buildFileSnapshotStore(Path filePath, String name) {
+        return new FileSnapshotStoreBuilder(name).setDir(filePath).get();
     }
 
-    public static TransactionStoreFactory buildFileTransactionStoreFactory(Path filePath) {
-        return new FileTransactionStoreFactoryBuilder().setDir(filePath).get();
+    public static TransactionStore buildFileTransactionStore(Path filePath, String name) {
+        return new FileTransactionStoreBuilder(name).setDir(filePath).get();
     }
 
-    public static SnapshotStoreFactory buildFileSnapshotStoreFactory(Path filePath, Integer transactionIdPaddingLength) {
-        return new FileSnapshotStoreFactoryBuilder().setDir(filePath).setTransactionIdPaddingLength(transactionIdPaddingLength).get();
+    public static SnapshotStore buildFileSnapshotStore(Path filePath, String name, Integer transactionIdPaddingLength) {
+        return new FileSnapshotStoreBuilder(name).setDir(filePath).setTransactionIdLength(transactionIdPaddingLength).get();
     }
 
-    public static TransactionStoreFactory buildFileTransactionStoreFactory(Path filePath, Integer transactionIdPaddingLength) {
-        return new FileTransactionStoreFactoryBuilder().setDir(filePath).setTransactionIdPaddingLength(transactionIdPaddingLength).get();
+    public static TransactionStore buildFileTransactionStore(Path filePath, String name, Integer transactionIdPaddingLength) {
+        return new FileTransactionStoreBuilder(name).setDir(filePath).setTransactionIdPaddingLength(transactionIdPaddingLength).get();
     }
 }

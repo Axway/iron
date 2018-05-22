@@ -173,7 +173,7 @@ public abstract class BaseInttest {
     }
 
     protected Path getIronSpiAwsInttestFilePath() {
-        return Paths.get("iron", "iron-spi-aws-inttest");
+        return Paths.get("tmp-iron-test", "iron-spi-aws-inttest");
     }
 
     public static Properties loadConfiguration(String resourceName) {

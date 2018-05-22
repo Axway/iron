@@ -4,9 +4,9 @@ import java.io.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import javax.annotation.*;
+import org.reactivestreams.Publisher;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
 import com.amazonaws.services.kinesis.model.DescribeStreamResult;
@@ -21,19 +21,21 @@ import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
+import io.axway.iron.spi.StoreNamePrefixManagement;
 import io.axway.iron.spi.storage.TransactionStore;
+import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
 
 import static io.axway.alf.assertion.Assertion.checkState;
+import static io.axway.iron.spi.StoreNamePrefixManagement.readStoreName;
 import static io.axway.iron.spi.aws.AwsUtils.performAmazonActionWithRetry;
 import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.*;
 import static java.math.BigInteger.ZERO;
 
 /**
- * Kinesis implementation of the TransactionStore.
- * Transactions are stored in a Kinesis Stream.
+ * Kinesis transaction store factory to build Kinesis TransactionStore.
  */
-class AwsKinesisTransactionStore implements TransactionStore {
-
+public class AwsKinesisTransactionStore implements TransactionStore {
     private static final Logger LOG = LoggerFactory.getLogger(AwsKinesisTransactionStore.class);
 
     private static final long INITIAL_MINIMAL_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS = 1_000 / 4; // max 5 calls per second
@@ -46,20 +48,87 @@ class AwsKinesisTransactionStore implements TransactionStore {
     @Nullable
     private Long m_lastGetShardIteratorRequestTime = null;
 
+    private final Flowable<TransactionInput> m_transactionsFlow;
+    private final StoreNamePrefixManagement m_prefixManagement = new StoreNamePrefixManagement();
+
     private AtomicLong m_minimalDurationBetweenTwoGetShardIteratorRequests = new AtomicLong(INITIAL_MINIMAL_DURATION_BETWEEN_TWO_GET_SHARD_ITERATOR_REQUESTS);
     private static Random s_random = new Random();
 
     /**
-     * Create a KinesisTransactionStore based on an already active Kinesis Stream.
-     * That is not the responsibility of this constructor to create the Kinesis Stream nor to wait that the Kinesis Stream reaches the 'ACTIVE" status.
+     * Create a KinesisTransactionStoreFactory with some properties set to configure Kinesis :
      *
-     * @param kinesis the kinesis consumer
-     * @param streamName the stream name
+     * @param accessKey aws access key (optional+)
+     * @param secretKey aws secret key (optional+)
+     * @param endpoint kinesis port (optional*)
+     * @param port kinesis endpoint (optional*)
+     * @param region aws region (optional*)
+     * @param streamName stream name prefix
+     * (+) to configure the access, both access key and secret key must be provided.
+     * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
      */
-    AwsKinesisTransactionStore(AmazonKinesis kinesis, String streamName) {
+    AwsKinesisTransactionStore(String accessKey, String secretKey, String endpoint, Integer port, String region, String streamName) {
+        m_kinesis = buildKinesisClient(accessKey, secretKey, endpoint, port, region);
         m_streamName = streamName;
-        m_kinesis = kinesis;
+        ensureStreamExists(m_kinesis, m_streamName);
         m_shard = getUniqueShard();
+
+        m_transactionsFlow = Flowable                                                //
+                .<List<Record>>generate(emitter -> emitter.onNext(nextRecords()))    //                                                                   //
+                .subscribeOn(Schedulers.io())                                        //
+                .observeOn(Schedulers.computation())                                 //
+                .concatMap(Flowable::fromIterable)                                   //
+                .map(record -> {
+                    BigInteger seekTransactionId = new BigInteger(record.getSequenceNumber());
+                    m_seekTransactionId = seekTransactionId;
+                    ByteBuffer data = record.getData().asReadOnlyBuffer();
+                    ByteBufferBackedInputStream inputStream = new ByteBufferBackedInputStream(data);
+                    String storeName = readStoreName(inputStream);
+                    return new TransactionInput() {
+                        @Override
+                        public String storeName() {
+                            return storeName;
+                        }
+
+                        @Override
+                        public InputStream getInputStream() {
+                            return inputStream;
+                        }
+
+                        @Override
+                        public BigInteger getTransactionId() {
+                            return seekTransactionId;
+                        }
+                    };
+                });
+    }
+
+    @Override
+    public OutputStream createTransactionOutput(String storeName) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream() {
+            @Override
+            public void close() throws IOException {
+                super.close();
+                ByteBuffer data = ByteBuffer.wrap(toByteArray());
+                m_kinesis.putRecord(new PutRecordRequest().withStreamName(m_streamName).withData(data).withPartitionKey(USELESS_PARTITION_KEY));
+            }
+        };
+        m_prefixManagement.writeNamePrefix(storeName, outputStream);
+        return outputStream;
+    }
+
+    @Override
+    public Publisher<TransactionInput> allTransactions() {
+        return m_transactionsFlow;
+    }
+
+    @Override
+    public void seekTransaction(BigInteger latestProcessedTransactionId) {
+        m_seekTransactionId = latestProcessedTransactionId;
+    }
+
+    @Override
+    public void close() {
+        m_kinesis.shutdown();
     }
 
     /**
@@ -80,49 +149,9 @@ class AwsKinesisTransactionStore implements TransactionStore {
         return shards.get(0);
     }
 
-    @Override
-    public OutputStream createTransactionOutput() throws IOException {
-        return new ByteArrayOutputStream() {
-            @Override
-            public void close() throws IOException {
-                super.close();
-                ByteBuffer data = ByteBuffer.wrap(toByteArray());
-                m_kinesis.putRecord(new PutRecordRequest().withStreamName(m_streamName).withData(data).withPartitionKey(USELESS_PARTITION_KEY));
-            }
-        };
-    }
-
-    @Override
-    public void seekTransactionPoll(BigInteger latestProcessedTransactionId) {
-        m_seekTransactionId = latestProcessedTransactionId;
-    }
-
-    @Override
-    public TransactionInput pollNextTransaction(long timeout, TimeUnit unit) {
-        Record record = getNextRecord();
-        if (record == null) {
-            return null;
-        }
-        BigInteger seekTransactionId = new BigInteger(record.getSequenceNumber());
-        m_seekTransactionId = seekTransactionId;
-        ByteBuffer data = record.getData().asReadOnlyBuffer();
-        return new TransactionInput() {
-            @Override
-            public InputStream getInputStream() throws IOException {
-                return new ByteBufferBackedInputStream(data);
-            }
-
-            @Override
-            public BigInteger getTransactionId() {
-                return seekTransactionId;
-            }
-        };
-    }
-
-    @Nullable
-    private Record getNextRecord() {
+    private List<Record> nextRecords() {
         if (!waitTheMinimalDurationToExecuteTheNextGetShardIteratorRequest()) {
-            return null;
+            return Collections.emptyList();
         }
         GetShardIteratorRequest getShardIteratorRequest;
         if (m_seekTransactionId == null || m_seekTransactionId
@@ -142,15 +171,7 @@ class AwsKinesisTransactionStore implements TransactionStore {
         }
         // Suboptimal request, should store records in a list instead. To be fixed.
         GetRecordsRequest getRecordsRequest = new GetRecordsRequest().withShardIterator(getShardIteratorResult.getShardIterator()).withLimit(1);
-        List<Record> records = getRecords(getRecordsRequest);
-        Record record;
-        if (records.isEmpty()) {
-            record = null;
-        } else {
-            checkState(records.size() == 1, "Kinesis should not return more than one record", args -> args.add("recordCount", records.size()));
-            record = records.get(0);
-        }
-        return record;
+        return getRecords(getRecordsRequest);
     }
 
     /**
@@ -170,7 +191,7 @@ class AwsKinesisTransactionStore implements TransactionStore {
             long updatedDuration = m_minimalDurationBetweenTwoGetShardIteratorRequests.updateAndGet(duration -> duration * 2 // twice the duration
                     + duration * 2 / durationRandomModifier);// add random duration to avoid simultaneous reads
             LOG.debug("Update of minimal duration between two get shard iterator requests",
-                     args -> args.add("streamName", m_streamName).add("new minimalDurationBetweenTwoGetShardIteratorRequests", updatedDuration));
+                      args -> args.add("streamName", m_streamName).add("new minimalDurationBetweenTwoGetShardIteratorRequests", updatedDuration));
             getShardIteratorResult = null;
         }
         return getShardIteratorResult;
@@ -239,12 +260,12 @@ class AwsKinesisTransactionStore implements TransactionStore {
         }
 
         @Override
-        public int read() throws IOException {
+        public int read() {
             return m_byteBuffer.hasRemaining() ? m_byteBuffer.get() & 255 : -1;
         }
 
         @Override
-        public int read(byte[] bytes, int off, int len) throws IOException {
+        public int read(byte[] bytes, int off, int len) {
             if (!m_byteBuffer.hasRemaining()) {
                 return -1;
             }

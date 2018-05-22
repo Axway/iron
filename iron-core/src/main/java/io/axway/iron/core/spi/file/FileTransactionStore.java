@@ -4,39 +4,54 @@ import java.io.*;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.*;
+import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.util.concurrent.locks.*;
 import java.util.regex.*;
 import java.util.stream.*;
+import javax.annotation.*;
+import javax.annotation.concurrent.*;
+import org.reactivestreams.Publisher;
+import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import io.axway.iron.spi.storage.TransactionStore;
+import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
 
-class FileTransactionStore implements TransactionStore {
+import static io.axway.iron.core.spi.file.FilenameUtils.*;
+
+public class FileTransactionStore implements TransactionStore {
     private static final String TX_EXT = "tx";
-    private static final String FILENAME_FORMAT = "%020d.%s";
-    private static final Pattern FILENAME_PATTERN = Pattern.compile("([0-9]{20}).([a-z]+)");
 
+    private final String m_filenameFormat;
+    private final Pattern m_filenamePattern;
     private final Path m_transactionDir;
     private final Path m_transactionTmpDir;
+    private long m_nextTxId;
 
     private final AtomicLong m_tmpCounter = new AtomicLong();
     private final Object m_commitLock = new Object();
-    private long m_nextTxId;
+    private final AtomicLong m_consumerStart = new AtomicLong();
 
-    private volatile long m_latestTransaction;
+    private final Lock m_txLock = new ReentrantLock();
+    private final Condition m_txAvailable = m_txLock.newCondition();
+    @GuardedBy("m_txLock")
+    private final LinkedList<String> m_txToProcess = new LinkedList<>();
 
-    private long m_consumerNextTxId = 0;
+    private Publisher<TransactionInput> m_allTx;
 
-    FileTransactionStore(Path transactionDir, Path transactionStoreTmpDir) {
-        m_transactionDir = transactionDir;
-        m_transactionTmpDir = transactionStoreTmpDir;
-
+    FileTransactionStore(Path fileStoreDir, @Nullable Integer transactionIdLength) {
+        m_filenamePattern = Pattern.compile("(" + buildIdRegex(transactionIdLength) + ")_([\\w\\s-]+)\\.([a-zA-Z]+)");
+        m_filenameFormat = buildIdFormat(transactionIdLength) + "_%s.%s";
+        m_transactionDir = ensureDirectoryExists(fileStoreDir.resolve("tx"));
+        m_transactionTmpDir = ensureDirectoryExists(fileStoreDir.resolve(".tmp").resolve("tx"));
         m_nextTxId = retrieveNextTxId();
-        m_latestTransaction = m_nextTxId - 1;
+        initExistingFiles();
     }
 
     @Override
-    public OutputStream createTransactionOutput() throws IOException {
-        Path tmpFile = m_transactionTmpDir.resolve(getFileName(m_tmpCounter.getAndIncrement(), TX_EXT));
+    public OutputStream createTransactionOutput(String storeName) throws IOException {
+        Path tmpFile = m_transactionTmpDir.resolve(getFileName(m_tmpCounter.getAndIncrement(), storeName));
 
         return new BufferedOutputStream(Files.newOutputStream(tmpFile)) {
             @Override
@@ -44,61 +59,113 @@ class FileTransactionStore implements TransactionStore {
                 super.close();
                 synchronized (m_commitLock) {
                     long transactionId = m_nextTxId++;
-                    Path txFile = getTxFile(transactionId);
+                    String fileName = getFileName(transactionId, storeName);
+                    Path txFile = m_transactionDir.resolve(fileName);
 
                     Files.move(tmpFile, txFile);
-                    m_latestTransaction = transactionId;
-                    m_commitLock.notifyAll();
-                }
-            }
-        };
-    }
-
-    @Override
-    public void seekTransactionPoll(BigInteger latestProcessedTransactionId) {
-        m_consumerNextTxId = latestProcessedTransactionId.longValueExact() + 1;
-    }
-
-    @Override
-    public TransactionInput pollNextTransaction(long timeout, TimeUnit unit) {
-        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-        long txId = m_consumerNextTxId;
-        while (m_latestTransaction < txId) {
-            long waitTimeout = deadline - System.currentTimeMillis();
-            if (waitTimeout > 0) {
-                try {
-                    synchronized (m_commitLock) {
-                        m_commitLock.wait(waitTimeout);
+                    m_txLock.lock();
+                    try {
+                        m_txToProcess.add(fileName);
+                        m_txAvailable.signalAll();
+                    } finally {
+                        m_txLock.unlock();
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return null;
                 }
-            } else {
-                return null;
-            }
-        }
-
-        m_consumerNextTxId++;
-        return new TransactionInput() {
-            @Override
-            public InputStream getInputStream() throws IOException {
-                return new BufferedInputStream(Files.newInputStream(getTxFile(txId)));
-            }
-
-            @Override
-            public BigInteger getTransactionId() {
-                return BigInteger.valueOf(txId);
             }
         };
+    }
+
+    private String getFileName(long id, String storeName) {
+        return String.format(m_filenameFormat, id, storeName, TX_EXT);
+    }
+
+    @Override
+    public Publisher<TransactionInput> allTransactions() {
+        if (m_allTx == null) {
+            m_allTx = Flowable                //
+                    .<String>generate(emitter -> {
+                        String next;
+                        m_txLock.lock();
+                        try {
+                            while (m_txToProcess.isEmpty()) {
+                                m_txAvailable.await();
+                            }
+                            next = m_txToProcess.poll();
+                        } finally {
+                            m_txLock.unlock();
+                        }
+                        emitter.onNext(next);
+                    })//
+                    .subscribeOn(Schedulers.io())                   //
+                    .observeOn(Schedulers.computation())            //
+                    .map(fileName -> {
+                        Matcher matcher = m_filenamePattern.matcher(fileName);
+                        if (!matcher.matches()) {
+                            System.err.println(fileName);
+                        }
+                        String store = matcher.group(2);
+                        BigInteger id = BigInteger.valueOf(Long.valueOf(matcher.group(1)));
+                        return new TransactionInput() {
+                            @Override
+                            public String storeName() {
+                                return store;
+                            }
+
+                            @Override
+                            public InputStream getInputStream() throws IOException {
+                                return new BufferedInputStream(Files.newInputStream(m_transactionDir.resolve(fileName)));
+                            }
+
+                            @Override
+                            public BigInteger getTransactionId() {
+                                return id;
+                            }
+                        };
+                    });
+        }
+        return m_allTx;
+    }
+
+    private void initExistingFiles() {
+        m_txLock.lock();
+        try {
+            m_txToProcess.clear();
+            Files //
+                    .find(m_transactionDir, 1, (path, atts) -> {
+                        if (atts.isDirectory()) {
+                            return false;
+                        }
+                        String fileName = path.getFileName().toString();
+                        return fileName.compareTo(Strings.padStart(m_consumerStart.toString(), 20, '0')) >= 0;
+                    })    //
+                    .forEach(path -> {
+                        String fileName = path.getFileName().toString();
+                        if (m_filenamePattern.matcher(fileName).matches()) {
+                            m_txToProcess.add(fileName);
+                            m_txAvailable.signalAll();
+                        }
+                    });
+            Collections.sort(m_txToProcess);
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        } finally {
+            m_txLock.unlock();
+        }
+    }
+
+    @Override
+    public void seekTransaction(BigInteger latestProcessedTransactionId) {
+        m_consumerStart.set(latestProcessedTransactionId.longValueExact() + 1);
+        m_allTx = null;
+        initExistingFiles();
     }
 
     private long retrieveNextTxId() {
         try (Stream<Path> dirList = Files.list(m_transactionDir)) {
             return dirList //
                     .map(path -> path.getFileName().toString()) //
-                    .map(FILENAME_PATTERN::matcher) //
-                    .filter(matcher -> matcher.matches() && TX_EXT.equals(matcher.group(2))) //
+                    .map(m_filenamePattern::matcher) //
+                    .filter(matcher -> matcher.matches() && TX_EXT.equals(matcher.group(3))) //
                     .mapToLong(matcher -> Long.valueOf(matcher.group(1))) //
                     .max() //
                     .orElse(-1L) // in case no file exists we want nextTxId=0
@@ -106,13 +173,5 @@ class FileTransactionStore implements TransactionStore {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    private Path getTxFile(long id) {
-        return m_transactionDir.resolve(getFileName(id, TX_EXT));
-    }
-
-    private String getFileName(long id, String ext) {
-        return String.format(FILENAME_FORMAT, id, ext);
     }
 }

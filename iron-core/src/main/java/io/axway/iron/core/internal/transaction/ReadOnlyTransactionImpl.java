@@ -5,24 +5,24 @@ import java.util.stream.*;
 import javax.annotation.*;
 import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.core.internal.entity.EntityStore;
-import io.axway.iron.core.internal.entity.EntityStoreManager;
+import io.axway.iron.core.internal.entity.EntityStores;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.error.ObjectNotFoundException;
 import io.axway.iron.functional.Accessor;
 
 public class ReadOnlyTransactionImpl implements ReadOnlyTransaction {
     final IntrospectionHelper m_introspectionHelper;
-    final EntityStoreManager m_entityStoreManager;
+    final EntityStores m_entityStores;
 
-    public ReadOnlyTransactionImpl(IntrospectionHelper introspectionHelper, EntityStoreManager entityStoreManager) {
+    public ReadOnlyTransactionImpl(IntrospectionHelper introspectionHelper, EntityStores entityStores) {
         m_introspectionHelper = introspectionHelper;
-        m_entityStoreManager = entityStoreManager;
+        m_entityStores = entityStores;
     }
 
     @Override
     public <E> From<E> select(Class<E> entityClass) {
         return new From<E>() {
-            private final EntityStore<E> m_entityStore = m_entityStoreManager.getEntityStore(entityClass);
+            private final EntityStore<E> m_entityStore = m_entityStores.getEntityStore(entityClass);
 
             @Override
             public Collection<E> all() {
@@ -62,5 +62,9 @@ public class ReadOnlyTransactionImpl implements ReadOnlyTransaction {
                 };
             }
         };
+    }
+
+    public EntityStores entityStores() {
+        return m_entityStores;
     }
 }

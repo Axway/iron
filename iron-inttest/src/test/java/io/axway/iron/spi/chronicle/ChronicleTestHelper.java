@@ -1,10 +1,10 @@
 package io.axway.iron.spi.chronicle;
 
 import java.nio.file.Path;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.TransactionStore;
 
 public class ChronicleTestHelper {
-    public static TransactionStoreFactory buildChronicleTransactionStoreFactory(Path filePath) {
-        return new ChronicleTransactionStoreFactoryBuilder().setDir(filePath).get();
+    public static TransactionStore buildChronicleTransactionStoreFactory(String name, Path filePath) {
+        return new ChronicleTransactionStoreBuilder(name).setDir(filePath).get();
     }
 }

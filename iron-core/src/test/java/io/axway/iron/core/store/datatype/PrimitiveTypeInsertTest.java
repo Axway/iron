@@ -3,7 +3,7 @@ package io.axway.iron.core.store.datatype;
 import java.util.*;
 import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
-import io.axway.iron.core.StoreManagerFactoryBuilder;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.store.SucceedingStoreTest;
 import io.axway.iron.core.store.datatype.command.PrimitiveTypeInsertCommand;
 import io.axway.iron.core.store.datatype.model.PrimitiveTypeEntity;
@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PrimitiveTypeInsertTest implements SucceedingStoreTest {
 
     @Override
-    public void configure(StoreManagerFactoryBuilder builder) throws Exception {
+    public void configure(StoreManagerBuilder builder) throws Exception {
         builder.withEntityClass(PrimitiveTypeEntity.class).withCommandClass(PrimitiveTypeInsertCommand.class);
     }
 

@@ -6,7 +6,7 @@ import com.google.common.collect.ImmutableList;
 import io.axway.iron.Command;
 import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.Store;
-import io.axway.iron.core.StoreManagerFactoryBuilder;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.store.FailingStoreTest;
 import io.axway.iron.core.store.relation.command.CarChangeOwner;
 import io.axway.iron.core.store.relation.command.CarCreateCommand;
@@ -17,7 +17,7 @@ import io.axway.iron.error.StoreException;
 
 class ShouldRollbackRelationTest extends AbstractRelationTest implements FailingStoreTest {
     @Override
-    public void configure(StoreManagerFactoryBuilder builder) throws Exception {
+    public void configure(StoreManagerBuilder builder) throws Exception {
         super.configure(builder);
         builder.withCommandClass(CarFailingCommand.class);
     }

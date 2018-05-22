@@ -24,7 +24,7 @@ public class CommandWithLongCollectionParameterTest {
     @Test(dataProvider = "longs")
     public void ensureLongCollectionParameterInCommandWorks(Collection<Long> longParameters, Long expectedResult) throws Exception {
         try (StoreManager storeManager = IronTestHelper.createTransientStore()) {
-            Store store = storeManager.getStore();
+            Store store = IronTestHelper.getRandomTransientStore(storeManager);
 
             Long result = store.createCommand(CommandWithLongCollectionParameterCommand.class) //
                     .set(CommandWithLongCollectionParameterCommand::longParameters).to(longParameters) //
