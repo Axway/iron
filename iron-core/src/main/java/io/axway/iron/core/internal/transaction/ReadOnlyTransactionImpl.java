@@ -63,8 +63,4 @@ public class ReadOnlyTransactionImpl implements ReadOnlyTransaction {
             }
         };
     }
-
-    public EntityStores entityStores() {
-        return m_entityStores;
-    }
 }

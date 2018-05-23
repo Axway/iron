@@ -203,8 +203,7 @@ class StoreManagerImpl implements StoreManager {
     private StoreImpl createStore(String storeName) {
         checkArgument(STORE_NAME_VALIDATOR_PATTERN.matcher(storeName).matches(), "Invalid store name", args -> args.add("storeName", storeName));
         EntityStores entityStores = createEntityStores();
-        ReadOnlyTransactionImpl readOnlyTransaction = new ReadOnlyTransactionImpl(m_introspectionHelper, entityStores);
-        return new StoreImpl(storeName, readOnlyTransaction);
+        return new StoreImpl(storeName, entityStores);
     }
 
     private EntityStores createEntityStores() {
@@ -251,13 +250,15 @@ class StoreManagerImpl implements StoreManager {
     private class StoreImpl implements Store {
         private final String m_storeName;
         private final ReadOnlyTransactionImpl m_readOnlyTransaction;
+        private final EntityStores m_entityStores;
         private final ReadWriteLock m_readWriteLock = new ReentrantReadWriteLock();
         private final Lock m_readLock = m_readWriteLock.readLock();
         private final Lock m_writeLock = m_readWriteLock.writeLock();
 
-        private StoreImpl(String storeName, ReadOnlyTransactionImpl readOnlyTransaction) {
+        private StoreImpl(String storeName, EntityStores entityStores) {
             m_storeName = storeName;
-            m_readOnlyTransaction = readOnlyTransaction;
+            m_readOnlyTransaction = new ReadOnlyTransactionImpl(m_introspectionHelper, entityStores);
+            m_entityStores = entityStores;
         }
 
         @Override
@@ -319,7 +320,7 @@ class StoreManagerImpl implements StoreManager {
         }
 
         EntityStores entityStores() {
-            return m_readOnlyTransaction.entityStores();
+            return m_entityStores;
         }
     }
 
