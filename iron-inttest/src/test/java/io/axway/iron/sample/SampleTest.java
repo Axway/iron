@@ -13,7 +13,7 @@ import com.google.common.collect.ImmutableMap;
 import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
-import io.axway.iron.StoreManagerFactory;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.sample.command.ChangeCompanyAddress;
 import io.axway.iron.sample.command.CreateCompany;
 import io.axway.iron.sample.command.CreatePerson;
@@ -25,10 +25,10 @@ import io.axway.iron.sample.model.Company;
 import io.axway.iron.sample.model.Person;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
-import static io.axway.iron.core.StoreManagerFactoryBuilder.newStoreManagerBuilderFactory;
+import static io.axway.iron.core.StoreManagerBuilder.newStoreManagerBuilder;
 import static io.axway.iron.spi.chronicle.ChronicleTestHelper.buildChronicleTransactionStoreFactory;
 import static io.axway.iron.spi.file.FileTestHelper.*;
 import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
@@ -40,31 +40,31 @@ public class SampleTest {
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
-        Path filePath = Paths.get("iron", "iron-sample");
-        SnapshotStoreFactory fileSnapshotStoreFactory = buildFileSnapshotStoreFactory(filePath);
-        TransactionStoreFactory fileTransactionStoreFactory = buildFileTransactionStoreFactory(filePath);
+        Path filePath = Paths.get("tmp-iron-test");
+        SnapshotStore fileSnapshotStore = buildFileSnapshotStore(filePath, "iron-sample");
+        TransactionStore fileTransactionStore = buildFileTransactionStore(filePath, "iron-sample");
 
-        TransactionStoreFactory chronicleTransactionStoreFactory = buildChronicleTransactionStoreFactory(filePath);
+        TransactionStore chronicleTransactionStore = buildChronicleTransactionStoreFactory("iron-sample", filePath);
 
         String storeBaseName = "irontest-" + System.getProperty("user.name");
 
         return new Object[][]{ //
-                {chronicleTransactionStoreFactory, fileSnapshotStoreFactory, storeBaseName + "-" + UUID.randomUUID()}, //
-                {fileTransactionStoreFactory, fileSnapshotStoreFactory, storeBaseName + "-" + UUID.randomUUID()}, //
+                {chronicleTransactionStore, fileSnapshotStore, storeBaseName + "-" + UUID.randomUUID()}, //
+                {fileTransactionStore, fileSnapshotStore, storeBaseName + "-" + UUID.randomUUID()}, //
         };
     }
 
     @Test(dataProvider = "stores")
-    public void testCreateCompany(TransactionStoreFactory transactionStoreFactory, SnapshotStoreFactory snapshotStoreFactory, String storeName)
+    public void testCreateCompany(TransactionStore transactionStore, SnapshotStore snapshotStore, String storeName)
             throws Exception {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
 
-        StoreManagerFactory storeManagerFactory = newStoreManagerBuilderFactory() //
+        StoreManager storeManager = StoreManagerBuilder.newStoreManagerBuilder() //
                 .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withTransactionStore(transactionStore) //
                 .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withSnapshotStore(snapshotStore) //
                 .withEntityClass(Company.class) //
                 .withEntityClass(Person.class) //
                 .withCommandClass(ChangeCompanyAddress.class) //
@@ -100,121 +100,113 @@ public class SampleTest {
             System.out.printf("Query6: %s%n", billCompany.name() + " @ " + billCompany.address());
         };
 
-        try (StoreManager storeManager = storeManagerFactory.openStore(storeName)) {
+        Store store = storeManager.getStore(storeName);
+        store.query(listInstances);
 
-            Store store = storeManager.getStore();
+        Store.TransactionBuilder tx1 = store.begin();
+        tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
+        tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
+        tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
+        tx1.addCommand(CreateCompany.class).map(ImmutableMap.of("name", "Apple", "address", "Cupertino")).submit();
+        List<?> result = tx1.submit().get();
+        assertThat(result.size()).isEqualTo(4);
+        assertThat(result.get(0)).isEqualTo(0L);
+        assertThat(result.get(1)).isEqualTo(1L);
+        assertThat(result.get(2)).isEqualTo(2L);
+        assertThat(result.get(3)).isEqualTo(3L);
 
-            store.query(listInstances);
+        Future<Void> c1 = store.createCommand(ChangeCompanyAddress.class) //
+                .set(ChangeCompanyAddress::name).to("Apple") //
+                .set(ChangeCompanyAddress::newAddress).to("Cupertino") //
+                .set(ChangeCompanyAddress::newCountry).to("USA") //
+                .submit();
+        awaitAllAndDiscardErrors(c1);
 
-            Store.TransactionBuilder tx1 = store.begin();
-            tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
-            tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
-            tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
-            tx1.addCommand(CreateCompany.class).map(ImmutableMap.of("name", "Apple", "address", "Cupertino")).submit();
-            List<?> result = tx1.submit().get();
-            assertThat(result.size()).isEqualTo(4);
-            assertThat(result.get(0)).isEqualTo(0L);
-            assertThat(result.get(1)).isEqualTo(1L);
-            assertThat(result.get(2)).isEqualTo(2L);
-            assertThat(result.get(3)).isEqualTo(3L);
+        store.query(tx -> {
+            System.out.printf("Batch1: %s%n", tx.select(Company.class).all());
+        });
 
-            Future<Void> c1 = store.createCommand(ChangeCompanyAddress.class) //
-                    .set(ChangeCompanyAddress::name).to("Apple") //
-                    .set(ChangeCompanyAddress::newAddress).to("Cupertino") //
-                    .set(ChangeCompanyAddress::newCountry).to("USA") //
-                    .submit();
-            awaitAllAndDiscardErrors(c1);
+        Future<Void> c4 = store.createCommand(DeleteCompany.class).set(DeleteCompany::name).to("Apple").submit();
+        awaitAll(c4);
 
-            store.query(tx -> {
-                System.out.printf("Batch1: %s%n", tx.select(Company.class).all());
-            });
+        store.query(tx -> {
+            System.out.printf("Batch2: %s%n", tx.select(Company.class).all());
+        });
 
-            Future<Void> c4 = store.createCommand(DeleteCompany.class).set(DeleteCompany::name).to("Apple").submit();
-            awaitAll(c4);
+        Future<Void> c5 = store.createCommand(ChangeCompanyAddress.class) //
+                .set(ChangeCompanyAddress::name).to("Google") //
+                .set(ChangeCompanyAddress::newAddress).to("Palo Alto") //
+                .set(ChangeCompanyAddress::newCountry).to("") //
+                .submit();
 
-            store.query(tx -> {
-                System.out.printf("Batch2: %s%n", tx.select(Company.class).all());
-            });
+        Future<Long> c6 = store.createCommand(CreateCompany.class) //
+                .set(CreateCompany::name).to("Facebook") //
+                .set(CreateCompany::address).to("") //
+                .submit();
 
-            Future<Void> c5 = store.createCommand(ChangeCompanyAddress.class) //
-                    .set(ChangeCompanyAddress::name).to("Google") //
-                    .set(ChangeCompanyAddress::newAddress).to("Palo Alto") //
-                    .set(ChangeCompanyAddress::newCountry).to("") //
-                    .submit();
+        Future<Void> c7 = store.createCommand(DeleteCompany.class) //
+                .set(DeleteCompany::name).to("Google") //
+                .submit();
 
-            Future<Long> c6 = store.createCommand(CreateCompany.class) //
-                    .set(CreateCompany::name).to("Facebook") //
-                    .set(CreateCompany::address).to("") //
-                    .submit();
+        awaitAllAndDiscardErrors(c5, c6, c7);
 
-            Future<Void> c7 = store.createCommand(DeleteCompany.class) //
-                    .set(DeleteCompany::name).to("Google") //
-                    .submit();
+        store.query(tx -> {
+            System.out.printf("Batch3: %s%n", tx.select(Company.class).all());
+        });
 
-            awaitAllAndDiscardErrors(c5, c6, c7);
+        Store.TransactionBuilder tx8 = store.begin();
+        tx8.addCommand(CreatePerson.class) //
+                .set(CreatePerson::id).to("123") //
+                .set(CreatePerson::name).to("bill") //
+                .set(CreatePerson::previousCompanyNames).to(ImmutableList.of("Google", "Axway")) //
+                .set(CreatePerson::birthDate).to(DATE_FORMAT.parse("01/01/1990")) //
+                .submit();
 
-            store.query(tx -> {
-                System.out.printf("Batch3: %s%n", tx.select(Company.class).all());
-            });
+        tx8.addCommand(CreatePerson.class) //
+                .set(CreatePerson::id).to("456") //
+                .set(CreatePerson::name).to("john") //
+                .submit();
 
-            Store.TransactionBuilder tx8 = store.begin();
-            tx8.addCommand(CreatePerson.class) //
-                    .set(CreatePerson::id).to("123") //
-                    .set(CreatePerson::name).to("bill") //
-                    .set(CreatePerson::previousCompanyNames).to(ImmutableList.of("Google", "Axway")) //
-                    .set(CreatePerson::birthDate).to(DATE_FORMAT.parse("01/01/1990")) //
-                    .submit();
+        tx8.addCommand(CreatePerson.class) //
+                .set(CreatePerson::id).to("789") //
+                .set(CreatePerson::name).to("mark") //
+                .submit();
 
-            tx8.addCommand(CreatePerson.class) //
-                    .set(CreatePerson::id).to("456") //
-                    .set(CreatePerson::name).to("john") //
-                    .submit();
+        awaitAll(tx8.submit());
 
-            tx8.addCommand(CreatePerson.class) //
-                    .set(CreatePerson::id).to("789") //
-                    .set(CreatePerson::name).to("mark") //
-                    .submit();
+        store.query(tx -> {
+            System.out.printf("Batch4: %s%n", tx.select(Person.class).all());
+        });
 
-            awaitAll(tx8.submit());
+        Store.TransactionBuilder tx9 = store.begin();
+        tx9.addCommand(PersonJoinCompany.class) //
+                .set(PersonJoinCompany::personId).to("123") //
+                .set(PersonJoinCompany::companyName).to("Microsoft") //
+                .set(PersonJoinCompany::salary).to(111111.0) //
+                .submit();
+        tx9.addCommand(PersonJoinCompany.class) //
+                .set(PersonJoinCompany::personId).to("456") //
+                .set(PersonJoinCompany::companyName).to("Microsoft") //
+                .set(PersonJoinCompany::salary).to(100000.0) //
+                .submit();
+        tx9.addCommand(PersonJoinCompany.class) //
+                .set(PersonJoinCompany::personId).to("789") //
+                .set(PersonJoinCompany::companyName).to("Google") //
+                .set(PersonJoinCompany::salary).to(123456.0) //
+                .submit();
 
-            store.query(tx -> {
-                System.out.printf("Batch4: %s%n", tx.select(Person.class).all());
-            });
+        awaitAll(tx9.submit());
 
-            Store.TransactionBuilder tx9 = store.begin();
-            tx9.addCommand(PersonJoinCompany.class) //
-                    .set(PersonJoinCompany::personId).to("123") //
-                    .set(PersonJoinCompany::companyName).to("Microsoft") //
-                    .set(PersonJoinCompany::salary).to(111111.0) //
-                    .submit();
-            tx9.addCommand(PersonJoinCompany.class) //
-                    .set(PersonJoinCompany::personId).to("456") //
-                    .set(PersonJoinCompany::companyName).to("Microsoft") //
-                    .set(PersonJoinCompany::salary).to(100000.0) //
-                    .submit();
-            tx9.addCommand(PersonJoinCompany.class) //
-                    .set(PersonJoinCompany::personId).to("789") //
-                    .set(PersonJoinCompany::companyName).to("Google") //
-                    .set(PersonJoinCompany::salary).to(123456.0) //
-                    .submit();
+        store.query(tx -> {
+            Collection<Person> persons = tx.select(Person.class).all();
+            System.out.printf("Batch5: %s%n", persons);
+        });
 
-            awaitAll(tx9.submit());
+        store.query(checkData);
+        storeManager.snapshot();
 
-            store.query(tx -> {
-                Collection<Person> persons = tx.select(Person.class).all();
-                System.out.printf("Batch5: %s%n", persons);
-            });
-
-            store.query(checkData);
-
-            storeManager.snapshot();
-        }
-
-        try (StoreManager storeManager = storeManagerFactory.openStore(storeName)) {
-            Store store = storeManager.getStore();
-            store.query(listInstances);
-            store.query(checkData);
-        }
+        store.query(listInstances);
+        store.query(checkData);
     }
 
     private void awaitAll(Future<?>... futures) throws ExecutionException, InterruptedException {

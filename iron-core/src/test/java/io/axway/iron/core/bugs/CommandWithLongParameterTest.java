@@ -19,7 +19,7 @@ public class CommandWithLongParameterTest {
     @Test(dataProvider = "longs")
     public void ensureLongParameterInCommandWorks(Long value) throws Exception {
         try (StoreManager storeManager = IronTestHelper.createTransientStore()) {
-            Store store = storeManager.getStore();
+            Store store = IronTestHelper.getRandomTransientStore(storeManager);
 
             Long result = store.createCommand(CommandWithLongParameterCommand.class) //
                     .set(CommandWithLongParameterCommand::longParameter).to(value) //

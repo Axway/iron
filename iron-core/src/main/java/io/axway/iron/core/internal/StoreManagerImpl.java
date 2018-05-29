@@ -3,11 +3,13 @@ package io.axway.iron.core.internal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
 import javax.annotation.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.Command;
@@ -15,135 +17,91 @@ import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.internal.command.CommandProxyFactory;
-import io.axway.iron.core.internal.entity.EntityStoreManager;
+import io.axway.iron.core.internal.definition.command.CommandDefinition;
+import io.axway.iron.core.internal.definition.entity.EntityDefinition;
+import io.axway.iron.core.internal.definition.entity.RelationDefinition;
+import io.axway.iron.core.internal.entity.EntityStore;
+import io.axway.iron.core.internal.entity.EntityStores;
+import io.axway.iron.core.internal.entity.RelationStore;
 import io.axway.iron.core.internal.transaction.ReadOnlyTransactionImpl;
 import io.axway.iron.core.internal.transaction.ReadWriteTransactionImpl;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.error.MalformedCommandException;
 import io.axway.iron.error.UnrecoverableStoreException;
 import io.axway.iron.functional.Accessor;
+import io.axway.iron.spi.serializer.SnapshotSerializer;
+import io.axway.iron.spi.serializer.TransactionSerializer;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.flowables.ConnectableFlowable;
 
-import static io.axway.alf.assertion.Assertion.checkState;
+import static io.axway.alf.assertion.Assertion.*;
+import static java.util.concurrent.TimeUnit.*;
 
 class StoreManagerImpl implements StoreManager {
-    private static final Logger LOG = LoggerFactory.getLogger(io.axway.iron.core.internal.StoreManagerImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StoreManagerImpl.class);
 
+    private final TransactionStore m_transactionStore;
     private final IntrospectionHelper m_introspectionHelper;
     private final CommandProxyFactory m_commandProxyFactory;
+    private final Map<Class<?>, EntityDefinition<?>> m_entityDefinitions;
     private final StorePersistence m_storePersistence;
-    private final EntityStoreManager m_entityStoreManager;
-    private final Runnable m_onClose;
-    private final ReadOnlyTransaction m_readOnlyTransaction;
-    private final Thread m_thread;
-    private final StoreImpl m_store = new StoreImpl();
-    private final Cache<String, CompletableFuture<List<Object>>> m_futuresBySynchronizationId = CacheBuilder.newBuilder().weakValues().build();
-    private final CountDownLatch m_transactionRecoveryDone = new CountDownLatch(1);
 
-    private final ReadWriteLock m_readWriteLock = new ReentrantReadWriteLock();
-    private final Lock m_readLock = m_readWriteLock.readLock();
-    private final Lock m_writeLock = m_readWriteLock.writeLock();
+    private final Cache<String, CompletableFuture<List<Object>>> m_futuresBySynchronizationId = CacheBuilder.newBuilder().weakValues().build();
+    private final SnapshotStore m_snapshotStore;
+
     private BigInteger m_currentTxId = BigInteger.ZERO;
     private BigInteger m_lastSnapshotTxId = BigInteger.ONE.negate();
 
+    private Disposable m_disposableTxFlow;
     private volatile boolean m_closed = false;
 
-    StoreManagerImpl(IntrospectionHelper introspectionHelper, CommandProxyFactory commandProxyFactory, StorePersistence storePersistence,
-                     EntityStoreManager entityStoreManager, String storeName, Runnable onClose) {
+    private final Cache<String, StoreImpl> m_stores = CacheBuilder.newBuilder().build();
+
+    StoreManagerImpl(TransactionSerializer transactionSerializer, TransactionStore transactionStore, SnapshotSerializer snapshotSerializer,
+                     SnapshotStore snapshotStore, IntrospectionHelper introspectionHelper, CommandProxyFactory commandProxyFactory,
+                     Collection<CommandDefinition<? extends Command<?>>> commandDefinitions, Map<Class<?>, EntityDefinition<?>> entityDefinitions) {
+        m_transactionStore = transactionStore;
         m_introspectionHelper = introspectionHelper;
         m_commandProxyFactory = commandProxyFactory;
-        m_storePersistence = storePersistence;
-        m_entityStoreManager = entityStoreManager;
-        m_onClose = onClose;
-        m_readOnlyTransaction = new ReadOnlyTransactionImpl(m_introspectionHelper, m_entityStoreManager);
-        m_thread = new Thread(this::consumerLoop, "IronConsumer-" + storeName);
-        m_thread.setUncaughtExceptionHandler((t, e) -> LOG.error("Transaction consumer thread failure", e));
-    }
+        m_entityDefinitions = entityDefinitions;
+        m_snapshotStore = snapshotStore;
+        m_storePersistence = new StorePersistence(m_commandProxyFactory, m_transactionStore, transactionSerializer, m_snapshotStore, snapshotSerializer,
+                                                  commandDefinitions);
 
-    void open() {
-        ensureOpen();
-        BigInteger recoveredSnapshotTxId = m_storePersistence.recover(m_entityStoreManager::getEntityStore);
-        m_thread.start();
-        if (recoveredSnapshotTxId != null) {
-            m_currentTxId = recoveredSnapshotTxId;
-            m_lastSnapshotTxId = m_currentTxId;
-        } else {
-            // create the first snapshot with an empty transaction
+        m_storePersistence                                                           //
+                .loadStores(storeName -> {
+                    StoreImpl store = createStore(storeName);
+                    m_stores.put(storeName, store);
+                    return store.entityStores();
+                })                                                                  //
+                .ifPresent(lastTx -> {
+                    m_currentTxId = lastTx;
+                    m_lastSnapshotTxId = lastTx;
+                    m_transactionStore.seekTransaction(lastTx);
+                });
+
+        ConnectableFlowable<StorePersistence.TransactionToExecute> connectableTransactions = m_storePersistence.allTransactions() //
+                .publish();
+        Flowable<StorePersistence.TransactionToExecute> transactions
+                = connectableTransactions // to start only when connect is called and not with the first subscription
+                .share(); // because we subscribe the main consumer and the one in charge of notifying recovery done
+
+        Completable withTimeout = transactions.takeWhile(t -> !m_closed).timeout(1, SECONDS).ignoreElements();
+
+        m_disposableTxFlow = transactions.subscribe(transaction -> {
+            BigInteger txId = transaction.getTxId();
+            List<Command<?>> commands = transaction.getCommands();
+            Object[] results = new Object[commands.size()];
+            Throwable error = null;
+            CompletableFuture<List<Object>> transactionFuture = null;
             try {
-                m_store.begin().submit().get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new UnrecoverableStoreException(e);
-            } catch (ExecutionException e) {
-                throw new UnrecoverableStoreException(e);
-            }
-            snapshot();
-        }
-
-        try {
-            m_transactionRecoveryDone.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new UnrecoverableStoreException(e);
-        }
-    }
-
-    @Override
-    public Store getStore() {
-        ensureOpen();
-        return m_store;
-    }
-
-    @Nullable
-    @Override
-    public BigInteger snapshot() {
-        ensureOpen();
-        m_readLock.lock();
-        try {
-            if (m_currentTxId.compareTo(m_lastSnapshotTxId) > 0) {
-                m_storePersistence.persistSnapshot(m_currentTxId, m_entityStoreManager.getEntityStores());
-                m_lastSnapshotTxId = m_currentTxId;
-                return m_lastSnapshotTxId;
-            } else {
-                return null;
-            }
-        } finally {
-            m_readLock.unlock();
-        }
-    }
-
-    @Override
-    public void close() {
-        LOG.debug("A store is going to be closed", args -> args.add("store name", m_thread.getName()));
-        ensureOpen();
-        m_closed = true;
-        try {
-            m_thread.join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        m_onClose.run();
-    }
-
-    @Override
-    public BigInteger lastSnapshotTransactionId() {
-        return m_lastSnapshotTxId;
-    }
-
-    private void ensureOpen() {
-        checkState(!m_closed, "Store has been closed");
-    }
-
-    private void consumerLoop() {
-        boolean shouldNotifyTransactionDone = true;
-        while (!m_closed) {
-            StorePersistence.TransactionToExecute transactionToExecute = m_storePersistence.pollNextTransaction(10);
-            if (transactionToExecute != null) {
-                BigInteger txId = transactionToExecute.getTxId();
-                List<Command<?>> commands = transactionToExecute.getCommands();
-                Object[] results = new Object[commands.size()];
-                Throwable error = null;
-                ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, m_entityStoreManager);
-                m_writeLock.lock();
+                StoreImpl store = getStore(transaction.getStoreName());
+                ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, store.entityStores());
+                store.m_writeLock.lock();
                 try {
                     for (int i = 0; i < commands.size(); i++) {
                         Command<?> command = commands.get(i);
@@ -159,43 +117,160 @@ class StoreManagerImpl implements StoreManager {
                 } catch (Exception e) {
                     error = e;
                     tx.rollback();
+                    LOG.info("Transaction failed and rollbacked", args -> args.add("transactionId", txId), error);
                 } finally {
                     m_currentTxId = txId;
-                    m_writeLock.unlock();
+                    store.m_writeLock.unlock();
                 }
 
-                if (error != null) {
-                    LOG.info("Transaction failed and rollbacked", args -> args.add("transactionId", txId), error);
-                }
-
-                String synchronizationId = transactionToExecute.getSynchronizationId();
-                CompletableFuture<List<Object>> transactionFuture = m_futuresBySynchronizationId.getIfPresent(synchronizationId);
-                if (transactionFuture != null) {
-                    if (error != null) {
-                        transactionFuture.completeExceptionally(error);
-                    } else {
-                        transactionFuture.complete(Arrays.asList(results));
-                    }
-                }
-            } else if (shouldNotifyTransactionDone) {
-                shouldNotifyTransactionDone = false;
-                m_transactionRecoveryDone.countDown();
+                transactionFuture = m_futuresBySynchronizationId.getIfPresent(transaction.getSynchronizationId());
+            } catch (Exception e) {
+                error = e;
+                LOG.info("Error processing transaction", args -> args.add("transactionId", txId), error);
             }
+
+            if (transactionFuture != null) {
+                if (error != null) {
+                    transactionFuture.completeExceptionally(error);
+                } else {
+                    transactionFuture.complete(Arrays.asList(results));
+                }
+            }
+        }, error -> {
+            LOG.info("Error processing transaction", error);
+            m_futuresBySynchronizationId.asMap().values().forEach(f -> f.completeExceptionally(error));
+        });
+
+        connectableTransactions.connect();
+        // use timeout to wait for
+        Throwable error = withTimeout.blockingGet();
+        if (!(error instanceof TimeoutException) && !(error instanceof NoSuchElementException)) {
+            throw new UnrecoverableStoreException(error);
         }
     }
 
+    @Override
+    public Set<String> listStores() {
+        return Collections.unmodifiableSet(m_stores.asMap().keySet());
+    }
+
+    @Nullable
+    @Override
+    public BigInteger snapshot() {
+        ensureOpen();
+
+        if (m_currentTxId.compareTo(m_lastSnapshotTxId) > 0) {
+            BigInteger tx = m_currentTxId;
+            m_stores.asMap().forEach((storeName, store) -> {
+                store.m_readLock.lock();
+                try {
+                    m_storePersistence.persistSnapshot(tx, storeName, store.entityStores().toList());
+                } finally {
+                    store.m_readLock.unlock();
+                }
+            });
+            return m_lastSnapshotTxId = tx;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public BigInteger lastSnapshotTransactionId() {
+        return m_lastSnapshotTxId;
+    }
+
+    @Override
+    public StoreImpl getStore(String storeName) {
+        ensureOpen();
+        StoreImpl store = m_stores.getIfPresent(storeName);
+        if (store != null) {
+            return store;
+        }
+
+        AtomicBoolean newStore = new AtomicBoolean(false);
+        try {
+            store = m_stores.get(storeName, () -> {
+                newStore.set(true);
+                return createStore(storeName);
+            });
+        } catch (ExecutionException e) {
+            throw new UnrecoverableStoreException(e);
+        }
+        return store;
+    }
+
+    private StoreImpl createStore(String storeName) {
+        checkArgument(STORE_NAME_VALIDATOR_PATTERN.matcher(storeName).matches(), "Invalid store name", args -> args.add("storeName", storeName));
+        EntityStores entityStores = createEntityStores();
+        return new StoreImpl(storeName, entityStores);
+    }
+
+    private EntityStores createEntityStores() {
+        ImmutableMap.Builder<RelationDefinition, RelationStore> relationStoresBuilder = ImmutableMap.builder();
+        m_entityDefinitions.values().stream().flatMap(entityDefinition -> entityDefinition.getRelations().values().stream()).forEach(relationDefinition -> {
+            RelationStore relationStore = RelationStore.newRelationStore(relationDefinition);
+            relationStoresBuilder.put(relationDefinition, relationStore);
+        });
+        Map<RelationDefinition, RelationStore> relationStores = relationStoresBuilder.build();
+
+        ImmutableMap.Builder<Class<?>, EntityStore<?>> entityStoresBuilder = ImmutableMap.builder();
+        m_entityDefinitions.values().forEach(entityDefinition -> {
+            EntityStore<?> entityStore = createEntityStore(entityDefinition, relationStores);
+            entityStoresBuilder.put(entityDefinition.getEntityClass(), entityStore);
+        });
+        Map<Class<?>, EntityStore<?>> entityStores = entityStoresBuilder.build();
+
+        for (EntityStore<?> entityStore : entityStores.values()) {
+            entityStore.init(entityStores, relationStores);
+        }
+
+        return new EntityStores(entityStores.values());
+    }
+
+    private <E> EntityStore<E> createEntityStore(EntityDefinition<E> entityDefinition, Map<RelationDefinition, RelationStore> relationStores) {
+        return new EntityStore<>(entityDefinition, relationStores);
+    }
+
+    @Override
+    public void close() {
+        LOG.debug("A store manager is going to be closed");
+        ensureOpen();
+        //TODO RRE : why not taking a snapshot before close ?
+        m_closed = true;
+        m_disposableTxFlow.dispose();
+        m_transactionStore.close();
+        m_snapshotStore.close();
+    }
+
+    private void ensureOpen() {
+        checkState(!m_closed, "Store has been closed");
+    }
+
     private class StoreImpl implements Store {
+        private final String m_storeName;
+        private final ReadOnlyTransactionImpl m_readOnlyTransaction;
+        private final EntityStores m_entityStores;
+        private final ReadWriteLock m_readWriteLock = new ReentrantReadWriteLock();
+        private final Lock m_readLock = m_readWriteLock.readLock();
+        private final Lock m_writeLock = m_readWriteLock.writeLock();
+
+        private StoreImpl(String storeName, EntityStores entityStores) {
+            m_storeName = storeName;
+            m_readOnlyTransaction = new ReadOnlyTransactionImpl(m_introspectionHelper, entityStores);
+            m_entityStores = entityStores;
+        }
 
         @Override
         public TransactionBuilder begin() {
             ensureOpen();
-            return new TransactionBuilderImpl();
+            return new TransactionBuilderImpl(m_storeName);
         }
 
         @Override
         public <C extends Command<T>, T> CommandBuilder<C, T> createCommand(Class<C> commandClass) {
             ensureOpen();
-            TransactionBuilder transactionBuilder = new TransactionBuilderImpl();
+            TransactionBuilder transactionBuilder = new TransactionBuilderImpl(m_storeName);
             CommandBuilder<C, T> commandBuilder = transactionBuilder.addCommand(commandClass);
             return new CommandBuilder<C, T>() {
                 @Override
@@ -243,13 +318,22 @@ class StoreManagerImpl implements StoreManager {
                 m_readLock.unlock();
             }
         }
+
+        EntityStores entityStores() {
+            return m_entityStores;
+        }
     }
 
     private class TransactionBuilderImpl implements Store.TransactionBuilder {
+        private final String m_storeName;
         private final String m_synchronizationId = UUID.randomUUID().toString();
         private final CompletableFuture<List<Object>> m_future = new CompletableFuture<>();
         private final List<Command<?>> m_commands = new ArrayList<>();
         private boolean m_valid = true;
+
+        private TransactionBuilderImpl(String storeName) {
+            m_storeName = storeName;
+        }
 
         private void checkValid() {
             checkState(m_valid, "This TransactionBuilder is no more usable");
@@ -266,7 +350,7 @@ class StoreManagerImpl implements StoreManager {
             checkValid();
             m_valid = false;
             m_futuresBySynchronizationId.put(m_synchronizationId, m_future);
-            m_storePersistence.persistTransaction(m_synchronizationId, m_commands);
+            m_storePersistence.persistTransaction(m_storeName, m_synchronizationId, m_commands);
 
             return m_future;
         }
@@ -313,7 +397,7 @@ class StoreManagerImpl implements StoreManager {
                     setParameter(key, e.getValue());
                 }
             } else {
-                throw new UnsupportedOperationException("To be implemented"); //TODO implements
+                throw new UnsupportedOperationException("To be implemented"); //TODO implement
             }
             return this;
         }

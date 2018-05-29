@@ -2,34 +2,35 @@ package io.axway.iron.core;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.axway.alf.exception.IllegalArgumentFormattedException;
 import io.axway.alf.exception.IllegalStateFormattedException;
 import io.axway.iron.StoreManager;
-import io.axway.iron.StoreManagerFactory;
 import io.axway.iron.core.model.simple.SimpleCommand;
 import io.axway.iron.core.model.simple.SimpleEntity;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.iron.core.bugs.IronTestHelper.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class StoreManagerFactoryTest {
+public class StoreManagerTest {
 
     @DataProvider(name = "duplicates")
     public Object[][] providesDuplicates() {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-        SnapshotStoreFactory snapshotStoreFactory = buildTransientSnapshotStoreFactory();
-        TransactionStoreFactory transactionStoreFactory = buildTransientTransactionStoreFactory();
+        SnapshotStore snapshotStore = buildTransientSnapshotStoreFactory();
+        TransactionStore transactionStore = buildTransientTransactionStoreFactory();
 
-        StoreManagerFactoryBuilder b = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory();
+        StoreManagerBuilder b = StoreManagerBuilder.newStoreManagerBuilder();
 
         return new Runnable[][]{{() -> b.withSnapshotSerializer(snapshotSerializer)}, //
                 {() -> b.withTransactionSerializer(transactionSerializer)}, //
-                {() -> b.withSnapshotStoreFactory(snapshotStoreFactory)}, //
-                {() -> b.withTransactionStoreFactory(transactionStoreFactory)}, //
+                {() -> b.withSnapshotStore(snapshotStore)}, //
+                {() -> b.withTransactionStore(transactionStore)}, //
                 {() -> b.withCommandClass(SimpleCommand.class)}, //
                 {() -> b.withEntityClass(SimpleEntity.class)}, //
         };
@@ -54,10 +55,10 @@ public class StoreManagerFactoryTest {
     public void shouldBuilderNotAcceptIncompleteConfiguration(boolean b1, boolean b2, boolean b3, boolean b4) {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-        SnapshotStoreFactory snapshotStoreFactory = buildTransientSnapshotStoreFactory();
-        TransactionStoreFactory transactionStoreFactory = buildTransientTransactionStoreFactory();
+        SnapshotStore snapshotStore = buildTransientSnapshotStoreFactory();
+        TransactionStore transactionStore = buildTransientTransactionStoreFactory();
 
-        StoreManagerFactoryBuilder builder = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory();
+        StoreManagerBuilder builder = StoreManagerBuilder.newStoreManagerBuilder();
         if (b1) {
             builder.withSnapshotSerializer(snapshotSerializer);
         }
@@ -67,11 +68,11 @@ public class StoreManagerFactoryTest {
         }
 
         if (b3) {
-            builder.withSnapshotStoreFactory(snapshotStoreFactory);
+            builder.withSnapshotStore(snapshotStore);
         }
 
         if (b4) {
-            builder.withTransactionStoreFactory(transactionStoreFactory);
+            builder.withTransactionStore(transactionStore);
         }
 
         builder.withCommandClass(SimpleCommand.class) //
@@ -79,17 +80,17 @@ public class StoreManagerFactoryTest {
                 .build();
     }
 
-    private StoreManagerFactory createStoreManagerFactory() {
+    private StoreManager createStoreManagerFactory() {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-        SnapshotStoreFactory snapshotStoreFactory = buildTransientSnapshotStoreFactory();
-        TransactionStoreFactory transactionStoreFactory = buildTransientTransactionStoreFactory();
+        SnapshotStore snapshotStore = buildTransientSnapshotStoreFactory();
+        TransactionStore transactionStore = buildTransientTransactionStoreFactory();
 
-        return StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
+        return StoreManagerBuilder.newStoreManagerBuilder() //
                 .withSnapshotSerializer(snapshotSerializer) //
                 .withTransactionSerializer(transactionSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
-                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withSnapshotStore(snapshotStore) //
+                .withTransactionStore(transactionStore) //
                 .withCommandClass(SimpleCommand.class) //
                 .withEntityClass(SimpleEntity.class) //
                 .build();
@@ -106,38 +107,20 @@ public class StoreManagerFactoryTest {
         };
     }
 
-    @Test(dataProvider = "invalidStoreNames", expectedExceptions = IllegalArgumentFormattedException.class)
+    @Test(dataProvider = "invalidStoreNames")
     public void shouldNotOpenStoreWithInvalidName(String storeName) {
-        //noinspection EmptyTryBlock
-        try (StoreManager ignored = createStoreManagerFactory().openStore(storeName)) {
+        try (StoreManager ignored = createStoreManagerFactory()) {
+            ignored.getStore(storeName);
+        } catch(UncheckedExecutionException e) {
+            assertThat(e).hasCauseInstanceOf(IllegalArgumentFormattedException.class);
+            assertThat(e.getCause()).hasMessageStartingWith("Invalid store name");
         }
     }
 
     @Test
     public void shouldOpenStoreWithValidName() {
-        //noinspection EmptyTryBlock
-        try (StoreManager ignored = createStoreManagerFactory().openStore("a-zA-Z0-9_")) {
-        }
-    }
-
-    @Test(expectedExceptions = IllegalStateFormattedException.class)
-    public void shouldFailWhenOpeningStoreTwiceAtSameTime() {
-        StoreManagerFactory factory = createStoreManagerFactory();
-
-        //noinspection EmptyTryBlock
-        try (StoreManager ignored = factory.openStore("test"); StoreManager ignored2 = factory.openStore("test")) {
-        }
-    }
-
-    @Test
-    public void shouldOpenSameStoreAfterClose() {
-        StoreManagerFactory factory = createStoreManagerFactory();
-        //noinspection EmptyTryBlock
-        try (StoreManager ignored = factory.openStore("test")) {
-        }
-
-        //noinspection EmptyTryBlock
-        try (StoreManager ignored = factory.openStore("test")) {
+        try (StoreManager ignored = createStoreManagerFactory()) {
+            ignored.getStore("a-zA-Z0-9_");
         }
     }
 }

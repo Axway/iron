@@ -2,7 +2,7 @@ package io.axway.iron.core.store.relation;
 
 import com.google.common.collect.ImmutableList;
 import io.axway.iron.Store;
-import io.axway.iron.core.StoreManagerFactoryBuilder;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.store.StoreTest;
 import io.axway.iron.core.store.relation.command.CarChangeOwner;
 import io.axway.iron.core.store.relation.command.CarCreateCommand;
@@ -16,7 +16,7 @@ import io.axway.iron.core.store.relation.model.Person;
 abstract class AbstractRelationTest implements StoreTest {
 
     @Override
-    public void configure(StoreManagerFactoryBuilder builder) throws Exception {
+    public void configure(StoreManagerBuilder builder) throws Exception {
         builder //
                 .withEntityClass(Car.class) //
                 .withEntityClass(Person.class) //

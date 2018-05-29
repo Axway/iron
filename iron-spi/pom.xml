@@ -14,4 +14,11 @@
     <name>${project.artifactId}</name>
     <description>Iron Service Provider Interfaces</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.reactivestreams</groupId>
+            <artifactId>reactive-streams</artifactId>
+        </dependency>
+    </dependencies>
+
 </project>

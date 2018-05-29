@@ -5,12 +5,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.axway.iron.error.StoreException;
 
-public class EntityStoreManager {
-    private final Collection<EntityStore<?>> m_entityStores;
+public class EntityStores {
+    private final List<EntityStore<?>> m_entityStores;
     private final Map<Class<?>, EntityStore<?>> m_entityStoresByClass;
     private final Map<String, EntityStore<?>> m_entityStoresByName;
 
-    public EntityStoreManager(Collection<EntityStore<?>> unsortedEntityStores) {
+    public EntityStores(Collection<EntityStore<?>> unsortedEntityStores) {
         List<EntityStore<?>> entityStores = new ArrayList<>(unsortedEntityStores);
         entityStores.sort(Comparator.comparing(s -> s.getEntityDefinition().getEntityName()));
         m_entityStores = ImmutableList.copyOf(entityStores);
@@ -25,7 +25,7 @@ public class EntityStoreManager {
         m_entityStoresByName = entityStoresByName.build();
     }
 
-    public Collection<EntityStore<?>> getEntityStores() {
+    public List<EntityStore<?>> toList() {
         return m_entityStores;
     }
 

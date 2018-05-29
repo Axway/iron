@@ -2,37 +2,39 @@ package io.axway.iron.core.bugs;
 
 import java.nio.file.Path;
 import java.util.*;
+import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
-import io.axway.iron.StoreManagerFactory;
-import io.axway.iron.core.StoreManagerFactoryBuilder;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.model.simple.SimpleCommand;
 import io.axway.iron.core.model.simple.SimpleEntity;
-import io.axway.iron.core.spi.file.FileSnapshotStoreFactoryBuilder;
-import io.axway.iron.core.spi.file.FileTransactionStoreFactoryBuilder;
-import io.axway.iron.core.spi.testing.TransientSnapshotStoreFactoryBuilder;
-import io.axway.iron.core.spi.testing.TransientTransactionStoreFactoryBuilder;
+import io.axway.iron.core.spi.file.FileSnapshotStoreBuilder;
+import io.axway.iron.core.spi.file.FileTransactionStoreBuilder;
+import io.axway.iron.core.spi.testing.TransientSnapshotStoreBuilder;
+import io.axway.iron.core.spi.testing.TransientTransactionStoreBuilder;
 import io.axway.iron.spi.jackson.JacksonSnapshotSerializerBuilder;
 import io.axway.iron.spi.jackson.JacksonTransactionSerializerBuilder;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
 final public class IronTestHelper {
 
     static StoreManager createTransientStore() {
-        StoreManagerFactory storeManagerFactory = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
+       return StoreManagerBuilder.newStoreManagerBuilder() //
                 .withSnapshotSerializer(buildJacksonSnapshotSerializer())       //
                 .withTransactionSerializer(buildJacksonTransactionSerializer()) //
-                .withSnapshotStoreFactory(buildTransientSnapshotStoreFactory())       //
-                .withTransactionStoreFactory(buildTransientTransactionStoreFactory()) //
+                .withSnapshotStore(buildTransientSnapshotStoreFactory())       //
+                .withTransactionStore(buildTransientTransactionStoreFactory()) //
                 .withCommandClass(SimpleCommand.class) //
                 .withCommandClass(CommandWithLongParameterCommand.class) //
                 .withCommandClass(CommandWithLongCollectionParameterCommand.class) //
                 .withEntityClass(SimpleEntity.class) //
                 .build();
+    }
 
-        return storeManagerFactory.openStore("iron-test-bugs-" + UUID.randomUUID().toString());
+    static Store getRandomTransientStore(StoreManager storeManager){
+        return storeManager.getStore("iron-test-bugs-" + UUID.randomUUID().toString());
     }
 
     public static SnapshotSerializer buildJacksonSnapshotSerializer() {
@@ -43,20 +45,20 @@ final public class IronTestHelper {
         return new JacksonTransactionSerializerBuilder().get();
     }
 
-    public static SnapshotStoreFactory buildTransientSnapshotStoreFactory() {
-        return new TransientSnapshotStoreFactoryBuilder().get();
+    public static SnapshotStore buildTransientSnapshotStoreFactory() {
+        return new TransientSnapshotStoreBuilder().get();
     }
 
-    public static TransactionStoreFactory buildTransientTransactionStoreFactory() {
-        return new TransientTransactionStoreFactoryBuilder().get();
+    public static TransactionStore buildTransientTransactionStoreFactory() {
+        return new TransientTransactionStoreBuilder().get();
     }
 
-    public static SnapshotStoreFactory buildFileSnapshotStoreFactory(Path filePath) {
-        return new FileSnapshotStoreFactoryBuilder().setDir(filePath).get();
+    public static SnapshotStore buildFileSnapshotStoreFactory(Path filePath, String name) {
+        return new FileSnapshotStoreBuilder(name).setDir(filePath).get();
     }
 
-    public static TransactionStoreFactory buildFileTransactionStoreFactory(Path filePath) {
-        return new FileTransactionStoreFactoryBuilder().setDir(filePath).get();
+    public static TransactionStore buildFileTransactionStoreFactory(Path filePath, String name) {
+        return new FileTransactionStoreBuilder(name).setDir(filePath).get();
     }
 
     private IronTestHelper() {

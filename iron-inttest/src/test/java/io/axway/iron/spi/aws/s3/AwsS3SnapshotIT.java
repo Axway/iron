@@ -1,16 +1,18 @@
 package io.axway.iron.spi.aws.s3;
 
+import java.util.*;
+import java.util.function.*;
 import org.testng.annotations.Test;
 import io.axway.iron.spi.SpiTestHelper;
 import io.axway.iron.spi.aws.BaseInttest;
 import io.axway.iron.spi.file.FileTestHelper;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.iron.spi.aws.AwsTestHelper.*;
-import static io.axway.iron.spi.file.FileTestHelper.buildFileTransactionStoreFactory;
+import static io.axway.iron.spi.file.FileTestHelper.buildFileTransactionStore;
 import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
 
 /**
@@ -22,8 +24,9 @@ public class AwsS3SnapshotIT extends BaseInttest {
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String bucketName = initS3Configuration();
         createS3Bucket(bucketName);
-        SnapshotStoreFactory s3SnapshotStoreFactory = buildAwsS3SnapshotStoreFactory(m_configuration);
-        TransactionStoreFactory ironFileStoreFactory = buildFileTransactionStoreFactory(getIronSpiAwsInttestFilePath());
+        String factoryName = "shouldCreateCompanySequenceBeRight-" + UUID.randomUUID();
+        Supplier<SnapshotStore> s3SnapshotStoreFactory = () -> buildAwsS3SnapshotStoreFactory(factoryName, m_configuration);
+        Supplier<TransactionStore> ironFileStoreFactory = () -> FileTestHelper.buildFileTransactionStore(getIronSpiAwsInttestFilePath(), factoryName);
 
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
@@ -41,14 +44,15 @@ public class AwsS3SnapshotIT extends BaseInttest {
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshotsSample() throws Exception {
         String storeName = createRandomStoreName();
 
-        TransactionStoreFactory transactionStoreFactory = buildFileTransactionStoreFactory(getIronSpiAwsInttestFilePath());
-        SnapshotStoreFactory snapshotStoreFactory = FileTestHelper.buildFileSnapshotStoreFactory(getIronSpiAwsInttestFilePath());
+        String factoryName = "shouldListSnapshotsReturnTheRightNumberOfSnapshotsSample-" + UUID.randomUUID();
+        TransactionStore transactionStore = FileTestHelper.buildFileTransactionStore(getIronSpiAwsInttestFilePath(), factoryName);
+        SnapshotStore snapshotStore = FileTestHelper.buildFileSnapshotStore(getIronSpiAwsInttestFilePath(), factoryName);
 
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
 
-        SpiTestHelper.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStoreFactory, transactionSerializer, //
-                                                                            snapshotStoreFactory, snapshotSerializer, //
+        SpiTestHelper.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStore, transactionSerializer, //
+                                                                            snapshotStore, snapshotSerializer, //
                                                                             storeName);
     }
 
@@ -57,16 +61,17 @@ public class AwsS3SnapshotIT extends BaseInttest {
         String bucketName = initS3Configuration();
         createS3Bucket(bucketName);
 
-        SnapshotStoreFactory s3SnapshotStoreFactory = buildAwsS3SnapshotStoreFactory(m_configuration);
-        TransactionStoreFactory transactionStoreFactory = buildFileTransactionStoreFactory(getIronSpiAwsInttestFilePath());
+        String factoryName = "shouldListSnapshotsReturnTheRightNumberOfSnapshots-" + UUID.randomUUID();
+        SnapshotStore s3SnapshotStore = buildAwsS3SnapshotStoreFactory(factoryName, m_configuration);
+        TransactionStore transactionStore = FileTestHelper.buildFileTransactionStore(getIronSpiAwsInttestFilePath(), factoryName);
 
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
 
         String storeName = createRandomStoreName();
         try {
-            SpiTestHelper.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStoreFactory, transactionSerializer,    //
-                                                                                s3SnapshotStoreFactory, snapshotSerializer,  //
+            SpiTestHelper.checkThatListSnapshotsReturnTheRightNumberOfSnapshots(transactionStore, transactionSerializer,    //
+                                                                                s3SnapshotStore, snapshotSerializer,  //
                                                                                 storeName);
         } finally {
             deleteS3Bucket(bucketName);

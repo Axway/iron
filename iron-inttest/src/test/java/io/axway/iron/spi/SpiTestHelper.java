@@ -13,8 +13,7 @@ import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
-import io.axway.iron.StoreManagerFactory;
-import io.axway.iron.core.StoreManagerFactoryBuilder;
+import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.sample.command.ChangeCompanyAddress;
 import io.axway.iron.sample.command.CreateCompany;
 import io.axway.iron.sample.command.CreatePerson;
@@ -27,8 +26,7 @@ import io.axway.iron.sample.model.Person;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStore;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.TransactionStore;
 
 import static com.google.common.collect.ImmutableMap.*;
 import static java.util.stream.Collectors.*;
@@ -37,14 +35,15 @@ public class SpiTestHelper {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/mm/yyyy");
 
-    public static void checkThatCreateCompanySequenceIsRight(TransactionStoreFactory transactionStoreFactory, TransactionSerializer transactionSerializer,
-                                                             SnapshotStoreFactory snapshotStoreFactory, SnapshotSerializer snapshotSerializer, String storeName)
+    @SuppressWarnings("unchecked")
+    public static void checkThatCreateCompanySequenceIsRight(Supplier<TransactionStore> transactionStoreFactory, TransactionSerializer transactionSerializer,
+                                                             Supplier<SnapshotStore> snapshotStoreFactory, SnapshotSerializer snapshotSerializer, String storeName)
             throws Exception {
-        StoreManagerFactory storeManagerFactory = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
+        StoreManagerBuilder factoryBuilder = StoreManagerBuilder.newStoreManagerBuilder() //
                 .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withTransactionStore(transactionStoreFactory.get()) //
                 .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withSnapshotStore(snapshotStoreFactory.get()) //
                 .withEntityClass(Company.class) //
                 .withEntityClass(Person.class) //
                 .withCommandClass(ChangeCompanyAddress.class) //
@@ -53,8 +52,7 @@ public class SpiTestHelper {
                 .withCommandClass(DeleteCompany.class) //
                 .withCommandClass(PersonJoinCompany.class) //
                 .withCommandClass(PersonLeaveCompany.class) //
-                .withCommandClass(PersonRaiseSalary.class) //
-                .build();
+                .withCommandClass(PersonRaiseSalary.class);
 
         Consumer<ReadOnlyTransaction> listInstances = tx -> {
             System.out.printf("Persons:%n");
@@ -80,9 +78,8 @@ public class SpiTestHelper {
             System.out.printf("Query6: %s%n", billCompany.name() + " @ " + billCompany.address());
         };
 
-        try (StoreManager storeManager = storeManagerFactory.openStore(storeName)) {
-
-            Store store = storeManager.getStore();
+        try (StoreManager factory = factoryBuilder.build()) {
+            Store store = factory.getStore(storeName);
 
             store.query(listInstances);
 
@@ -199,27 +196,14 @@ public class SpiTestHelper {
 
             store.query(checkData);
 
-            storeManager.snapshot();
+            factory.snapshot();
         }
 
-        try (StoreManager storeManager = storeManagerFactory.openStore(storeName)) {
-            Store store = storeManager.getStore();
-            store.query(listInstances);
-            store.query(checkData);
-        }
-    }
-
-    public static void checkThatListSnapshotsReturnTheRightNumberOfSnapshots(TransactionStoreFactory transactionStoreFactory,
-                                                                             TransactionSerializer transactionSerializer,
-                                                                             SnapshotStoreFactory snapshotStoreFactory, SnapshotSerializer snapshotSerializer,
-                                                                             String storeName) throws Exception {
-        System.out.println("storeManagerFactory1");
-
-        StoreManagerFactory storeManagerFactory1 = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
+        factoryBuilder = StoreManagerBuilder.newStoreManagerBuilder() //
                 .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withTransactionStore(transactionStoreFactory.get()) //
                 .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
+                .withSnapshotStore(snapshotStoreFactory.get()) //
                 .withEntityClass(Company.class) //
                 .withEntityClass(Person.class) //
                 .withCommandClass(ChangeCompanyAddress.class) //
@@ -228,21 +212,46 @@ public class SpiTestHelper {
                 .withCommandClass(DeleteCompany.class) //
                 .withCommandClass(PersonJoinCompany.class) //
                 .withCommandClass(PersonLeaveCompany.class) //
-                .withCommandClass(PersonRaiseSalary.class) //
-                .build();
+                .withCommandClass(PersonRaiseSalary.class);
 
-        try (StoreManager storeManager1 = storeManagerFactory1.openStore(storeName)) {
-            Assertions.assertThat(snapshotStoreFactory.createSnapshotStore(storeName).listSnapshots()).hasSize(1);
-            Store store1 = storeManager1.getStore();
-            Store.TransactionBuilder tx1 = store1.begin();
+        try (StoreManager factory = factoryBuilder.build()) {
+            Store store = factory.getStore(storeName);
+            store.query(listInstances);
+            store.query(checkData);
+        }
+    }
+
+    public static void checkThatListSnapshotsReturnTheRightNumberOfSnapshots(TransactionStore transactionStore,
+                                                                             TransactionSerializer transactionSerializer,
+                                                                             SnapshotStore snapshotStore, SnapshotSerializer snapshotSerializer,
+                                                                             String storeName) throws Exception {
+        System.out.println("storeManagerFactory1");
+
+        StoreManagerBuilder factoryBuilder = StoreManagerBuilder.newStoreManagerBuilder() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStore(transactionStore) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStore(snapshotStore) //
+                .withEntityClass(Company.class) //
+                .withEntityClass(Person.class) //
+                .withCommandClass(ChangeCompanyAddress.class) //
+                .withCommandClass(CreateCompany.class) //
+                .withCommandClass(CreatePerson.class) //
+                .withCommandClass(DeleteCompany.class) //
+                .withCommandClass(PersonJoinCompany.class) //
+                .withCommandClass(PersonLeaveCompany.class) //
+                .withCommandClass(PersonRaiseSalary.class);
+
+        try (StoreManager factory = factoryBuilder //
+                .build()) {
+            Store store = factory.getStore(storeName);
+            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(1);
+            Store.TransactionBuilder tx1 = store.begin();
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("MyCompany1").submit();
             tx1.submit().get();
-            SnapshotStore snapshotStoreCreatedBeforeSnapshot = snapshotStoreFactory.createSnapshotStore(storeName);
-            Assertions.assertThat(snapshotStoreCreatedBeforeSnapshot.listSnapshots()).hasSize(1);
-            storeManager1.snapshot();
-            SnapshotStore snapshotStoreCreatedAfterSnapshot = snapshotStoreFactory.createSnapshotStore(storeName);
-            Assertions.assertThat(snapshotStoreCreatedBeforeSnapshot.listSnapshots()).hasSize(2);
-            Assertions.assertThat(snapshotStoreCreatedAfterSnapshot.listSnapshots()).hasSize(2);
+            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(1);
+            factory.snapshot();
+            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(2);
         }
     }
 
@@ -251,36 +260,35 @@ public class SpiTestHelper {
         int[] s_executionCount = new int[]{0};
 
         @Override
-        default Void execute(ReadWriteTransaction tx) {
+        default Void execute(@Nonnull ReadWriteTransaction tx) {
             s_executionCount[0] = s_executionCount[0] + 1;
             return null;
         }
     }
 
-    public static void checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(TransactionStoreFactory transactionStoreFactory,
+    public static void checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(Supplier<TransactionStore> transactionStoreFactory,
                                                                                           TransactionSerializer transactionSerializer,
-                                                                                          SnapshotStoreFactory snapshotStoreFactory,
+                                                                                          Supplier<SnapshotStore> snapshotStoreFactory,
                                                                                           SnapshotSerializer snapshotSerializer, String storeName)
             throws Exception {
         ExecutionCountCommand.s_executionCount[0] = 0;
 
-        StoreManagerFactory storeManagerFactory1 = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
+        StoreManagerBuilder factoryBuilder = StoreManagerBuilder.newStoreManagerBuilder() //
                 .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStoreFactory(transactionStoreFactory) //
+                .withTransactionStore(transactionStoreFactory.get()) //
                 .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
-                .withCommandClass(ExecutionCountCommand.class) //
-                .build();
+                .withSnapshotStore(snapshotStoreFactory.get()) //
+                .withCommandClass(ExecutionCountCommand.class);
 
-        try (StoreManager storeManager1 = storeManagerFactory1.openStore(storeName)) {
-            Store store1 = storeManager1.getStore();
+        try (StoreManager storeManager = factoryBuilder.build()) {
+            Store store1 = storeManager.getStore(storeName);
             Store.TransactionBuilder tx1 = store1.begin();
             tx1.addCommand(ExecutionCountCommand.class).submit();
             tx1.addCommand(ExecutionCountCommand.class).submit();
             Assertions.assertThat(ExecutionCountCommand.s_executionCount[0]).as("The store is empty, no command execution should have occurred.").isEqualTo(0);
             tx1.submit().get();
             Assertions.assertThat(ExecutionCountCommand.s_executionCount[0]).as("Two commands execution should have occurred : 0 + 2 = 2").isEqualTo(2);
-            storeManager1.snapshot();
+            storeManager.snapshot();
             Store.TransactionBuilder tx2 = store1.begin();
             tx2.addCommand(ExecutionCountCommand.class).submit();
             tx2.addCommand(ExecutionCountCommand.class).submit();
@@ -291,16 +299,16 @@ public class SpiTestHelper {
                     .isEqualTo(5);
         }
 
-        StoreManagerFactory storeManagerFactory2 = StoreManagerFactoryBuilder.newStoreManagerBuilderFactory() //
-                .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStoreFactory(transactionStoreFactory) //
-                .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStoreFactory(snapshotStoreFactory) //
-                .withCommandClass(ExecutionCountCommand.class) //
-                .build();
-
         Assertions.assertThat(ExecutionCountCommand.s_executionCount[0]).as("No command execution should have occurred since the last check.").isEqualTo(5);
-        try (StoreManager storeManager2 = storeManagerFactory2.openStore(storeName)) {
+
+        factoryBuilder = StoreManagerBuilder.newStoreManagerBuilder() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStore(transactionStoreFactory.get()) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStore(snapshotStoreFactory.get()) //
+                .withCommandClass(ExecutionCountCommand.class);
+        //noinspection EmptyTryBlock
+        try (StoreManager ignored = factoryBuilder.build()) {
         }
         Assertions.assertThat(ExecutionCountCommand.s_executionCount[0])
                 .as("Starting from the Snapshot, only the three commands execution of the Transaction should have occurred : 5 + 3 = 8."
@@ -309,21 +317,25 @@ public class SpiTestHelper {
 
     //region Tools
 
+    @SafeVarargs
     private static void checkCompanies(String title, Store store, ImmutableMap<Object, Object>... expectedCompanies) {
         store.query(tx -> {
             Collection<Company> companies = tx.select(Company.class).all();
             System.out.printf(title + ": %s%n", companies);
             Assertions.assertThat(companies.stream()//
                                           .map(company -> {
-                                              Builder<Object, Object> map = builder().put("name", company.name()).put("address", company.address());
-                                              if (company.country() != null) {
-                                                  map.put("country", company.country());
+                                              Builder<Object, Object> map = builder().put("name", company.name())
+                                                      .put("address", Objects.requireNonNull(company.address()));
+                                              String country = company.country();
+                                              if (country != null) {
+                                                  map.put("country", country);
                                               }
                                               return map.build();
                                           }).collect(toList())).containsExactlyInAnyOrder(expectedCompanies);
         });
     }
 
+    @SafeVarargs
     private static void checkPersons(String title, Store store, ImmutableMap<Object, Object>... expectedPersons) {
         store.query(tx -> {
             Collection<Person> persons = tx.select(Person.class).all();
@@ -331,11 +343,13 @@ public class SpiTestHelper {
             Assertions.assertThat(persons.stream()//
                                           .map(person -> {
                                               Builder<Object, Object> map = builder().put("name", person.name()).put("id", person.id());
-                                              if (person.birthDate() != null) {
-                                                  map.put("birthDate", person.birthDate());
+                                              Date birthDate = person.birthDate();
+                                              if (birthDate != null) {
+                                                  map.put("birthDate", birthDate);
                                               }
-                                              if (person.salary() != null) {
-                                                  map.put("salary", person.salary());
+                                              Double salary = person.salary();
+                                              if (salary != null) {
+                                                  map.put("salary", salary);
                                               }
                                               return map.build();
                                           }).collect(toList())).containsExactlyInAnyOrder(expectedPersons);

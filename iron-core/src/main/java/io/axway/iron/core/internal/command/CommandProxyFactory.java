@@ -23,7 +23,7 @@ public class CommandProxyFactory {
 
     private final Map<Class<? extends Command<?>>, ProxyFactory<? extends Command<?>, CommandProxyContext>> m_commandProxyFactories;
 
-    public CommandProxyFactory(Collection<CommandDefinition<?>> commandDefinitions) {
+    public CommandProxyFactory(Collection<CommandDefinition<? extends Command<?>>> commandDefinitions) {
         ImmutableMap.Builder<Class<? extends Command<?>>, ProxyFactory<? extends Command<?>, CommandProxyContext>> commandProxyFactories = ImmutableMap
                 .builder();
 

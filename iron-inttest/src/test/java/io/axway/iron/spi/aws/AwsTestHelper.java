@@ -3,12 +3,12 @@ package io.axway.iron.spi.aws;
 import java.util.*;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.s3.AmazonS3;
-import io.axway.iron.spi.aws.kinesis.AwsKinesisTransactionStoreFactoryBuilder;
+import io.axway.iron.spi.aws.kinesis.AwsKinesisTransactionStoreBuilder;
 import io.axway.iron.spi.aws.kinesis.AwsKinesisUtils;
-import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreFactoryBuilder;
+import io.axway.iron.spi.aws.s3.AwsS3SnapshotStoreBuilder;
 import io.axway.iron.spi.aws.s3.AwsS3Utils;
-import io.axway.iron.spi.storage.SnapshotStoreFactory;
-import io.axway.iron.spi.storage.TransactionStoreFactory;
+import io.axway.iron.spi.storage.SnapshotStore;
+import io.axway.iron.spi.storage.TransactionStore;
 
 import static com.amazonaws.SDKGlobalConfiguration.*;
 
@@ -47,8 +47,8 @@ public class AwsTestHelper {
                                         configuration.getProperty(S3_REGION));
     }
 
-    public static TransactionStoreFactory buildAwsKinesisTransactionStoreFactory(Properties configuration) {
-        return new AwsKinesisTransactionStoreFactoryBuilder() //
+    public static TransactionStore buildAwsKinesisTransactionStoreFactory(String name, Properties configuration) {
+        return new AwsKinesisTransactionStoreBuilder(name) //
                 .setAccessKey(configuration.getProperty(KINESIS_ACCESS_KEY)) //
                 .setSecretKey(configuration.getProperty(KINESIS_SECRET_KEY)) //
                 .setEndpoint(configuration.getProperty(KINESIS_ENDPOINT)) //
@@ -57,8 +57,8 @@ public class AwsTestHelper {
                 .setStreamNamePrefix(configuration.getProperty(KINESIS_STREAM_NAME_PREFIX)).get();
     }
 
-    public static SnapshotStoreFactory buildAwsS3SnapshotStoreFactory(Properties configuration) {
-        return new AwsS3SnapshotStoreFactoryBuilder() //
+    public static SnapshotStore buildAwsS3SnapshotStoreFactory(String name, Properties configuration) {
+        return new AwsS3SnapshotStoreBuilder(name) //
                 .setAccessKey(configuration.getProperty(S3_ACCESS_KEY)) //
                 .setSecretKey(configuration.getProperty(S3_SECRET_KEY)) //
                 .setEndpoint(configuration.getProperty(S3_ENDPOINT)) //

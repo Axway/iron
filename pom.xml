@@ -56,6 +56,10 @@
             <name>Guillaume Vauvert</name>
             <url>https://github.com/gvauvert</url>
         </developer>
+        <developer>
+            <name>Romain Revol</name>
+            <url>https://github.com/rrevol</url>
+        </developer>
     </developers>
 
     <scm>
@@ -139,6 +143,17 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>1.0.1</version>
             </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams</artifactId>
+                <version>1.0.2</version>
+            </dependency>
+            <dependency>
+                <groupId>io.reactivex.rxjava2</groupId>
+                <artifactId>rxjava</artifactId>
+                <version>2.1.13</version>
+            </dependency>
+
             <!-- Amazon AWS -->
             <dependency>
                 <groupId>com.amazonaws</groupId>
