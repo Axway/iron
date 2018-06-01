@@ -10,7 +10,7 @@ import org.reactivestreams.Publisher;
  */
 public interface SnapshotStore {
     /**
-     * Initiate the storage part of a snapshot for a given store. <br/>
+     * Initiate the storage part of a snapshot for a given store.
      * In the end one snapshot will contain parts for every stores, so this method is called once for each store at snapshot time.
      *
      * @param storeName the name of the store about to be snapshot.
@@ -33,6 +33,7 @@ public interface SnapshotStore {
      * List all the existing snapshots.
      *
      * @return the list of snapshot transactions id.
+     * @throws IOException if an I/O error occurs when listing the snapshots
      */
     List<BigInteger> listSnapshots() throws IOException;
 
@@ -45,6 +46,7 @@ public interface SnapshotStore {
      * Delete a snapshot.
      *
      * @param transactionId the transaction id of the snapshot to be deleted.
+     *  @throws IOException if an I/O error occurs when deleting the snapshot
      */
     void deleteSnapshot(BigInteger transactionId) throws IOException;
 
