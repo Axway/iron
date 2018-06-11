@@ -215,7 +215,7 @@ public class StoreManagerBuilderConfigurator {
             return m_supplierClass;
         }
 
-        String baseName() {
+        private String baseName() {
             return m_baseName;
         }
     }

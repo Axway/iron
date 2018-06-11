@@ -2,7 +2,6 @@ package io.axway.iron.core.spi.file;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.*;
@@ -78,17 +77,16 @@ public class FileSnapshotStore implements SnapshotStore {
 
     @Override
     public List<BigInteger> listSnapshots() throws IOException {
-        return Files                                            //
-                .list(m_snapshotDir)                            //
-                .map(path -> path.getFileName().toString())     //
-                .filter(name -> name.matches(m_idRegex))        //
-                .map(BigInteger::new)                       //
+        return list(m_snapshotDir)                            //
+                .map(path -> path.getFileName().toString())   //
+                .filter(name -> name.matches(m_idRegex))      //
+                .map(BigInteger::new)                         //
                 .collect(Collectors.toList());
     }
 
     @Override
     public void deleteSnapshot(BigInteger transactionId) throws IOException {
-        Files.walk(getSnapshotDirectory(transactionId))                            //
+        walk(getSnapshotDirectory(transactionId))        //
                 .sorted(Comparator.reverseOrder())       //
                 .map(Path::toFile)                       //
                 .forEach(File::delete);

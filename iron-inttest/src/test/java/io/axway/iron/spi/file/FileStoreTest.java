@@ -7,7 +7,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.*;
 import org.testng.annotations.Test;
-import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.sample.command.ChangeCompanyAddress;
@@ -75,7 +74,7 @@ public class FileStoreTest {
                 .withCommandClass(PersonRaiseSalary.class);
 
         try (StoreManager storeManager = factoryBuilder.build()) {
-            Store store = storeManager.getStore("test");
+            storeManager.getStore("test");
             storeManager.snapshot();
         }
 

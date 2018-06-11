@@ -83,7 +83,7 @@ public final class AwsKinesisUtils {
             try {
                 describeStreamResult = consumer.describeStream(describeStreamRequest);
                 streamStatus = describeStreamResult.getStreamDescription().getStreamStatus();
-                if (streamStatus.equals(ACTIVE_STREAM_STATUS)) {
+                if (ACTIVE_STREAM_STATUS.equals(streamStatus)) {
                     break;
                 }
                 Thread.sleep(100);

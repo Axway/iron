@@ -13,7 +13,12 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import com.google.common.base.Throwables;
 import io.axway.iron.core.spi.file.IronMigration;
+import io.axway.iron.error.StoreException;
 
+import static java.lang.String.join;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.concat;
+import static java.util.stream.Stream.of;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
 public class IronMigrationTest {
@@ -32,11 +37,10 @@ public class IronMigrationTest {
         try {
             Path sourceIronPath = randomPath.resolve(directory);
             Path destIronPath = randomPath.resolve(directory + ".new");
-            Stream.concat(IntStream.range(0, lastTenantIdx + 1).boxed().map(n -> Integer.toString(n)), Stream.of("global")).forEach(storeName -> {
+            concat(IntStream.range(0, lastTenantIdx + 1).boxed().map(n -> Integer.toString(n)), of("global")).forEach(storeName -> {
                 for (String type : new String[]{"snapshot", "tx"}) {
-                    String sourceDirectory = "io/axway/iron/spi/file/" + directory + "/" + storeName + "/" + type + "/";
                     String sourceFile = "00000000000000000000." + type;
-                    List<String> fileContent = getResourceFileAsString(sourceDirectory + sourceFile);
+                    List<String> fileContent = getResourceFileAsString(join("/", "io", "axway", "iron", "spi", "file", directory, storeName, type, sourceFile));
                     Path destDirectoryPath = sourceIronPath.resolve(storeName).resolve(type);
                     destDirectoryPath.toFile().mkdirs();
                     Path destFilePath = destDirectoryPath.resolve(sourceFile);
@@ -63,7 +67,7 @@ public class IronMigrationTest {
 
                 @Override
                 public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                    throw new RuntimeException(exc);
+                    throw new StoreException(exc);
                 }
 
                 @Override
@@ -71,12 +75,11 @@ public class IronMigrationTest {
                     return FileVisitResult.CONTINUE;
                 }
             });
-            String destIronPathString = destIronPath.toString();
-            String globalSnapshot = destIronPathString + "\\global\\snapshot\\00000000000000000000\\";
-            String tenantSnapshot = destIronPathString + "\\tenant\\snapshot\\00000000000000000000\\";
-            List<String> expectedFiles = Stream.concat(IntStream.range(0, lastTenantIdx + 1).boxed().map(n -> tenantSnapshot + n + ".snapshot"),
-                                                       Stream.of(globalSnapshot + "global.snapshot")).collect(Collectors.toList());
-            assertThat(foundFiles).as(message).containsExactlyInAnyOrderElementsOf(expectedFiles);
+            Path globalSnapshot = destIronPath.resolve("global").resolve("snapshot").resolve("00000000000000000000");
+            Path tenantSnapshot = destIronPath.resolve("tenant").resolve("snapshot").resolve("00000000000000000000");
+            List<Path> expectedPaths = concat(IntStream.range(0, lastTenantIdx + 1).boxed().map(n -> tenantSnapshot.resolve(n + ".snapshot")),
+                                              of(globalSnapshot.resolve("global.snapshot"))).collect(toList());
+            assertThat(foundFiles.stream().map(Paths::get).collect(toList())).as(message).containsExactlyInAnyOrderElementsOf(expectedPaths);
         } finally {
             Files.walk(randomPath).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
         }
@@ -86,7 +89,7 @@ public class IronMigrationTest {
         InputStream is = getClass().getClassLoader().getResourceAsStream(fileName);
         if (is != null) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            return reader.lines().collect(Collectors.toList());
+            return reader.lines().collect(toList());
         }
         return null;
     }

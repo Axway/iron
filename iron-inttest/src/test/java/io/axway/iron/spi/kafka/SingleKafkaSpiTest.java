@@ -40,7 +40,7 @@ public class SingleKafkaSpiTest {
     private Path m_ironPath;
     private StoreManager m_storeManager;
 
-    private static String topic = "iron-kafka-test-" + UUID.randomUUID().toString();
+    private static String topic = "iron-kafka-test-" + randomUUID().toString();
 
     @BeforeClass
     public void setUp() throws Exception {

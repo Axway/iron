@@ -125,7 +125,7 @@ public class KafkaTransactionStore implements TransactionStore {
         localKafkaProperties.put("group.id", "bug-" + UUID.randomUUID());
         try (KafkaConsumer consumer = new KafkaConsumer<>(localKafkaProperties, new IntegerDeserializer(), new ByteArrayDeserializer())) {
             // if topic auto create is on then subscription creates the topic
-            consumer.subscribe(Collections.singletonList(topicName));
+            consumer.subscribe(singletonList(topicName));
             consumer.poll(100);
         }
     }

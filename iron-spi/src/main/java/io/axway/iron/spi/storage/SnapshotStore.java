@@ -40,7 +40,9 @@ public interface SnapshotStore {
     /**
      * Dispose any resource the store may have open.
      */
-    default void close() {}
+    default void close() {
+        // default is to do nothing
+    }
 
     /**
      * Delete a snapshot.

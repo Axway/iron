@@ -319,7 +319,7 @@ class StoreManagerImpl implements StoreManager {
             }
         }
 
-        EntityStores entityStores() {
+        private EntityStores entityStores() {
             return m_entityStores;
         }
     }
