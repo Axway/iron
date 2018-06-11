@@ -39,9 +39,9 @@ public class IronMigration {
                     .forEach(file -> {                                                //
                         String tx = file.getName().substring(0, 20);
                         try {
-                            Path txDir = targetGlobalPath.resolve(tx);
-                            txDir.toFile().mkdirs();
-                            Files.copy(file.toPath(), txDir.resolve("global.snapshot"));
+                            Path snapshotDir = targetGlobalPath.resolve("snapshot").resolve(tx);
+                            snapshotDir.toFile().mkdirs();
+                            Files.copy(file.toPath(), snapshotDir.resolve("global.snapshot"));
                         } catch (IOException e) {
                             throw Throwables.propagate(e);
                         }
@@ -60,9 +60,9 @@ public class IronMigration {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     String store = file.getName(file.getNameCount() - 3).toString();
                     String tx = file.getFileName().toString().substring(0,20);
-                    Path txDir = targetStoresPath.resolve(tx);
-                    txDir.toFile().mkdirs();
-                    Files.copy(file, txDir.resolve(store + ".snapshot"));
+                    Path snapshotDir = targetStoresPath.resolve("snapshot").resolve(tx);
+                    snapshotDir.toFile().mkdirs();
+                    Files.copy(file, snapshotDir.resolve(store + ".snapshot"));
                     return FileVisitResult.CONTINUE;
                 }
 
@@ -81,7 +81,7 @@ public class IronMigration {
         } catch (Exception e) {
             System.err.println(
                     "Usage of migration tool : java -jar migrationTool.jar uriToIronDirectory globalStoreManagerName storesStoreManagerName uriToTargetDirectory\n"
-                            + "\tglobalStoreManagerName and storesStoreManagerName must correspond to the names given in the code of tracability-ui");
+                            + "\tglobalStoreManagerName and storesStoreManagerName must correspond to the names given in the code of traceability-ui");
             throw Throwables.propagate(e);
         }
     }
