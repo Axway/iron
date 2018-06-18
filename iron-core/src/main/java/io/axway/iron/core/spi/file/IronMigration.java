@@ -8,11 +8,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import com.google.common.base.Throwables;
+import io.axway.iron.error.StoreException;
 
 /**
  * Migration script to migrate iron snapshots files from 0.5.0 layout to 0.6.0 layout
  */
 public class IronMigration {
+
+    private static final String GLOBAL_DIRECTORY_NAME = "global";
+    private static final String SNAPSHOT_DIRECTORY_NAME = "snapshot";
+    private static final String SNAPSHOT_SUFFIX = ".snapshot";
+    private static final String TX_DIRECTORY_NAME = "tx";
+    private static final String TMP_DIRECTORY_NAME = ".tmp";
+    public static final int TX_ID_FILENAME_LENGTH = 20;
+
     public static void main(String[] args) {
         try {
             if (args.length != 4) {
@@ -30,18 +39,18 @@ public class IronMigration {
                 throw new IllegalArgumentException("globalStoreManagerName and storesStoreManagerName must not be empty");
             }
 
-            Path globalPath = ironPath.resolve("global").resolve("snapshot");
+            Path globalPath = ironPath.resolve(GLOBAL_DIRECTORY_NAME).resolve(SNAPSHOT_DIRECTORY_NAME);
             Path targetGlobalPath = Paths.get(args[3]).resolve(globalStoreManagerName);
             Files.walk(globalPath)                                                    //
                     .map(Path::toFile)                                                //
                     .filter(File::isFile)                                             //
-                    .filter(file -> file.getName().endsWith(".snapshot"))             //
+                    .filter(file -> file.getName().endsWith(SNAPSHOT_SUFFIX))             //
                     .forEach(file -> {                                                //
                         String tx = file.getName().substring(0, 20);
                         try {
-                            Path txDir = targetGlobalPath.resolve(tx);
-                            txDir.toFile().mkdirs();
-                            Files.copy(file.toPath(), txDir.resolve("global.snapshot"));
+                            Path snapshotDir = targetGlobalPath.resolve(SNAPSHOT_DIRECTORY_NAME).resolve(tx);
+                            snapshotDir.toFile().mkdirs();
+                            Files.copy(file.toPath(), snapshotDir.resolve("global.snapshot"));
                         } catch (IOException e) {
                             throw Throwables.propagate(e);
                         }
@@ -52,23 +61,25 @@ public class IronMigration {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                     String name = dir.getFileName().toString();
-                    if(name.equals("global") || name.equals(".tmp") || name.equals("tx")) return FileVisitResult.SKIP_SUBTREE;
+                    if (GLOBAL_DIRECTORY_NAME.equals(name) || TMP_DIRECTORY_NAME.equals(name) || TX_DIRECTORY_NAME.equals(name)) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    }
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     String store = file.getName(file.getNameCount() - 3).toString();
-                    String tx = file.getFileName().toString().substring(0,20);
-                    Path txDir = targetStoresPath.resolve(tx);
-                    txDir.toFile().mkdirs();
-                    Files.copy(file, txDir.resolve(store + ".snapshot"));
+                    String tx = file.getFileName().toString().substring(0, TX_ID_FILENAME_LENGTH);
+                    Path snapshotDir = targetStoresPath.resolve(SNAPSHOT_DIRECTORY_NAME).resolve(tx);
+                    snapshotDir.toFile().mkdirs();
+                    Files.copy(file, snapshotDir.resolve(store + SNAPSHOT_SUFFIX));
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                    throw new RuntimeException(exc);
+                    throw new StoreException(exc);
                 }
 
                 @Override
@@ -81,7 +92,7 @@ public class IronMigration {
         } catch (Exception e) {
             System.err.println(
                     "Usage of migration tool : java -jar migrationTool.jar uriToIronDirectory globalStoreManagerName storesStoreManagerName uriToTargetDirectory\n"
-                            + "\tglobalStoreManagerName and storesStoreManagerName must correspond to the names given in the code of tracability-ui");
+                            + "\tglobalStoreManagerName and storesStoreManagerName must correspond to the names given in the code of traceability-ui");
             throw Throwables.propagate(e);
         }
     }

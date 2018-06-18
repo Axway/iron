@@ -45,9 +45,10 @@ public class StoreNamePrefixManagement {
 
     private static void encodeInt(byte[] data, int pos, int i) {
         int decl = Integer.SIZE;
+        int newPos = pos;
         while (decl > 0) {
             decl -= Byte.SIZE;
-            data[pos++] = (byte) (i >> decl);
+            data[newPos++] = (byte) (i >> decl);
         }
     }
 

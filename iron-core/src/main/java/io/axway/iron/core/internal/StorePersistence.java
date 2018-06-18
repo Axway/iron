@@ -187,7 +187,7 @@ class StorePersistence {
             return m_commands;
         }
 
-        public String getStoreName() {
+        String getStoreName() {
             return m_storeName;
         }
     }

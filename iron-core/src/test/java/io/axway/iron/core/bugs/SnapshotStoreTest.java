@@ -18,7 +18,7 @@ import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.iron.core.bugs.IronTestHelper.*;
-import static java.math.BigInteger.ONE;
+import static java.math.BigInteger.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SnapshotStoreTest {
@@ -55,7 +55,7 @@ public class SnapshotStoreTest {
         // Given: a store and a snapshot which transaction ID is TxID (TxID >= 4)
         // When: opening the store from that snapshot and creating a new snapshot without changing content of store
         // Then: new snapshot should be created with transaction ID >= TxID
-        BigInteger transactionCount = BigInteger.TEN;
+        BigInteger transactionCount = TEN;
 
         try (StoreManager storeManager = createOpenStoreManager("shouldInitializeInitialTransactionIdAfterOpeningSnapshot")) {
             Store store = storeManager.getStore(MY_STORE);
@@ -88,14 +88,14 @@ public class SnapshotStoreTest {
             store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value").submit().get();
 
             // Should create snapshot 1
-            assertThat(storeManager.snapshot()).isEqualTo(BigInteger.ZERO);
+            assertThat(storeManager.snapshot()).isEqualTo(ZERO);
 
             // Should not create another snapshot, since snapshot 1 is already the latest
             assertThat(storeManager.snapshot()).isNull();
 
             store.createCommand(SnapshotStoreCommand.class).set(SnapshotStoreCommand::value).to("value2").submit().get();
 
-            assertThat(storeManager.snapshot()).isEqualTo(BigInteger.ONE);
+            assertThat(storeManager.snapshot()).isEqualTo(ONE);
         }
     }
 
