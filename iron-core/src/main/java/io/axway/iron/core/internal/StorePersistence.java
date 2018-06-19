@@ -83,7 +83,10 @@ class StorePersistence {
                             String storeName = reader.storeName();
                             EntityStores entityStores = entityStoresByStoreName.apply(storeName);
 
-                            SerializableSnapshot serializableSnapshot = m_snapshotSerializer.deserializeSnapshot(reader.inputStream());
+                            SerializableSnapshot serializableSnapshot;
+                            try (InputStream is = reader.inputStream()) {
+                                serializableSnapshot = m_snapshotSerializer.deserializeSnapshot(is);
+                            }
                             if (serializableSnapshot.getSnapshotModelVersion() != SNAPSHOT_MODEL_VERSION) {
                                 throw new UnrecoverableStoreException("Snapshot serializable model version is not supported",
                                                                       args -> args.add("version", serializableSnapshot.getSnapshotModelVersion())

@@ -39,7 +39,6 @@ public class FileSnapshotStore implements SnapshotStore {
         String snapshotFileName = format(m_filenameFormat, storeName, SNAPSHOT_EXT);
         Path tmpSnapshotFile = ensureDirectoryExists(m_snapshotTmpDir.resolve(format(m_idFormat, transactionId))).resolve(snapshotFileName);
         Path finalSnapshotFile = getSnapshotDirectory(transactionId).resolve(snapshotFileName);
-
         return new BufferedOutputStream(newOutputStream(tmpSnapshotFile)) {
             @Override
             public void close() throws IOException {
@@ -77,11 +76,13 @@ public class FileSnapshotStore implements SnapshotStore {
 
     @Override
     public List<BigInteger> listSnapshots() throws IOException {
-        return list(m_snapshotDir)                            //
-                .map(path -> path.getFileName().toString())   //
-                .filter(name -> name.matches(m_idRegex))      //
-                .map(BigInteger::new)                         //
-                .collect(Collectors.toList());
+        try (Stream<Path> list = list(m_snapshotDir)) {
+            return list                                           //
+                    .map(path -> path.getFileName().toString())   //
+                    .filter(name -> name.matches(m_idRegex))      //
+                    .map(BigInteger::new)                         //
+                    .collect(Collectors.toList());
+        }
     }
 
     @Override

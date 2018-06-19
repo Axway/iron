@@ -26,9 +26,7 @@ import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.iron.spi.file.FileTestHelper.*;
 import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
-import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.*;
-import static java.util.stream.Collectors.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FileStoreTest {
@@ -49,11 +47,12 @@ public class FileStoreTest {
     }
 
     @Test
-    public void should() throws IOException {
+    public void shouldBeAbleToDeleteFilesAfterStoreManagerClose() throws IOException, InterruptedException {
         Path filePath = Paths.get("tmp-iron-test", "iron-spi-file-inttest");
 
-        Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(filePath, "shouldCreateCompanySequenceBeRight");
-        Supplier<SnapshotStore> snapshotStoreFactory = () -> buildFileSnapshotStore(filePath, "shouldCreateCompanySequenceBeRight");
+        String directory = "iron-directory";
+        Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(filePath, directory);
+        Supplier<SnapshotStore> snapshotStoreFactory = () -> buildFileSnapshotStore(filePath, directory);
 
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
@@ -78,7 +77,10 @@ public class FileStoreTest {
             storeManager.snapshot();
         }
 
-        assertThat(Files.walk(filePath).sorted(reverseOrder()).map(Path::toFile).map(File::delete).collect(toSet())).containsOnly(TRUE);
+        assertThat(Files.walk(Paths.get("tmp-iron-test")).
+                sorted(reverseOrder()).map(Path::toFile).
+                map(file -> new Object[]{file, file.delete()})).
+                allMatch(fileStatus -> (boolean) fileStatus[1]);
     }
 }
 
