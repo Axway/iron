@@ -14,6 +14,7 @@ import javax.annotation.concurrent.*;
 import org.reactivestreams.Publisher;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.storage.TransactionStore;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
@@ -101,7 +102,9 @@ public class FileTransactionStore implements TransactionStore {
                     .map(fileName -> {
                         Matcher matcher = m_filenamePattern.matcher(fileName);
                         if (!matcher.matches()) {
-                            System.err.println(fileName);
+                            throw new StoreException("Transaction file name in transaction directory does not match the expected pattern",
+                                                     args -> args.add("filename", fileName).add("transaction directory", m_transactionDir)
+                                                             .add("file name pattern", m_filenamePattern.toString()));
                         }
                         String store = matcher.group(2);
                         BigInteger id = BigInteger.valueOf(Long.valueOf(matcher.group(1)));
@@ -168,7 +171,7 @@ public class FileTransactionStore implements TransactionStore {
                     .filter(matcher -> matcher.matches() && TX_EXT.equals(matcher.group(3))) //
                     .mapToLong(matcher -> Long.valueOf(matcher.group(1))) //
                     .max() //
-                    .orElse(-1L) // in case no file exists we want nextTxId=0
+                    .orElse(0L) // in case no file exists we want nextTxId=1 because a snapshot with no tx may have already be done to store the model
                     + 1;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
