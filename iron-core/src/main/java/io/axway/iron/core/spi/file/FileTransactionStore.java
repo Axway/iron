@@ -171,7 +171,7 @@ public class FileTransactionStore implements TransactionStore {
                     .filter(matcher -> matcher.matches() && TX_EXT.equals(matcher.group(3))) //
                     .mapToLong(matcher -> Long.valueOf(matcher.group(1))) //
                     .max() //
-                    .orElse(-1L) // in case no file exists we want nextTxId=0
+                    .orElse(0L) // in case no file exists we want nextTxId=1 because a snapshot with no tx may have already be done to store the model
                     + 1;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
