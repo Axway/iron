@@ -7,7 +7,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 import org.testng.annotations.Test;
-import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerBuilder;
@@ -29,8 +28,7 @@ import io.axway.iron.spi.storage.TransactionStore;
 import static io.axway.iron.spi.file.FileTestHelper.*;
 import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
 import static java.nio.file.Paths.get;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
+import static java.util.Arrays.*;
 import static java.util.Comparator.*;
 import static java.util.stream.Collectors.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -117,7 +115,7 @@ public class FileStoreTest {
             storeManager.snapshot();
             // Then I find no snapshot
             assertThat(Files.walk(filePath.resolve(directory).resolve("snapshot")).collect(toSet())).
-                    containsExactlyInAnyOrderElementsOf(asList(filePath.resolve(directory).resolve("snapshot")));
+                    containsExactlyInAnyOrder(filePath.resolve(directory).resolve("snapshot"));
             //
             // When I snapshot after a transaction
             Store.TransactionBuilder transaction1_1 = store1.begin();
@@ -128,11 +126,10 @@ public class FileStoreTest {
             transaction1_1.submit().get();
             storeManager.snapshot();
             // Then I find a snapshot
-            List<Path> expectedPaths = asList(filePath.resolve(directory).resolve("snapshot"),
+            assertThat(Files.walk(filePath.resolve(directory).resolve("snapshot")).collect(toSet())).
+                    containsExactlyInAnyOrder(filePath.resolve(directory).resolve("snapshot"),
                                               filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000000"),
                                               filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000000").resolve("store1.snapshot"));
-            assertThat(Files.walk(filePath.resolve(directory).resolve("snapshot")).collect(toSet())).
-                    containsExactlyInAnyOrderElementsOf(expectedPaths);
         }
     }
 }

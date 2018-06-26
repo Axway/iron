@@ -95,8 +95,8 @@ public class IronMigrationTest {
                             List<String> fileContent = getResourceFileAsString(
                                     join("/", "io", "axway", "iron", "spi", "file", directory, storeName, type, sourceFile));
                             if (fileContent != null) {
-                                if (type.equals("snapshot")) {
-                                    snapshotIdsByStoreType.computeIfAbsent(storeName.equals("global") ? "global" : "tenant", t -> new HashSet<>()).add(id);
+                                if ("snapshot".equals(type)) {
+                                    snapshotIdsByStoreType.computeIfAbsent("global".equals(storeName) ? "global" : "tenant", t -> new HashSet<>()).add(id);
                                 }
                                 Path destDirectoryPath = sourceIronPath.resolve(storeName).resolve(type);
                                 destDirectoryPath.toFile().mkdirs();
@@ -113,7 +113,7 @@ public class IronMigrationTest {
         return snapshotIdsByStoreType;
     }
 
-    public List<String> getResourceFileAsString(String fileName) {
+    private List<String> getResourceFileAsString(String fileName) {
         InputStream is = getClass().getClassLoader().getResourceAsStream(fileName);
         if (is != null) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
