@@ -1,6 +1,7 @@
 package io.axway.iron.core.spi.file;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -8,8 +9,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.regex.*;
 import com.google.common.base.Throwables;
 import io.axway.iron.error.StoreException;
+import io.axway.iron.spi.serializer.SnapshotSerializer;
 
 import static java.util.Arrays.*;
 import static java.util.stream.Collectors.*;
@@ -116,6 +119,9 @@ public class IronMigration {
      * @param targetStoresPath path to store target iron
      */
     private static void completeStoreSnapshotWithMissingInstanceSnapshots(Path targetStoresPath) {
+        String transactionIdRegexAlone = "\"transactionId\"\\s*:\\s*\\d+\\s*,";
+        String transactionIdRegexReplace = "(.*\"transactionId\"\\s*:\\s*)\\d+(\\s*,.*)";
+        Pattern transactionIdPattern = Pattern.compile(transactionIdRegexAlone);
         Set<File> previousSnapshots = new HashSet<>();
         List<File> snapshots = asList(targetStoresPath.resolve(SNAPSHOT_DIRECTORY_NAME).toFile().listFiles());
         Collections.sort(snapshots);
@@ -123,7 +129,14 @@ public class IronMigration {
             Set<String> snapshotNames = stream(snapshot.listFiles()).map(File::getName).collect(toSet());
             previousSnapshots.stream().filter(previousSnapshot -> !snapshotNames.contains(previousSnapshot.getName())).forEach(previousSnapshot -> {
                 try {
-                    Files.copy(previousSnapshot.toPath(), snapshot.toPath().resolve(previousSnapshot.getName()));
+                    Path targetPath = snapshot.toPath().resolve(previousSnapshot.getName());
+                    Path sourcePath = previousSnapshot.toPath();
+                    int count = countTransactionId(transactionIdPattern, sourcePath);
+                    if (count != 1) {
+                        throw new StoreException("transactionId not found once", args -> args.add("found count", count));
+                    }
+                    BigInteger newTransactionId = new BigInteger(snapshot.getName());
+                    replaceTransactionIdValue(transactionIdRegexReplace, sourcePath, targetPath, newTransactionId.toString());
                 } catch (IOException e) {
                     throw Throwables.propagate(e);
                 }
@@ -131,5 +144,20 @@ public class IronMigration {
             previousSnapshots.clear();
             previousSnapshots.addAll(stream(snapshot.listFiles()).collect(toSet()));
         }
+    }
+
+    private static int countTransactionId(Pattern transactionIdPattern, Path targetPath) throws IOException {
+        int[] count = {0};
+        Files.lines(targetPath).forEach(line -> {
+            Matcher matcher = transactionIdPattern.matcher(line);
+            while (matcher.find()) {
+                count[0]++;
+            }
+        });
+        return count[0];
+    }
+
+    private static void replaceTransactionIdValue(String transactionIdRegex, Path sourcePath, Path targetPath, String newTransactionId) throws IOException {
+        Files.write(targetPath, Files.lines(sourcePath).map(line -> line.replaceAll(transactionIdRegex, "$1" + newTransactionId + "$2")).collect(toList()));
     }
 }

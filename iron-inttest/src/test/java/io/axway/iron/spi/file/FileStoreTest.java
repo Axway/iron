@@ -111,6 +111,7 @@ public class FileStoreTest {
 
         try (StoreManager storeManager = factoryBuilder.build()) {
             Store store1 = storeManager.getStore("store1");
+            Store store2 = storeManager.getStore("store2");
             // When I snapshot before any transaction
             storeManager.snapshot();
             // Then I find no snapshot
@@ -118,12 +119,26 @@ public class FileStoreTest {
                     containsExactlyInAnyOrder(filePath.resolve(directory).resolve("snapshot"));
             //
             // When I snapshot after a transaction
-            Store.TransactionBuilder transaction1_1 = store1.begin();
-            transaction1_1.addCommand(CreatePerson.class).
-                    set(CreatePerson::id).to("myPersonId").
-                    set(CreatePerson::name).to("myPersonName").
+            Store.TransactionBuilder transaction1 = store1.begin();
+            transaction1.addCommand(CreatePerson.class).
+                    set(CreatePerson::id).to("myPersonId1_1").
+                    set(CreatePerson::name).to("myPersonName1_1").
                     submit();
-            transaction1_1.submit().get();
+            transaction1.submit().get();
+            Store.TransactionBuilder transaction2 = store2.begin();
+            transaction2.addCommand(CreatePerson.class).
+                    set(CreatePerson::id).to("myPersonId2_1").
+                    set(CreatePerson::name).to("myPersonName2_1").
+                    submit();
+            transaction2.submit().get();
+            storeManager.snapshot();
+
+            transaction1 = store1.begin();
+            transaction1.addCommand(CreatePerson.class).
+                    set(CreatePerson::id).to("myPersonId1_2").
+                    set(CreatePerson::name).to("myPersonName1_2").
+                    submit();
+            transaction1.submit().get();
             storeManager.snapshot();
             // Then I find a snapshot
             assertThat(Files.walk(filePath.resolve(directory).resolve("snapshot")).collect(toSet())).
