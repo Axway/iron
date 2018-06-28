@@ -88,6 +88,53 @@ public class FileStoreTest {
     }
 
     @Test
+    public void shouldASnapshotCommandWaitATransactionToGenerateASnapshot() throws IOException, ExecutionException, InterruptedException {
+        // Given an iron store
+        Path filePath = get("tmp-iron-test", "iron-spi-file-inttest");
+
+        String directory = "iron-directory-" + UUID.randomUUID();
+        Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(filePath, directory);
+        Supplier<SnapshotStore> snapshotStoreFactory = () -> buildFileSnapshotStore(filePath, directory);
+
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+
+        StoreManagerBuilder factoryBuilder = StoreManagerBuilder.newStoreManagerBuilder() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStore(transactionStoreFactory.get()) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStore(snapshotStoreFactory.get()) //
+                .withEntityClass(Company.class) //
+                .withEntityClass(Person.class) //
+                .withCommandClass(CreatePerson.class) //
+                ;
+
+        try (StoreManager storeManager = factoryBuilder.build()) {
+            Store store1 = storeManager.getStore("store1");
+            // When I snapshot before any transaction
+            storeManager.snapshot();
+            // Then I find no snapshot
+            assertThat(Files.walk(filePath.resolve(directory).resolve("snapshot")).collect(toSet())).
+                    containsExactlyInAnyOrder(filePath.resolve(directory).resolve("snapshot"));
+            //
+            // When I snapshot after a transaction
+            Store.TransactionBuilder transaction1 = store1.begin();
+            transaction1.addCommand(CreatePerson.class).
+                    set(CreatePerson::id).to("myPersonId1_1").
+                    set(CreatePerson::name).to("myPersonName1_1").
+                    submit();
+            transaction1.submit().get();
+            storeManager.snapshot();
+
+            // Then I find a snapshot
+            assertThat(Files.walk(filePath.resolve(directory).resolve("snapshot")).collect(toSet())).
+                    containsExactlyInAnyOrder(filePath.resolve(directory).resolve("snapshot"),
+                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000000"),
+                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000000").resolve("store1.snapshot"));
+        }
+    }
+
+    @Test
     public void shouldSnapshotContainAllInstances() throws IOException, ExecutionException, InterruptedException {
         // Given an iron store
         Path filePath = get("tmp-iron-test", "iron-spi-file-inttest");
@@ -142,9 +189,16 @@ public class FileStoreTest {
             storeManager.snapshot();
             // Then I find a snapshot
             assertThat(Files.walk(filePath.resolve(directory).resolve("snapshot")).collect(toSet())).
-                    containsExactlyInAnyOrder(filePath.resolve(directory).resolve("snapshot"),
-                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000000"),
-                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000000").resolve("store1.snapshot"));
+                    containsExactlyInAnyOrder(//
+                                              filePath.resolve(directory).resolve("snapshot"),
+                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000001"),
+                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000001").resolve("store1.snapshot"),
+                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000001").resolve("store2.snapshot"),
+                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000002"),
+                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000002").resolve("store1.snapshot"),
+                                              filePath.resolve(directory).resolve("snapshot").resolve("00000000000000000002").resolve("store2.snapshot")
+                                              //
+                    );
         }
     }
 }

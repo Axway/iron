@@ -12,7 +12,6 @@ import java.util.*;
 import java.util.regex.*;
 import com.google.common.base.Throwables;
 import io.axway.iron.error.StoreException;
-import io.axway.iron.spi.serializer.SnapshotSerializer;
 
 import static java.util.Arrays.*;
 import static java.util.stream.Collectors.*;

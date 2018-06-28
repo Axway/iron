@@ -39,6 +39,21 @@ import static org.assertj.core.api.Java6Assertions.assertThat;
 
 public class IronMigrationTest {
 
+    private Function<Path, StoreManagerBuilder> personCompanyStoreManagerBuilder = destIronPath -> {
+        Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(destIronPath, "tenant");
+        Supplier<SnapshotStore> snapshotStoreFactory = () -> buildFileSnapshotStore(destIronPath, "tenant");
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+        return StoreManagerBuilder.newStoreManagerBuilder() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStore(transactionStoreFactory.get()) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStore(snapshotStoreFactory.get()) //
+                .withEntityClass(Company.class) //
+                .withEntityClass(Person.class) //
+                .withCommandClass(CreatePerson.class);
+    };
+
     @DataProvider(name = "ironCases")
     public Object[][] ironCases() {
         return new Object[][]{//
@@ -112,21 +127,6 @@ public class IronMigrationTest {
             Files.walk(randomPath).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
         }
     }
-
-    private Function<Path, StoreManagerBuilder> personCompanyStoreManagerBuilder = destIronPath -> {
-        Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(destIronPath, "tenant");
-        Supplier<SnapshotStore> snapshotStoreFactory = () -> buildFileSnapshotStore(destIronPath, "tenant");
-        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
-        return StoreManagerBuilder.newStoreManagerBuilder() //
-                .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStore(transactionStoreFactory.get()) //
-                .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStore(snapshotStoreFactory.get()) //
-                .withEntityClass(Company.class) //
-                .withEntityClass(Person.class) //
-                .withCommandClass(CreatePerson.class);
-    };
 
     private HashMap<String, Set<String>> copyIronFromResourcesToFileSytem(String directory, int lastTenantIdx, Path sourceIronPath) {
         HashMap<String, Set<String>> snapshotIdsByStoreType = new HashMap<>();
