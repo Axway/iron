@@ -53,7 +53,7 @@ public class IronMigration {
             copyTenantSnapshots(originIronPath, targetStoresPath);
             completeStoreSnapshotWithMissingInstanceSnapshots(targetStoresPath);
 
-            System.out.println("Migration done from " + originIronPath + " to " + targetIronPath);
+            System.out.printf("Migration done from %s to %s.%n", originIronPath, targetIronPath);
         } catch (Exception e) {
             System.err.println(
                     "Usage of migration tool : java -jar migrationTool.jar uriToIronDirectory globalStoreManagerName storesStoreManagerName uriToTargetDirectory\n"

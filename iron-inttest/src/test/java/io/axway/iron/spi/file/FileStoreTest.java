@@ -3,6 +3,7 @@ package io.axway.iron.spi.file;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -27,8 +28,6 @@ import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.iron.spi.file.FileTestHelper.*;
 import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
-import static java.nio.file.Paths.get;
-import static java.util.Arrays.*;
 import static java.util.Comparator.*;
 import static java.util.stream.Collectors.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +37,7 @@ public class FileStoreTest {
     @Test
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String randomStoreName = "iron-store-" + UUID.randomUUID();
-        Path filePath = get("tmp-iron-test", "iron-spi-file-inttest");
+        Path filePath = Paths.get("tmp-iron-test", "iron-spi-file-inttest");
 
         Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(filePath, "shouldCreateCompanySequenceBeRight");
         Supplier<SnapshotStore> snapshotStoreFactory = () -> buildFileSnapshotStore(filePath, "shouldCreateCompanySequenceBeRight");
@@ -52,7 +51,7 @@ public class FileStoreTest {
 
     @Test
     public void shouldBeAbleToDeleteFilesAfterStoreManagerClose() throws IOException, InterruptedException {
-        Path filePath = get("tmp-iron-test", "iron-spi-file-inttest");
+        Path filePath = Paths.get("tmp-iron-test", "iron-spi-file-inttest");
 
         String directory = "iron-directory";
         Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(filePath, directory);
@@ -81,7 +80,7 @@ public class FileStoreTest {
             storeManager.snapshot();
         }
 
-        assertThat(Files.walk(get("tmp-iron-test")).
+        assertThat(Files.walk(Paths.get("tmp-iron-test")).
                 sorted(reverseOrder()).map(Path::toFile).
                 map(file -> new Object[]{file, file.delete()})).
                 allMatch(fileStatus -> (boolean) fileStatus[1]);
@@ -90,7 +89,7 @@ public class FileStoreTest {
     @Test
     public void shouldASnapshotCommandWaitATransactionToGenerateASnapshot() throws IOException, ExecutionException, InterruptedException {
         // Given an iron store
-        Path filePath = get("tmp-iron-test", "iron-spi-file-inttest");
+        Path filePath = Paths.get("tmp-iron-test", "iron-spi-file-inttest");
 
         String directory = "iron-directory-" + UUID.randomUUID();
         Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(filePath, directory);
@@ -137,7 +136,7 @@ public class FileStoreTest {
     @Test
     public void shouldSnapshotContainAllInstances() throws IOException, ExecutionException, InterruptedException {
         // Given an iron store
-        Path filePath = get("tmp-iron-test", "iron-spi-file-inttest");
+        Path filePath = Paths.get("tmp-iron-test", "iron-spi-file-inttest");
 
         String directory = "iron-directory-" + UUID.randomUUID();
         Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(filePath, directory);

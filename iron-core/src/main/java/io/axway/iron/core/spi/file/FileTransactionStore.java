@@ -103,8 +103,8 @@ public class FileTransactionStore implements TransactionStore {
                         Matcher matcher = m_filenamePattern.matcher(fileName);
                         if (!matcher.matches()) {
                             throw new StoreException("Transaction file name in transaction directory does not match the expected pattern",
-                                                     args -> args.add("filename", fileName).add("transaction directory", m_transactionDir)
-                                                             .add("file name pattern", m_filenamePattern.toString()));
+                                                     args -> args.add("filename", fileName).add("transactionDirectory", m_transactionDir)
+                                                             .add("fileNamePattern", m_filenamePattern.toString()));
                         }
                         String store = matcher.group(2);
                         BigInteger id = BigInteger.valueOf(Long.valueOf(matcher.group(1)));
@@ -171,7 +171,7 @@ public class FileTransactionStore implements TransactionStore {
                     .filter(matcher -> matcher.matches() && TX_EXT.equals(matcher.group(3))) //
                     .mapToLong(matcher -> Long.valueOf(matcher.group(1))) //
                     .max() //
-                    .orElse(-1L) // in case no file exists we want nextTxId=1 because a snapshot with no tx may have already be done to store the model
+                    .orElse(-1L) // in case no file exists we want nextTxId=0
                     + 1;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
