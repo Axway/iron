@@ -53,7 +53,7 @@ class StoreManagerImpl implements StoreManager {
     private final Cache<String, CompletableFuture<List<Object>>> m_futuresBySynchronizationId = CacheBuilder.newBuilder().weakValues().build();
     private final SnapshotStore m_snapshotStore;
 
-    private BigInteger m_currentTxId = BigInteger.ZERO;
+    private BigInteger m_currentTxId = BigInteger.ONE.negate();
     private BigInteger m_lastSnapshotTxId = BigInteger.ONE.negate();
 
     private Disposable m_disposableTxFlow;
