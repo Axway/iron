@@ -1,0 +1,30 @@
+{
+    "snapshotModelVersion": 123,
+    "transactionId": 123456789,
+    "entities": [
+        {
+            "entityName": "io.axway.iron.spi.jackson.SimpleEntity",
+            "relations": {},
+            "attributes": {
+                "simpleAttribute": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                [
+                    "simpleAttribute"
+                ]
+            ],
+            "nextId": 1,
+            "instances": [
+                {
+                    "id": 0,
+                    "values": {
+                        "simpleAttribute": "simpleAttributeValue"
+                    }
+                }
+            ]
+        }
+    ]
+}

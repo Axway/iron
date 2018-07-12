@@ -35,4 +35,5 @@ public class SerializableSnapshot {
     public void setEntities(Collection<SerializableEntity> entities) {
         m_entities = entities;
     }
+
 }

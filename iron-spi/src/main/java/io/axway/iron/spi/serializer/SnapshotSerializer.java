@@ -20,9 +20,11 @@ public interface SnapshotSerializer {
     /**
      * Deserialize a snapshot.
      *
+     *
+     * @param storeName the name of the store
      * @param in the snapshot is to be read from this stream
      * @return the deserialized snapshot
      * @throws IOException in case of errors when writing on the {@code in} stream
      */
-    SerializableSnapshot deserializeSnapshot(InputStream in) throws IOException;
+    SerializableSnapshot deserializeSnapshot(String storeName, InputStream in) throws IOException;
 }
