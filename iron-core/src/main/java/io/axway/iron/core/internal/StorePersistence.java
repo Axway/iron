@@ -85,7 +85,7 @@ class StorePersistence {
 
                             SerializableSnapshot serializableSnapshot;
                             try (InputStream is = reader.inputStream()) {
-                                serializableSnapshot = m_snapshotSerializer.deserializeSnapshot(is);
+                                serializableSnapshot = m_snapshotSerializer.deserializeSnapshot(storeName, is);
                             }
                             if (serializableSnapshot.getSnapshotModelVersion() != SNAPSHOT_MODEL_VERSION) {
                                 throw new UnrecoverableStoreException("Snapshot serializable model version is not supported",

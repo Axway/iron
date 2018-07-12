@@ -37,7 +37,7 @@ public class JacksonSerializer implements TransactionSerializer, SnapshotSeriali
     }
 
     @Override
-    public SerializableSnapshot deserializeSnapshot(InputStream in) throws IOException {
-        return m_objectMapper.reader().forType(SerializableSnapshot.class).readValue(in);
+    public SerializableSnapshot deserializeSnapshot(String storeName, InputStream in) throws IOException {
+        return ((SerializableSnapshot) m_objectMapper.reader().forType(SerializableSnapshot.class).readValue(in));
     }
 }
