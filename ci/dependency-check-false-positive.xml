@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.1.xsd">
+    <suppress>
+        <notes><![CDATA[
+   file name: affinity-3.1.7.jar
+   ]]></notes>
+        <gav regex="true">^net\.openhft:affinity:.*$</gav>
+        <cpe>cpe:/a:thread_project:thread</cpe>
+    </suppress>
+</suppressions>
