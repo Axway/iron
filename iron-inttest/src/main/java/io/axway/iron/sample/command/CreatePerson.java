@@ -16,6 +16,9 @@ public interface CreatePerson extends Command<Void> {
     @Nullable
     Date birthDate();
 
+    @Nullable
+    String worksAt();
+
     Collection<String> previousCompanyNames();
 
     @Override
@@ -25,11 +28,13 @@ public interface CreatePerson extends Command<Void> {
             previousCompanyNames = Collections.emptyList();
         }
         Collection<Company> previousCompanies = tx.select(Company.class).where(Company::name).allContainedIn(previousCompanyNames);
+        Company worksAt = tx.select(Company.class).where(Company::name).equalsToOrNull(worksAt());
 
         tx.insert(Person.class) //
                 .set(Person::name).to(name()) //
                 .set(Person::id).to(id()) //
                 .set(Person::birthDate).to(birthDate()) //
+                .set(Person::worksAt).to(worksAt) //
                 .set(Person::previousCompanies).to(previousCompanies) //
                 .done();
 

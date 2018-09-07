@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.*;
 import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.core.internal.entity.EntityStore;
 import io.axway.iron.core.internal.entity.EntityStores;
+import io.axway.iron.core.internal.utils.CollectionUpdateType;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.functional.Accessor;
 
@@ -119,7 +120,78 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
         @Override
         public <H, V extends Collection<H>> CollectionUpdater<E, H> onCollection(Accessor<E, V> accessor) {
             checkValid();
-            throw new UnsupportedOperationException("Not yet implemented"); // TODO implements multiple relation
+
+            return new CollectionUpdater<E, H>() {
+                @Override
+                public E done() {
+                    checkValid();
+                    m_valid = false;
+                    m_activeObjectUpdaterCount.decrementAndGet();
+                    return m_object;
+                }
+
+                @Override
+                public <V> To<E, V> set(Accessor<E, V> accessor) {
+                    checkValid();
+                    return value -> {
+                        checkValid();
+                        String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
+                        V oldValue = m_entityStore.update(m_object, propertyName, value);
+                        m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                        return this;
+                    };
+                }
+
+                @Override
+                public <H, V extends Collection<H>> CollectionUpdater<E, H> onCollection(Accessor<E, V> accessor) {
+                    return (CollectionUpdater<E, H>) this;
+                }
+
+                @Override
+                public CollectionUpdater<E, H> add(H object) {
+                    checkValid();
+                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
+                    Collection<H> oldValue = m_entityStore.update(CollectionUpdateType.ADD_ONE, m_object, propertyName, object, null);
+                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    return this;
+                }
+
+                @Override
+                public CollectionUpdater<E, H> addAll(Collection<H> object) {
+                    checkValid();
+                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
+                    Collection<H> oldValue = m_entityStore.update(CollectionUpdateType.ADD_ALL, m_object, propertyName, null, object);
+                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    return this;
+                }
+
+                @Override
+                public CollectionUpdater<E, H> remove(H object) {
+                    checkValid();
+                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
+                    Collection<H> oldValue = m_entityStore.update(CollectionUpdateType.REMOVE_ONE, m_object, propertyName, object, null);
+                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    return this;
+                }
+
+                @Override
+                public CollectionUpdater<E, H> removeAll(Collection<H> object) {
+                    checkValid();
+                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
+                    Collection<H> oldValue = m_entityStore.update(CollectionUpdateType.REMOVE_ALL, m_object, propertyName, null, object);
+                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    return this;
+                }
+
+                @Override
+                public CollectionUpdater<E, H> clear() {
+                    checkValid();
+                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
+                    Collection<H> oldValue = m_entityStore.update(m_object, propertyName, Arrays.asList());
+                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    return this;
+                }
+            };
         }
 
         @Override
