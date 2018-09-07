@@ -73,7 +73,7 @@ public interface ReadWriteTransaction extends ReadOnlyTransaction {
         E done();
     }
 
-    interface CollectionUpdater<E, H> extends ObjectUpdaterBase<E> {
+    interface CollectionUpdater<E, H> extends ObjectUpdater<E> {
         /**
          * Add one element in the relation collection.
          *
