@@ -6,7 +6,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
-import org.joda.time.DateTime;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import com.google.common.collect.ImmutableList;
@@ -19,7 +18,6 @@ import io.axway.iron.sample.command.ChangeCompanyAddress;
 import io.axway.iron.sample.command.CreateCompany;
 import io.axway.iron.sample.command.CreatePerson;
 import io.axway.iron.sample.command.DeleteCompany;
-import io.axway.iron.sample.command.MultipleRelationsTestCommand;
 import io.axway.iron.sample.command.PersonJoinCompany;
 import io.axway.iron.sample.command.PersonLeaveCompany;
 import io.axway.iron.sample.command.PersonRaiseSalary;
@@ -207,67 +205,6 @@ public class SampleTest {
 
         store.query(listInstances);
         store.query(checkData);
-    }
-
-    @Test(dataProvider = "stores")
-    public void testMultiplicity(TransactionStore transactionStore, SnapshotStore snapshotStore, String storeName) throws Exception {
-        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
-        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-
-        StoreManager storeManager = StoreManagerBuilder.newStoreManagerBuilder() //
-                .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStore(transactionStore) //
-                .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStore(snapshotStore) //
-                .withEntityClass(Company.class) //
-                .withEntityClass(Person.class) //
-                .withCommandClass(CreateCompany.class) //
-                .withCommandClass(CreatePerson.class) //
-                .withCommandClass(PersonJoinCompany.class) //
-                .withCommandClass(MultipleRelationsTestCommand.class) //
-                .withCommandClass(PersonLeaveCompany.class) //
-                .build();
-
-        Store store = storeManager.getStore(storeName);
-
-        Store.TransactionBuilder tx1 = store.begin();
-        tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
-        tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
-        tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
-        tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Oracle").set(CreateCompany::address).to("Redwood City").submit();
-        tx1.addCommand(CreateCompany.class).map(ImmutableMap.of("name", "Apple", "address", "Cupertino")).submit();
-        List<?> result = tx1.submit().get();
-        assertThat(result.size()).isEqualTo(5);
-        assertThat(result.get(0)).isEqualTo(0L);
-        assertThat(result.get(1)).isEqualTo(1L);
-        assertThat(result.get(2)).isEqualTo(2L);
-        assertThat(result.get(3)).isEqualTo(3L);
-        assertThat(result.get(4)).isEqualTo(4L);
-
-        Function<ReadOnlyTransaction, Company> retrieveAxwayCompany = (tx) -> {
-            return tx.select(Company.class).where(Company::name).equalsTo("Axway");
-        };
-
-        Company axwayCompany = store.query(retrieveAxwayCompany);
-
-        Store.TransactionBuilder tx2 = store.begin();
-
-        tx2.addCommand(CreatePerson.class).set(CreatePerson::id).to("11").set(CreatePerson::name).to("Marcel").set(CreatePerson::previousCompanyNames)
-                .to(Arrays.asList("Google", "Microsoft")).set(CreatePerson::birthDate).to(new DateTime().minusYears(20).toDate()).submit();
-        tx2.addCommand(CreatePerson.class).set(CreatePerson::id).to("22").set(CreatePerson::name).to("Sinclair").set(CreatePerson::worksAt).to("Axway")
-                .set(CreatePerson::previousCompanyNames).to(Arrays.asList("Apple")).set(CreatePerson::birthDate).to(new DateTime().minusYears(30).toDate())
-                .submit();
-        tx2.addCommand(MultipleRelationsTestCommand.class).set(MultipleRelationsTestCommand::personId).to("22").submit();
-        tx2.submit().get();
-
-        Store.TransactionBuilder tx3 = store.begin();
-        Function<ReadOnlyTransaction, Person> retrieveUpdatedPerson = (tx) -> {
-            return tx.select(Person.class).where(Person::id).equalsToOrNull("22");
-        };
-        Person updatedPerson = store.query(retrieveUpdatedPerson);
-        System.out.println(updatedPerson.previousCompanies());
-
-        assertThat(updatedPerson.previousCompanies().stream().map(company -> company.name()).filter(name -> name.equals("Axway")).count() > 0);
     }
 
     private void awaitAll(Future<?>... futures) throws ExecutionException, InterruptedException {
