@@ -101,10 +101,10 @@ public interface ReadWriteTransaction extends ReadOnlyTransaction {
         /**
          * Remove many elements in the relation collection.
          *
-         * @param object the head entity instances to be removed
+         * @param objects the head entity instances to be removed
          * @return the same object to continue the collection update
          */
-        CollectionUpdater<E, H> removeAll(Collection<H> object);
+        CollectionUpdater<E, H> removeAll(Collection<H> objects);
 
         /**
          * Remove all elements in the relation collection.

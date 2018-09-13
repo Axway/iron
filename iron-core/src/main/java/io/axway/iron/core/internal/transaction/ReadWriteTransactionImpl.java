@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.*;
 import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.core.internal.entity.EntityStore;
 import io.axway.iron.core.internal.entity.EntityStores;
-import io.axway.iron.core.internal.utils.CollectionUpdateType;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.functional.Accessor;
 
 import static io.axway.alf.assertion.Assertion.checkState;
@@ -47,8 +47,8 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
     @Override
     public void delete(Object object) {
         EntityStore<Object> entityStore = m_entityStores.getEntityStoreByObject(object);
-        entityStore.delete(object);
-        m_rollbackActions.add(() -> entityStore.undelete(object));
+        Runnable rollback = entityStore.delete(object);
+        m_rollbackActions.add(rollback);
     }
 
     private class InsertObjectUpdater<E> implements ObjectUpdater<E> {
@@ -83,10 +83,10 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
         public E done() {
             checkValid();
             m_valid = false;
-            E object = m_entityStore.insert(m_object);
-            m_rollbackActions.add(() -> m_entityStore.delete(m_object));
+            Runnable rollback = m_entityStore.insert(m_object);
+            m_rollbackActions.add(rollback);
             m_activeObjectUpdaterCount.decrementAndGet();
-            return object;
+            return m_object;
         }
 
         private void checkValid() {
@@ -110,9 +110,8 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
             checkValid();
             return value -> {
                 checkValid();
-                String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
-                V oldValue = m_entityStore.update(m_object, propertyName, value);
-                m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                Runnable rollback = m_entityStore.update(m_object, getPropertyName(accessor), value);
+                m_rollbackActions.add(rollback);
                 return UpdateObjectUpdater.this;
             };
         }
@@ -124,71 +123,62 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
             return new CollectionUpdater<E, H>() {
                 @Override
                 public E done() {
-                    checkValid();
-                    m_valid = false;
-                    m_activeObjectUpdaterCount.decrementAndGet();
-                    return m_object;
+                    return UpdateObjectUpdater.this.done();
                 }
 
                 @Override
-                public <V> To<E, V> set(Accessor<E, V> accessor) {
-                    checkValid();
-                    return value -> {
-                        checkValid();
-                        String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
-                        V oldValue = m_entityStore.update(m_object, propertyName, value);
-                        m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
-                        return this;
-                    };
+                public <V2> To<E, V2> set(Accessor<E, V2> accessor) {
+                    return UpdateObjectUpdater.this.set(accessor);
                 }
 
                 @Override
-                public <H, V extends Collection<H>> CollectionUpdater<E, H> onCollection(Accessor<E, V> accessor) {
-                    return (CollectionUpdater<E, H>) this;
+                public <H2, V2 extends Collection<H2>> CollectionUpdater<E, H2> onCollection(Accessor<E, V2> accessor) {
+                    return UpdateObjectUpdater.this.onCollection(accessor);
                 }
 
                 @Override
                 public CollectionUpdater<E, H> add(H object) {
                     checkValid();
-                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
-                    Collection<H> oldValue = m_entityStore.update(CollectionUpdateType.ADD_ONE, m_object, propertyName, object, null);
-                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    Runnable rollback = m_entityStore.updateCollectionAdd(m_object, getPropertyName(accessor), object);
+                    m_rollbackActions.add(rollback);
                     return this;
                 }
 
                 @Override
-                public CollectionUpdater<E, H> addAll(Collection<H> object) {
+                public CollectionUpdater<E, H> addAll(Collection<H> objects) {
                     checkValid();
-                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
-                    Collection<H> oldValue = m_entityStore.update(CollectionUpdateType.ADD_ALL, m_object, propertyName, null, object);
-                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    if (objects.stream().anyMatch(Objects::isNull)) {
+                        throw new StoreException("null values are not authorized for relations");
+                    }
+                    Runnable rollback = m_entityStore.updateCollectionAddAll(m_object, getPropertyName(accessor), objects);
+                    m_rollbackActions.add(rollback);
                     return this;
                 }
 
                 @Override
                 public CollectionUpdater<E, H> remove(H object) {
                     checkValid();
-                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
-                    Collection<H> oldValue = m_entityStore.update(CollectionUpdateType.REMOVE_ONE, m_object, propertyName, object, null);
-                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    Runnable rollback = m_entityStore.updateCollectionRemove(m_object, getPropertyName(accessor), object);
+                    m_rollbackActions.add(rollback);
                     return this;
                 }
 
                 @Override
-                public CollectionUpdater<E, H> removeAll(Collection<H> object) {
+                public CollectionUpdater<E, H> removeAll(Collection<H> objects) {
                     checkValid();
-                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
-                    Collection<H> oldValue = m_entityStore.update(CollectionUpdateType.REMOVE_ALL, m_object, propertyName, null, object);
-                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    if (objects.stream().anyMatch(Objects::isNull)) {
+                        throw new StoreException("null values are not authorized for relations");
+                    }
+                    Runnable rollback = m_entityStore.updateCollectionRemoveAll(m_object, getPropertyName(accessor), objects);
+                    m_rollbackActions.add(rollback);
                     return this;
                 }
 
                 @Override
                 public CollectionUpdater<E, H> clear() {
                     checkValid();
-                    String propertyName = m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
-                    Collection<H> oldValue = m_entityStore.update(m_object, propertyName, Arrays.asList());
-                    m_rollbackActions.add(() -> m_entityStore.update(m_object, propertyName, oldValue));
+                    Runnable rollback = m_entityStore.updateCollectionClear(m_object, getPropertyName(accessor));
+                    m_rollbackActions.add(rollback);
                     return this;
                 }
             };
@@ -204,6 +194,10 @@ public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements
 
         private void checkValid() {
             checkState(m_valid, "This UpdateObjectUpdater is no more usable");
+        }
+
+        private <V> String getPropertyName(Accessor<E, V> accessor) {
+            return m_introspectionHelper.getMethodName(m_entityStore.getEntityDefinition().getEntityClass(), accessor);
         }
     }
 }
