@@ -2,7 +2,6 @@ package io.axway.iron.core;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.*;
 import org.assertj.core.api.Assertions;
@@ -33,7 +32,6 @@ import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
 
 public class MultipleRelationsAPITest {
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/mm/yyyy");
     SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
     TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
 
