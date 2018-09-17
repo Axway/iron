@@ -174,7 +174,8 @@ class StoreManagerImpl implements StoreManager {
                     store.m_readLock.unlock();
                 }
             });
-            return m_lastSnapshotTxId = tx;
+            m_lastSnapshotTxId = tx;
+            return tx;
         } else {
             return null;
         }
