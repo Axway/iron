@@ -28,7 +28,6 @@ import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.TransactionStore;
 
-import static io.axway.iron.core.StoreManagerBuilder.newStoreManagerBuilder;
 import static io.axway.iron.spi.chronicle.ChronicleTestHelper.buildChronicleTransactionStoreFactory;
 import static io.axway.iron.spi.file.FileTestHelper.*;
 import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
@@ -56,8 +55,7 @@ public class SampleTest {
     }
 
     @Test(dataProvider = "stores")
-    public void testCreateCompany(TransactionStore transactionStore, SnapshotStore snapshotStore, String storeName)
-            throws Exception {
+    public void testCreateCompany(TransactionStore transactionStore, SnapshotStore snapshotStore, String storeName) throws Exception {
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
 

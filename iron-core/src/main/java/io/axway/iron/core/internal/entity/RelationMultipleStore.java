@@ -53,6 +53,22 @@ class RelationMultipleStore extends RelationStore {
         return previousHeadIds;
     }
 
+    boolean add(long tailId, long headId) {
+        return m_values.put(tailId, headId);
+    }
+
+    Collection<Long> addAll(long tailId, Collection<Long> headIds) {
+        return headIds.stream().filter(headId -> m_values.put(tailId, headId)).collect(Collectors.toList());
+    }
+
+    boolean remove(long tailId, long headId) {
+        return m_values.remove(tailId, headId);
+    }
+
+    Collection<Long> removeAll(long tailId, Collection<Long> headIds) {
+        return headIds.stream().filter(headId -> m_values.remove(tailId, headId)).collect(Collectors.toList());
+    }
+
     Collection<Long> clear(long tailId) {
         Collection<Long> previousHeadIds = m_values.removeAll(tailId);
         for (Long previousHeadId : previousHeadIds) {

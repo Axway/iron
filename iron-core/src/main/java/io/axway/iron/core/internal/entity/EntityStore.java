@@ -2,6 +2,7 @@ package io.axway.iron.core.internal.entity;
 
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.util.function.*;
 import java.util.stream.*;
 import javax.annotation.*;
 import com.google.common.collect.ImmutableList;
@@ -151,7 +152,7 @@ public class EntityStore<E> {
         return oldValue;
     }
 
-    public E insert(E object) {
+    public Runnable insert(E object) {
         InstanceProxy instance = (InstanceProxy) object;
         for (String nonNullAttribute : m_nonNullAttributes) {
             if (instance.__get(nonNullAttribute) == null) {
@@ -161,7 +162,8 @@ public class EntityStore<E> {
 
         indexInstance(instance);
         m_instancesById.put(instance.__id(), instance);
-        return m_entityClass.cast(instance);
+
+        return () -> delete(object);
     }
 
     private void indexInstance(InstanceProxy instance) {
@@ -197,7 +199,7 @@ public class EntityStore<E> {
         }
     }
 
-    public <V> V update(E object, String propertyName, @Nullable V value) {
+    public <V> Runnable update(E object, String propertyName, @Nullable V value) {
         InstanceProxy instance = (InstanceProxy) object;
         if (value == null && m_nonNullAttributes.contains(propertyName)) {
             throw new NonnullConstraintViolationException(m_entityName, propertyName);
@@ -224,11 +226,70 @@ public class EntityStore<E> {
             }
         }
 
-        //noinspection unchecked
-        return (V) oldValue;
+        return () -> update(object, propertyName, oldValue);
     }
 
-    public void delete(E object) {
+    public <H> Runnable updateCollectionAdd(E object, String propertyName, H value) {
+        return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
+            long headInstanceId = value instanceof Long ? (Long) value : InstanceProxy.class.cast(value).__id();
+            boolean rollbackNeeded = relationMultipleStore.add(tailId, headInstanceId);
+            return () -> {
+                if (rollbackNeeded) {
+                    relationMultipleStore.remove(tailId, headInstanceId);
+                }
+            };
+        });
+    }
+
+    public <H> Runnable updateCollectionAddAll(E object, String propertyName, Collection<H> values) {
+        return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
+            Collection<Long> headIds = values.stream().map(o -> o instanceof Long ? (Long) o : InstanceProxy.class.cast(o).__id()).collect(Collectors.toList());
+            Collection<Long> addedValues = relationMultipleStore.addAll(tailId, headIds);
+            return () -> relationMultipleStore.removeAll(tailId, addedValues);
+        });
+    }
+
+    public <H> Runnable updateCollectionRemove(E object, String propertyName, H value) {
+        return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
+            long headInstanceId = value instanceof Long ? (Long) value : InstanceProxy.class.cast(value).__id();
+            boolean rollbackNeeded = relationMultipleStore.remove(tailId, headInstanceId);
+            return () -> {
+                if (rollbackNeeded) {
+                    relationMultipleStore.add(tailId, headInstanceId);
+                }
+            };
+        });
+    }
+
+    public <H> Runnable updateCollectionRemoveAll(E object, String propertyName, Collection<H> values) {
+        return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
+            Collection<Long> headIds = values.stream().map(o -> o instanceof Long ? (Long) o : InstanceProxy.class.cast(o).__id()).collect(Collectors.toList());
+            Collection<Long> addedValues = relationMultipleStore.removeAll(tailId, headIds);
+            return () -> relationMultipleStore.addAll(tailId, addedValues);
+        });
+    }
+
+    public <H> Runnable updateCollectionClear(E object, String propertyName) {
+        return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
+            Collection<Long> previousValues = relationMultipleStore.clear(tailId);
+            return () -> relationMultipleStore.set(tailId, previousValues);
+        });
+    }
+
+    private <V, H> Runnable updateCollection(E object, String propertyName, BiFunction<RelationMultipleStore, Long, Runnable> collectionUpdateFunction) {
+        RelationStore relationStore = m_relationStores.get(propertyName);
+        if (!(relationStore instanceof RelationMultipleStore)) {
+            throw new StoreException("Property not found or not updatable through CollectionUpdater",
+                                     args -> args.add("entityName", m_entityName).add("propertyName", propertyName));
+        }
+        RelationMultipleStore relationMultipleStore = (RelationMultipleStore) relationStore;
+
+        InstanceProxy instance = (InstanceProxy) object;
+
+        return collectionUpdateFunction.apply(relationMultipleStore, instance.__id());
+    }
+
+    public Runnable delete(E object) {
         InstanceProxy instance = (InstanceProxy) object;
 
         for (RelationStore relationStore : m_relationStores.values()) {
@@ -245,10 +306,8 @@ public class EntityStore<E> {
         }
 
         m_instancesById.remove(instance.__id());
-    }
 
-    public void undelete(E object) {
-        insert(object);
+        return () -> insert(object);
     }
 
     private E newInstance(long id) {

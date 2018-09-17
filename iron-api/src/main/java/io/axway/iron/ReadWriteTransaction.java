@@ -73,7 +73,7 @@ public interface ReadWriteTransaction extends ReadOnlyTransaction {
         E done();
     }
 
-    interface CollectionUpdater<E, H> extends ObjectUpdaterBase<E> {
+    interface CollectionUpdater<E, H> extends ObjectUpdater<E> {
         /**
          * Add one element in the relation collection.
          *
@@ -101,10 +101,10 @@ public interface ReadWriteTransaction extends ReadOnlyTransaction {
         /**
          * Remove many elements in the relation collection.
          *
-         * @param object the head entity instances to be removed
+         * @param objects the head entity instances to be removed
          * @return the same object to continue the collection update
          */
-        CollectionUpdater<E, H> removeAll(Collection<H> object);
+        CollectionUpdater<E, H> removeAll(Collection<H> objects);
 
         /**
          * Remove all elements in the relation collection.
