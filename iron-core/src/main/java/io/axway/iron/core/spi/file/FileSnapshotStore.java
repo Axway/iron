@@ -87,10 +87,12 @@ public class FileSnapshotStore implements SnapshotStore {
 
     @Override
     public void deleteSnapshot(BigInteger transactionId) throws IOException {
-        walk(getSnapshotDirectory(transactionId))        //
-                .sorted(Comparator.reverseOrder())       //
-                .map(Path::toFile)                       //
-                .forEach(File::delete);
+        try (Stream<Path> walkStream = walk(getSnapshotDirectory(transactionId))) {
+            walkStream        //
+                    .sorted(Comparator.reverseOrder())       //
+                    .map(Path::toFile)                       //
+                    .forEach(File::delete);
+        }
     }
 
     @Nonnull

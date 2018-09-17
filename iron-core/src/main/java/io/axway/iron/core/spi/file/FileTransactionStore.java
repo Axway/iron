@@ -133,21 +133,21 @@ public class FileTransactionStore implements TransactionStore {
         m_txLock.lock();
         try {
             m_txToProcess.clear();
-            Files //
-                    .find(m_transactionDir, 1, (path, atts) -> {
-                        if (atts.isDirectory()) {
-                            return false;
-                        }
-                        String fileName = path.getFileName().toString();
-                        return fileName.compareTo(Strings.padStart(m_consumerStart.toString(), 20, '0')) >= 0;
-                    })    //
-                    .forEach(path -> {
-                        String fileName = path.getFileName().toString();
-                        if (m_filenamePattern.matcher(fileName).matches()) {
-                            m_txToProcess.add(fileName);
-                            m_txAvailable.signalAll();
-                        }
-                    });
+            try (Stream<Path> pathStream = Files.find(m_transactionDir, 1, (path, atts) -> {
+                if (atts.isDirectory()) {
+                    return false;
+                }
+                String fileName = path.getFileName().toString();
+                return fileName.compareTo(Strings.padStart(m_consumerStart.toString(), 20, '0')) >= 0;
+            })) {
+                pathStream.forEach(path -> {
+                    String fileName = path.getFileName().toString();
+                    if (m_filenamePattern.matcher(fileName).matches()) {
+                        m_txToProcess.add(fileName);
+                        m_txAvailable.signalAll();
+                    }
+                });
+            }
             Collections.sort(m_txToProcess);
         } catch (IOException e) {
             throw Throwables.propagate(e);

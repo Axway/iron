@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.*;
 import com.google.common.base.Throwables;
 import io.axway.iron.error.StoreException;
 
@@ -26,7 +27,7 @@ public class IronMigration {
     private static final String SNAPSHOT_SUFFIX = ".snapshot";
     private static final String TX_DIRECTORY_NAME = "tx";
     private static final String TMP_DIRECTORY_NAME = ".tmp";
-    public static final int TX_ID_FILENAME_LENGTH = 20;
+    private static final int TX_ID_FILENAME_LENGTH = 20;
 
     public static void main(String[] args) {
         try {
@@ -96,20 +97,22 @@ public class IronMigration {
     }
 
     private static void copyGlobalSnapshots(Path globalPath, Path targetGlobalPath) throws IOException {
-        Files.walk(globalPath)                                                    //
-                .map(Path::toFile)                                                //
-                .filter(File::isFile)                                             //
-                .filter(file -> file.getName().endsWith(SNAPSHOT_SUFFIX))             //
-                .forEach(file -> {                                                //
-                    String tx = file.getName().substring(0, 20);
-                    try {
-                        Path snapshotDir = targetGlobalPath.resolve(SNAPSHOT_DIRECTORY_NAME).resolve(tx);
-                        snapshotDir.toFile().mkdirs();
-                        Files.copy(file.toPath(), snapshotDir.resolve("global.snapshot"));
-                    } catch (IOException e) {
-                        throw Throwables.propagate(e);
-                    }
-                });
+        try (Stream<Path> pathStream = Files.walk(globalPath)) {
+            pathStream                                                    //
+                    .map(Path::toFile)                                                //
+                    .filter(File::isFile)                                             //
+                    .filter(file -> file.getName().endsWith(SNAPSHOT_SUFFIX))             //
+                    .forEach(file -> {                                                //
+                        String tx = file.getName().substring(0, 20);
+                        try {
+                            Path snapshotDir = targetGlobalPath.resolve(SNAPSHOT_DIRECTORY_NAME).resolve(tx);
+                            snapshotDir.toFile().mkdirs();
+                            Files.copy(file.toPath(), snapshotDir.resolve("global.snapshot"));
+                        } catch (IOException e) {
+                            throw Throwables.propagate(e);
+                        }
+                    });
+        }
     }
 
     /**
@@ -130,7 +133,7 @@ public class IronMigration {
                 try {
                     Path targetPath = snapshot.toPath().resolve(previousSnapshot.getName());
                     Path sourcePath = previousSnapshot.toPath();
-                    int count = countTransactionId(transactionIdPattern, sourcePath);
+                    long count = countTransactionId(transactionIdPattern, sourcePath);
                     if (count != 1) {
                         throw new StoreException("transactionId not found once", args -> args.add("found count", count));
                     }
@@ -145,18 +148,15 @@ public class IronMigration {
         }
     }
 
-    private static int countTransactionId(Pattern transactionIdPattern, Path targetPath) throws IOException {
-        int[] count = {0};
-        Files.lines(targetPath).forEach(line -> {
-            Matcher matcher = transactionIdPattern.matcher(line);
-            while (matcher.find()) {
-                count[0]++;
-            }
-        });
-        return count[0];
+    private static long countTransactionId(Pattern transactionIdPattern, Path targetPath) throws IOException {
+        try (Stream<String> lines = Files.lines(targetPath)) {
+            return lines.filter(line -> transactionIdPattern.matcher(line).find()).count();
+        }
     }
 
     private static void replaceTransactionIdValue(String transactionIdRegex, Path sourcePath, Path targetPath, String newTransactionId) throws IOException {
-        Files.write(targetPath, Files.lines(sourcePath).map(line -> line.replaceAll(transactionIdRegex, "$1" + newTransactionId + "$2")).collect(toList()));
+        try (Stream<String> lines = Files.lines(sourcePath)) {
+            Files.write(targetPath, lines.map(line -> line.replaceAll(transactionIdRegex, "$1" + newTransactionId + "$2")).collect(toList()));
+        }
     }
 }
