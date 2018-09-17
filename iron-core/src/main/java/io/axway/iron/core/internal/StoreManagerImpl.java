@@ -138,7 +138,8 @@ class StoreManagerImpl implements StoreManager {
                     }
                 }
             } else {
-                LOG.debug("Transaction was already processed and will be ignored", args -> args.add("transactionId", txId));
+                LOG.error("Transaction was already processed and will be ignored",
+                          args -> args.add("transactionId", txId).add("latestProcessedTransactionId", m_currentTxId));
             }
         }, error -> {
             LOG.info("Error processing transaction", error);
