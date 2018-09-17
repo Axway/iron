@@ -5,19 +5,19 @@ import java.util.*;
 import org.testng.annotations.Test;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import mockit.Injectable;
-import mockit.StrictExpectations;
+import mockit.Expectations;
+import mockit.Mocked;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AwsS3SnapshotStoreTest {
 
-    @Injectable
+    @Mocked
     private AmazonS3 m_amazonS3;
 
     @Test
     public void shouldCreateS3Bucket() {
-        new StrictExpectations() {{
+        new Expectations() {{
             m_amazonS3.listObjectsV2((ListObjectsV2Request) any).getCommonPrefixes();
             result = Arrays.asList("blabla/snapshot/123456789012345678901234567890/",     //
                                    "blabla/snapshot/123456789012345678901234567891/");

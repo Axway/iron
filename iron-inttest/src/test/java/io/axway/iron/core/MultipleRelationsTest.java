@@ -30,25 +30,19 @@ import static io.axway.iron.spi.chronicle.ChronicleTestHelper.buildChronicleTran
 import static io.axway.iron.spi.file.FileTestHelper.*;
 import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
 
-public class MultipleRelationsAPITest {
+public class MultipleRelationsTest {
 
-    SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
-    TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-
-    StoreManager storeManager;
+    private SnapshotSerializer m_snapshotSerializer = buildJacksonSnapshotSerializer();
+    private TransactionSerializer m_transactionSerializer = buildJacksonTransactionSerializer();
 
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
         Path filePath = Paths.get("tmp-iron-test");
-        SnapshotStore fileSnapshotStore = buildFileSnapshotStore(filePath, "iron-sample");
-        TransactionStore fileTransactionStore = buildFileTransactionStore(filePath, "iron-sample");
-
-        TransactionStore chronicleTransactionStore = buildChronicleTransactionStoreFactory("iron-sample", filePath);
-
+        SnapshotStore fileSnapshotStore = buildFileSnapshotStore(filePath, "iron-multiple-relation");
+        TransactionStore fileTransactionStore = buildFileTransactionStore(filePath, "iron-multiple-relation");
         String storeBaseName = "irontest-" + System.getProperty("user.name");
 
         return new Object[][]{ //
-                {chronicleTransactionStore, fileSnapshotStore, storeBaseName + "-" + UUID.randomUUID()}, //
                 {fileTransactionStore, fileSnapshotStore, storeBaseName + "-" + UUID.randomUUID()}, //
         };
     }
@@ -57,9 +51,9 @@ public class MultipleRelationsAPITest {
     public void testAddOne(TransactionStore transactionStore, SnapshotStore snapshotStore, String storeName) throws Exception {
 
         StoreManager storeManager = StoreManagerBuilder.newStoreManagerBuilder() //
-                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionSerializer(m_transactionSerializer) //
                 .withTransactionStore(transactionStore) //
-                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotSerializer(m_snapshotSerializer) //
                 .withSnapshotStore(snapshotStore) //
                 .withEntityClass(Company.class) //
                 .withEntityClass(Person.class) //
@@ -97,9 +91,9 @@ public class MultipleRelationsAPITest {
     public void testAddAll(TransactionStore transactionStore, SnapshotStore snapshotStore, String storeName) throws Exception {
 
         StoreManager storeManager = StoreManagerBuilder.newStoreManagerBuilder() //
-                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionSerializer(m_transactionSerializer) //
                 .withTransactionStore(transactionStore) //
-                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotSerializer(m_snapshotSerializer) //
                 .withSnapshotStore(snapshotStore) //
                 .withEntityClass(Company.class) //
                 .withEntityClass(Person.class) //
@@ -139,9 +133,9 @@ public class MultipleRelationsAPITest {
     public void testRemoveOne(TransactionStore transactionStore, SnapshotStore snapshotStore, String storeName) throws Exception {
 
         StoreManager storeManager = StoreManagerBuilder.newStoreManagerBuilder() //
-                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionSerializer(m_transactionSerializer) //
                 .withTransactionStore(transactionStore) //
-                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotSerializer(m_snapshotSerializer) //
                 .withSnapshotStore(snapshotStore) //
                 .withEntityClass(Company.class) //
                 .withEntityClass(Person.class) //
@@ -177,9 +171,9 @@ public class MultipleRelationsAPITest {
     public void testRemoveAll(TransactionStore transactionStore, SnapshotStore snapshotStore, String storeName) throws Exception {
 
         StoreManager storeManager = StoreManagerBuilder.newStoreManagerBuilder() //
-                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionSerializer(m_transactionSerializer) //
                 .withTransactionStore(transactionStore) //
-                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotSerializer(m_snapshotSerializer) //
                 .withSnapshotStore(snapshotStore) //
                 .withEntityClass(Company.class) //
                 .withEntityClass(Person.class) //
@@ -215,9 +209,9 @@ public class MultipleRelationsAPITest {
     public void testClear(TransactionStore transactionStore, SnapshotStore snapshotStore, String storeName) throws Exception {
 
         StoreManager storeManager = StoreManagerBuilder.newStoreManagerBuilder() //
-                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionSerializer(m_transactionSerializer) //
                 .withTransactionStore(transactionStore) //
-                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotSerializer(m_snapshotSerializer) //
                 .withSnapshotStore(snapshotStore) //
                 .withEntityClass(Company.class) //
                 .withEntityClass(Person.class) //

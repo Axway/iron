@@ -154,6 +154,7 @@ final class KafkaCluster implements AutoCloseable {
             kafkaProps.setProperty("num.partition", valueOf(clusterSize / 2 + 1));
             kafkaProps.setProperty("zookeeper.connect", m_zookeeper.getConnectionString());
             kafkaProps.setProperty("offsets.topic.replication.factor", valueOf(clusterSize / 2 + 1));
+            kafkaProps.setProperty("group.initial.rebalance.delay.ms", String.valueOf(0));
 
             m_broker = new KafkaServer(new KafkaConfig(kafkaProps), Time.SYSTEM, empty(), new ArraySeq<>(0));
             m_broker.startup();

@@ -5,8 +5,8 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.amazonaws.services.s3.model.HeadBucketResult;
+import mockit.Expectations;
 import mockit.Mocked;
-import mockit.StrictExpectations;
 
 public class AwsS3UtilsTest {
 
@@ -15,7 +15,7 @@ public class AwsS3UtilsTest {
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Bucket is not accessible.*")
     public void shouldFindNoS3Bucket() {
-        new StrictExpectations() {{
+        new Expectations() {{
             m_amazonS3.headBucket((HeadBucketRequest) any);
             AmazonServiceException amazonServiceException = new AmazonServiceException("");
             amazonServiceException.setStatusCode(404);
@@ -26,7 +26,7 @@ public class AwsS3UtilsTest {
 
     @Test
     public void shouldFindAS3Bucket() {
-        new StrictExpectations() {{
+        new Expectations() {{
             m_amazonS3.headBucket((HeadBucketRequest) any);
             result = new HeadBucketResult();
         }};
@@ -35,7 +35,7 @@ public class AwsS3UtilsTest {
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Bucket is not accessible.*")
     public void shouldThrowAnExceptionWhenNoS3BucketFound() {
-        new StrictExpectations() {{
+        new Expectations() {{
             m_amazonS3.headBucket((HeadBucketRequest) any);
             AmazonServiceException amazonServiceException = new AmazonServiceException("");
             amazonServiceException.setStatusCode(401);
