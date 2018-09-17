@@ -41,7 +41,8 @@ public class SampleTest {
     @DataProvider(name = "stores")
     public Object[][] providesStores() {
         Path filePath = Paths.get("tmp-iron-test");
-        SnapshotStore fileSnapshotStore = buildFileSnapshotStore(filePath, "iron-sample");
+        SnapshotStore fileSnapshotStore1 = buildFileSnapshotStore(filePath, "iron-sample1");
+        SnapshotStore fileSnapshotStore2 = buildFileSnapshotStore(filePath, "iron-sample2");
         TransactionStore fileTransactionStore = buildFileTransactionStore(filePath, "iron-sample");
 
         TransactionStore chronicleTransactionStore = buildChronicleTransactionStoreFactory("iron-sample", filePath);
@@ -49,8 +50,8 @@ public class SampleTest {
         String storeBaseName = "irontest-" + System.getProperty("user.name");
 
         return new Object[][]{ //
-                {chronicleTransactionStore, fileSnapshotStore, storeBaseName + "-" + UUID.randomUUID()}, //
-                {fileTransactionStore, fileSnapshotStore, storeBaseName + "-" + UUID.randomUUID()}, //
+                {chronicleTransactionStore, fileSnapshotStore1, storeBaseName + "-" + UUID.randomUUID()}, //
+                {fileTransactionStore, fileSnapshotStore2, storeBaseName + "-" + UUID.randomUUID()}, //
         };
     }
 

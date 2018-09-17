@@ -94,47 +94,52 @@ class StoreManagerImpl implements StoreManager {
 
         m_disposableTxFlow = transactions.subscribe(transaction -> {
             BigInteger txId = transaction.getTxId();
-            List<Command<?>> commands = transaction.getCommands();
-            Object[] results = new Object[commands.size()];
-            Throwable error = null;
-            CompletableFuture<List<Object>> transactionFuture = null;
-            try {
-                StoreImpl store = getStore(transaction.getStoreName());
-                ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, store.entityStores());
-                store.m_writeLock.lock();
+            if (txId.compareTo(m_currentTxId) > 0) {
+                List<Command<?>> commands = transaction.getCommands();
+                Object[] results = new Object[commands.size()];
+                Throwable error = null;
+                CompletableFuture<List<Object>> transactionFuture = null;
                 try {
-                    for (int i = 0; i < commands.size(); i++) {
-                        Command<?> command = commands.get(i);
-                        results[i] = command.execute(tx);
-                        int activeObjectUpdaterCount = tx.getActiveObjectUpdaterCount();
-                        if (activeObjectUpdaterCount > 0) {
-                            String commandName = m_commandProxyFactory.getCommandName(command);
-                            throw new MalformedCommandException(
-                                    "Command leaves some active ObjectUpdater. Command need to be fixed. Transaction has been rollbacked",
-                                    args -> args.add("commandName", commandName).add("activeObjectUpdaterCount", activeObjectUpdaterCount));
+                    StoreImpl store = getStore(transaction.getStoreName());
+                    ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, store.entityStores());
+                    store.m_writeLock.lock();
+                    try {
+                        for (int i = 0; i < commands.size(); i++) {
+                            Command<?> command = commands.get(i);
+                            results[i] = command.execute(tx);
+                            int activeObjectUpdaterCount = tx.getActiveObjectUpdaterCount();
+                            if (activeObjectUpdaterCount > 0) {
+                                String commandName = m_commandProxyFactory.getCommandName(command);
+                                throw new MalformedCommandException(
+                                        "Command leaves some active ObjectUpdater. Command need to be fixed. Transaction has been rollbacked",
+                                        args -> args.add("commandName", commandName).add("activeObjectUpdaterCount", activeObjectUpdaterCount));
+                            }
                         }
+                    } catch (Exception e) {
+                        error = e;
+                        tx.rollback();
+                        LOG.info("Transaction failed and rollbacked", args -> args.add("transactionId", txId), error);
+                    } finally {
+                        m_currentTxId = txId;
+                        store.m_writeLock.unlock();
                     }
+
+                    transactionFuture = m_futuresBySynchronizationId.getIfPresent(transaction.getSynchronizationId());
                 } catch (Exception e) {
                     error = e;
-                    tx.rollback();
-                    LOG.info("Transaction failed and rollbacked", args -> args.add("transactionId", txId), error);
-                } finally {
-                    m_currentTxId = txId;
-                    store.m_writeLock.unlock();
+                    LOG.info("Error processing transaction", args -> args.add("transactionId", txId), error);
                 }
 
-                transactionFuture = m_futuresBySynchronizationId.getIfPresent(transaction.getSynchronizationId());
-            } catch (Exception e) {
-                error = e;
-                LOG.info("Error processing transaction", args -> args.add("transactionId", txId), error);
-            }
-
-            if (transactionFuture != null) {
-                if (error != null) {
-                    transactionFuture.completeExceptionally(error);
-                } else {
-                    transactionFuture.complete(Arrays.asList(results));
+                if (transactionFuture != null) {
+                    if (error != null) {
+                        transactionFuture.completeExceptionally(error);
+                    } else {
+                        transactionFuture.complete(Arrays.asList(results));
+                    }
                 }
+            } else {
+                LOG.error("Transaction was already processed and will be ignored",
+                          args -> args.add("transactionId", txId).add("latestProcessedTransactionId", m_currentTxId));
             }
         }, error -> {
             LOG.info("Error processing transaction", error);
