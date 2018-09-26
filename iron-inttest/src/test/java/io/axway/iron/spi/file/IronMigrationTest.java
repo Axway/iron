@@ -8,77 +8,46 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.function.*;
 import java.util.stream.*;
 import javax.annotation.*;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import com.google.common.base.Throwables;
-import io.axway.iron.StoreManager;
-import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.spi.file.IronMigration;
 import io.axway.iron.error.StoreException;
-import io.axway.iron.sample.command.CreatePerson;
-import io.axway.iron.sample.model.Company;
-import io.axway.iron.sample.model.Person;
-import io.axway.iron.spi.serializer.SnapshotSerializer;
-import io.axway.iron.spi.serializer.TransactionSerializer;
-import io.axway.iron.spi.storage.SnapshotStore;
-import io.axway.iron.spi.storage.TransactionStore;
 
-import static io.axway.iron.spi.file.FileTestHelper.buildFileSnapshotStore;
-import static io.axway.iron.spi.file.FileTestHelper.buildFileTransactionStore;
-import static io.axway.iron.spi.jackson.JacksonTestHelper.buildJacksonSnapshotSerializer;
-import static io.axway.iron.spi.jackson.JacksonTestHelper.buildJacksonTransactionSerializer;
 import static java.lang.String.join;
-import static java.util.Collections.emptySet;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Stream.concat;
-import static java.util.stream.Stream.of;
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
+import static java.util.stream.Stream.*;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
 public class IronMigrationTest {
 
-    private Function<Path, StoreManagerBuilder> personCompanyStoreManagerBuilder = destIronPath -> {
-        Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(destIronPath, "tenant");
-        Supplier<SnapshotStore> snapshotStoreFactory = () -> buildFileSnapshotStore(destIronPath, "tenant");
-        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
-        return StoreManagerBuilder.newStoreManagerBuilder() //
-                .withTransactionSerializer(transactionSerializer) //
-                .withTransactionStore(transactionStoreFactory.get()) //
-                .withSnapshotSerializer(snapshotSerializer) //
-                .withSnapshotStore(snapshotStoreFactory.get()) //
-                .withEntityClass(Company.class) //
-                .withEntityClass(Person.class) //
-                .withCommandClass(CreatePerson.class);
-    };
-
     @DataProvider(name = "ironCases")
     public Object[][] ironCases() {
         return new Object[][]{//
-                {"simple iron", "iron", 2, null, null},//
-                {"ironWithRealData", "ironWithRealData", 1, personCompanyStoreManagerBuilder, null},//
-                {"ironWithRealDataNoTransactionId", "ironWithRealDataNoTransactionId", 1, personCompanyStoreManagerBuilder,
-                        "Error occurred when recovering from latest snapshot"},//
-                {"ironWithRealDataTwoTransactionId", "ironWithRealDataTwoTransactionId", 1, personCompanyStoreManagerBuilder,
-                        "transactionId not found once {\"args\": {\"found count\": 2}}"},//
+                //{ message, directory, lastTenantIdx, @Nullable expectedErrorMessage },
+                {"simple iron", "iron", 2, null},//
+                {"ironWithRealData", "ironWithRealData", 1, null},//
+                {"ironWithRealDataNoTransactionId", "ironWithRealDataNoTransactionId", 1, "transactionId not found once {\"args\": {\"found count\": 0}}"},//
+                {"ironWithRealDataTwoTransactionId", "ironWithRealDataTwoTransactionId", 1, "transactionId not found once {\"args\": {\"found count\": 2}}"},//
         };
     }
 
     @Test(dataProvider = "ironCases")
-    public void shouldMigrateIronSnapshotCorrectly(String message, String directory, int lastTenantIdx,
-                                                   @Nullable Function<Path, StoreManagerBuilder> storeManagerBuilder, @Nullable String expectedErrorMessage)
+    public void shouldMigrateIronSnapshotCorrectly(String message, String directory, int lastTenantIdx, @Nullable String expectedErrorMessage)
             throws IOException {
         Path randomPath = Paths.get("tmp-iron-test", "iron-spi-file-inttest", UUID.randomUUID().toString());
         try {
             Path sourceIronPath = randomPath.resolve(directory);
             Path destIronPath = randomPath.resolve(directory + ".new");
             // Given an Iron store
-            HashMap<String, Set<String>> snapshotIdsByStoreType = copyIronFromResourcesToFileSytem(directory, lastTenantIdx, sourceIronPath);
+            HashMap<String, Set<String>> snapshotIdsByStoreType = copyIronFromResourcesToFileSystem(directory, lastTenantIdx, sourceIronPath);
             // When the Iron store is migrated
             IronMigration.main(new String[]{sourceIronPath.toString(), "global", "tenant", destIronPath.toString()});
             // Then migratedIronPaths contains the
+            assertThat(expectedErrorMessage).as("Should have failed with error message: " + expectedErrorMessage).isNull();
             //
             List<Path> migratedIronPaths = new ArrayList<>();
             Files.walkFileTree(destIronPath, new FileVisitor<Path>() {
@@ -88,7 +57,7 @@ public class IronMigrationTest {
                 }
 
                 @Override
-                public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
                     migratedIronPaths.add(path);
                     return FileVisitResult.CONTINUE;
                 }
@@ -104,31 +73,36 @@ public class IronMigrationTest {
                 }
             });
             //
-            Stream<Path> expectedPaths = Stream.empty();
-            for (String usedSourceFileName : snapshotIdsByStoreType.getOrDefault("global", emptySet())) {
-                Path globalSnapshot = destIronPath.resolve("global").resolve("snapshot").resolve(usedSourceFileName);
-                expectedPaths = concat(expectedPaths, of(globalSnapshot.resolve("global.snapshot")));
+            try (Stream<Path> expectedPaths = computeExpectedPaths(lastTenantIdx, destIronPath, snapshotIdsByStoreType)) {
+                assertThat(migratedIronPaths).as(message).containsExactlyInAnyOrderElementsOf(expectedPaths.collect(toList()));
             }
-            for (String usedSourceFileName : snapshotIdsByStoreType.getOrDefault("tenant", emptySet())) {
-                Path tenantSnapshot = destIronPath.resolve("tenant").resolve("snapshot").resolve(usedSourceFileName);
-                expectedPaths = concat(expectedPaths, IntStream.range(0, lastTenantIdx + 1).boxed().map(n -> tenantSnapshot.resolve(n + ".snapshot")));
-            }
-            if (storeManagerBuilder != null) {
-                StoreManagerBuilder factoryBuilder = storeManagerBuilder.apply(destIronPath);
-                try (StoreManager ignored = factoryBuilder.build()) {
-                }
-            }
-            assertThat(migratedIronPaths).as(message).containsExactlyInAnyOrderElementsOf(expectedPaths.collect(toList()));
         } catch (Exception e) {
             if (expectedErrorMessage != null && !expectedErrorMessage.equals(e.getMessage())) {
                 throw e;
             }
         } finally {
-            Files.walk(randomPath).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+            if (randomPath.toFile().exists()) {
+                Files.walk(randomPath).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+            }
         }
     }
 
-    private HashMap<String, Set<String>> copyIronFromResourcesToFileSytem(String directory, int lastTenantIdx, Path sourceIronPath) {
+    private Stream<Path> computeExpectedPaths(int lastTenantIdx, Path destIronPath, HashMap<String, Set<String>> snapshotIdsByStoreType) {
+        List<Path> expectedPaths = new ArrayList<>();
+        // Add global paths
+        for (String usedSourceFileName : snapshotIdsByStoreType.getOrDefault("global", emptySet())) {
+            Path globalSnapshot = destIronPath.resolve("global").resolve("snapshot").resolve(usedSourceFileName);
+            expectedPaths.add(globalSnapshot.resolve("global.snapshot"));
+        }
+        // Add tenant paths
+        for (String usedSourceFileName : snapshotIdsByStoreType.getOrDefault("tenant", emptySet())) {
+            Path tenantSnapshot = destIronPath.resolve("tenant").resolve("snapshot").resolve(usedSourceFileName);
+            IntStream.range(0, lastTenantIdx + 1).boxed().map(n -> tenantSnapshot.resolve(n + ".snapshot")).forEach(expectedPaths::add);
+        }
+        return expectedPaths.stream();
+    }
+
+    private HashMap<String, Set<String>> copyIronFromResourcesToFileSystem(String directory, int lastTenantIdx, Path sourceIronPath) {
         HashMap<String, Set<String>> snapshotIdsByStoreType = new HashMap<>();
         concat(IntStream.range(0, lastTenantIdx + 1).boxed().map(n -> Integer.toString(n)), of("global")).
                 forEach(storeName -> {
@@ -157,11 +131,14 @@ public class IronMigrationTest {
     }
 
     private List<String> getResourceFileAsString(String fileName) {
-        InputStream is = getClass().getClassLoader().getResourceAsStream(fileName);
-        if (is != null) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            return reader.lines().collect(toList());
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(fileName)) {
+            if (is != null) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                return reader.lines().collect(toList());
+            }
+            return null;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return null;
     }
 }
