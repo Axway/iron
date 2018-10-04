@@ -14,6 +14,8 @@ import javax.annotation.concurrent.*;
 import org.reactivestreams.Publisher;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import io.axway.alf.log.Logger;
+import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.storage.TransactionStore;
 import io.reactivex.Flowable;
@@ -23,6 +25,7 @@ import static io.axway.iron.core.spi.file.FilenameUtils.*;
 
 public class FileTransactionStore implements TransactionStore {
     private static final String TX_EXT = "tx";
+    private static final Logger LOG = LoggerFactory.getLogger(FileTransactionStore.class);
 
     private final String m_filenameFormat;
     private final Pattern m_filenamePattern;
@@ -158,6 +161,11 @@ public class FileTransactionStore implements TransactionStore {
 
     @Override
     public void seekTransaction(BigInteger latestProcessedTransactionId) {
+        if (latestProcessedTransactionId.longValueExact() >= m_nextTxId) {
+            LOG.warn("The next transaction id has been set to the transaction id of the last snapshot because the first was lower than the second.",
+                     args -> args.add("next transaction id", m_nextTxId).add("transaction id of the last snapshot", latestProcessedTransactionId));
+            m_nextTxId = latestProcessedTransactionId.add(BigInteger.ONE).longValueExact();
+        }
         m_consumerStart.set(latestProcessedTransactionId.longValueExact() + 1);
         m_allTx = null;
         initExistingFiles();

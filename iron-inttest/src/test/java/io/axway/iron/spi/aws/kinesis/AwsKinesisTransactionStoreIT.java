@@ -43,8 +43,7 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         String randomStoreName = createRandomStoreName();
         String randomFactoryName = "shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionFileStore-" + UUID.randomUUID();
         Supplier<SnapshotStore> fileSnapshotStoreFactory = () -> buildFileSnapshotStore(getIronSpiAwsInttestFilePath(), randomFactoryName, null);
-        Supplier<TransactionStore> fileTransactionStoreFactory = () -> buildFileTransactionStore(getIronSpiAwsInttestFilePath(),
-                                                                                                 randomFactoryName);
+        Supplier<TransactionStore> fileTransactionStoreFactory = () -> buildFileTransactionStore(getIronSpiAwsInttestFilePath(), randomFactoryName);
 
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();

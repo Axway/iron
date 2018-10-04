@@ -66,6 +66,12 @@ class StorePersistence {
         }
     }
 
+    /**
+     * Load the stores.
+     *
+     * @param entityStoresByStoreName the map store name to entity stores
+     * @return latestSnapshotTxId the transaction id of the last snapshot
+     */
     Optional<BigInteger> loadStores(Function<String, EntityStores> entityStoresByStoreName) {
         Optional<BigInteger> latestSnapshotTxId;
         try {
