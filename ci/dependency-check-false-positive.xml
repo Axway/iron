@@ -7,4 +7,11 @@
         <gav regex="true">^net\.openhft:affinity:.*$</gav>
         <cpe>cpe:/a:thread_project:thread</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: annotations-12.0.jar
+   ]]></notes>
+        <gav regex="true">^com\.intellij:annotations:.*$</gav>
+        <cpe>cpe:/a:jetbrains:intellij_idea</cpe>
+    </suppress>
 </suppressions>
