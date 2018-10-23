@@ -134,6 +134,7 @@ class StorePersistence {
         serializableTransaction.setCommands(serializableCommands);
 
         try (OutputStream out = m_transactionStore.createTransactionOutput(storeName)) {
+            LOG.debug("Enlisting new transaction", args -> args.add("Store", storeName).add("synchronizationId", synchronizationId));
             m_transactionSerializer.serializeTransaction(out, serializableTransaction);
         } catch (IOException e) {
             throw new StoreException(e);
@@ -142,7 +143,9 @@ class StorePersistence {
 
     Flowable<TransactionToExecute> allTransactions() {
         return Flowable.fromPublisher(m_transactionStore.allTransactions()) //
-                .map(this::createTransactionToExecute);
+                .map(this::createTransactionToExecute) //
+                .doOnNext(tx -> LOG.debug("Received new transaction", args ->          //
+                        args.add("Store", tx.m_storeName).add("synchronizationId", tx.m_synchronizationId).add("txId", tx.m_txId)));
     }
 
     @Nonnull
