@@ -4,6 +4,8 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -11,12 +13,13 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.TopicExistsException;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.reactivestreams.Publisher;
 import io.axway.iron.spi.StoreNamePrefixManagement;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.IntegerDeserializer;
 import io.axway.iron.spi.storage.TransactionStore;
 import io.reactivex.Emitter;
 import io.reactivex.Flowable;
@@ -25,11 +28,11 @@ import io.reactivex.schedulers.Schedulers;
 
 import static io.axway.iron.spi.StoreNamePrefixManagement.readStoreName;
 import static java.lang.Long.parseLong;
-import static java.util.Collections.singletonList;
+import static java.time.Duration.ofMillis;
+import static java.util.Collections.*;
 import static org.apache.kafka.clients.CommonClientConfigs.CLIENT_ID_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.*;
 import static org.apache.kafka.clients.producer.ProducerConfig.*;
-import static org.apache.kafka.clients.producer.ProducerConfig.BUFFER_MEMORY_CONFIG;
 
 public class KafkaTransactionStore implements TransactionStore {
     private static final int PARTITION = 0;
@@ -53,25 +56,41 @@ public class KafkaTransactionStore implements TransactionStore {
         UUID uuid = UUID.randomUUID();
 
         //we create the topic first as a workaround of bug https://issues.apache.org/jira/browse/KAFKA-3727
-        createKafkaTopic(kafkaProperties, topicName);
+        createKafkaTopic((Properties) kafkaProperties.clone(), topicName);
 
-        Properties producerKafkaProperties = (Properties) kafkaProperties.clone();
-        producerKafkaProperties.put(ACKS_CONFIG, "all");
-        producerKafkaProperties.put(RETRIES_CONFIG, RETRIES);
-        producerKafkaProperties.put(BATCH_SIZE_CONFIG, 1);
-        producerKafkaProperties.put(BUFFER_MEMORY_CONFIG, PRODUCER_BUFFER_MEMORY);
-        producerKafkaProperties.put(CLIENT_ID_CONFIG, "ironClient-" + uuid);
-        m_producer = new KafkaProducer<>(producerKafkaProperties, new IntegerSerializer(), new ByteArraySerializer());
+        // see https://stackoverflow.com/questions/37363119/kafka-producer-org-apache-kafka-common-serialization-stringserializer-could-no
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(null);
+            Properties producerKafkaProperties = (Properties) kafkaProperties.clone();
+            producerKafkaProperties.put(ACKS_CONFIG, "all");
+            producerKafkaProperties.put(RETRIES_CONFIG, RETRIES);
+            producerKafkaProperties.put(BATCH_SIZE_CONFIG, 1);
+            producerKafkaProperties.put(BUFFER_MEMORY_CONFIG, PRODUCER_BUFFER_MEMORY);
+            producerKafkaProperties.put(CLIENT_ID_CONFIG, "ironClient-" + uuid);
+            m_producer = new KafkaProducer<>(producerKafkaProperties, new IntegerSerializer(), new ByteArraySerializer());
+        } finally {
+            Thread.currentThread().setContextClassLoader(classLoader);
+        }
 
         m_transactionsFlow = Flowable      //
                 .generate(() -> {
-                              Properties consumerKafkaProperties = (Properties) kafkaProperties.clone();
-                              consumerKafkaProperties.put(MAX_POLL_RECORDS_CONFIG, 1);
-                              consumerKafkaProperties.put(AUTO_OFFSET_RESET_CONFIG, "earliest");
-                              consumerKafkaProperties.put(ENABLE_AUTO_COMMIT_CONFIG, "false");
-                              consumerKafkaProperties.put(SESSION_TIMEOUT_MS_CONFIG, CONSUMER_SESSION_TIMEOUT);
-                              consumerKafkaProperties.put(GROUP_ID_CONFIG, "ironGroup-" + uuid);
-                              KafkaConsumer<Integer, byte[]> kafkaConsumer = new KafkaConsumer<>(consumerKafkaProperties, new IntegerDeserializer(), new ByteArrayDeserializer());
+                    // see https://stackoverflow.com/questions/37363119/kafka-producer-org-apache-kafka-common-serialization-stringserializer-could-no
+                              ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+                              KafkaConsumer<Integer, byte[]> kafkaConsumer;
+                              try {
+                                  Thread.currentThread().setContextClassLoader(null);
+                                  Properties consumerKafkaProperties = (Properties) kafkaProperties.clone();
+                                  consumerKafkaProperties.put(MAX_POLL_RECORDS_CONFIG, 1);
+                                  consumerKafkaProperties.put(AUTO_OFFSET_RESET_CONFIG, "earliest");
+                                  consumerKafkaProperties.put(ENABLE_AUTO_COMMIT_CONFIG, "false");
+                                  consumerKafkaProperties.put(SESSION_TIMEOUT_MS_CONFIG, CONSUMER_SESSION_TIMEOUT);
+                                  consumerKafkaProperties.put(GROUP_ID_CONFIG, "ironGroup-" + uuid);
+                                  kafkaConsumer = new KafkaConsumer<>(consumerKafkaProperties, new IntegerDeserializer(),
+                                                                      new ByteArrayDeserializer());
+                              } finally {
+                                  Thread.currentThread().setContextClassLoader(ccl);
+                              }
                               kafkaConsumer.assign(singletonList(m_topicPartition));
                               return kafkaConsumer;
                           },  //
@@ -81,7 +100,7 @@ public class KafkaTransactionStore implements TransactionStore {
                                   consumer.seek(m_topicPartition, seek);
                               }
 
-                              emitter.onNext(consumer.poll(parseLong(CONSUMER_SESSION_TIMEOUT) / 5));
+                              emitter.onNext(consumer.poll(ofMillis(parseLong(CONSUMER_SESSION_TIMEOUT) / 5)));
                           },                                                                          //
                           KafkaConsumer::close)  //
                 .subscribeOn(Schedulers.io())                                               // event loop
@@ -121,12 +140,15 @@ public class KafkaTransactionStore implements TransactionStore {
     }
 
     private void createKafkaTopic(Properties kafkaProperties, String topicName) {
-        Properties localKafkaProperties = (Properties) kafkaProperties.clone();
-        localKafkaProperties.put("group.id", "bug-" + UUID.randomUUID());
-        try (KafkaConsumer consumer = new KafkaConsumer<>(localKafkaProperties, new IntegerDeserializer(), new ByteArrayDeserializer())) {
-            // if topic auto create is on then subscription creates the topic
-            consumer.subscribe(singletonList(topicName));
-            consumer.poll(100);
+        try (AdminClient adminClient = AdminClient.create(kafkaProperties)) {
+            adminClient.createTopics(singleton(new NewTopic(topicName, 1, (short) 1)))//
+                    .all().get();
+        } catch (Exception e) {
+            Throwable current = e;
+            while(!(current instanceof TopicExistsException) && current.getCause() != null) {
+                 current = current.getCause();
+            }
+            if(!(current instanceof TopicExistsException)) throw new RuntimeException(e);
         }
     }
 
