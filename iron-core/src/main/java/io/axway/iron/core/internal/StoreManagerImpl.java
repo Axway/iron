@@ -39,6 +39,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.flowables.ConnectableFlowable;
 
 import static io.axway.alf.assertion.Assertion.*;
+import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.*;
 
 class StoreManagerImpl implements StoreManager {
@@ -94,11 +95,13 @@ class StoreManagerImpl implements StoreManager {
 
         m_disposableTxFlow = transactions.subscribe(transaction -> {
             BigInteger txId = transaction.getTxId();
-            if (txId.compareTo(m_currentTxId) > 0) {
+            CompletableFuture<List<Object>> transactionFuture = m_futuresBySynchronizationId.getIfPresent(transaction.getSynchronizationId());
+            // if m_currentTxId == 0, this is the particular case of a "bootstrap snapshot" loaded at the very first start (i.e. a snapshot that does not come from passed transactions).
+            // in this case, the first txId may be 0 but we don't want to skip it
+            if (txId.compareTo(m_currentTxId) > 0 || m_currentTxId.equals(BigInteger.ZERO)) {
                 List<Command<?>> commands = transaction.getCommands();
                 Object[] results = new Object[commands.size()];
                 Throwable error = null;
-                CompletableFuture<List<Object>> transactionFuture = null;
                 try {
                     StoreImpl store = getStore(transaction.getStoreName());
                     ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, store.entityStores());
@@ -123,8 +126,6 @@ class StoreManagerImpl implements StoreManager {
                         m_currentTxId = txId;
                         store.m_writeLock.unlock();
                     }
-
-                    transactionFuture = m_futuresBySynchronizationId.getIfPresent(transaction.getSynchronizationId());
                 } catch (Exception e) {
                     error = e;
                     LOG.info("Error processing transaction", args -> args.add("transactionId", txId), error);
@@ -140,6 +141,9 @@ class StoreManagerImpl implements StoreManager {
             } else {
                 LOG.error("Transaction was already processed and will be ignored",
                           args -> args.add("transactionId", txId).add("latestProcessedTransactionId", m_currentTxId));
+                if (transactionFuture != null) {
+                   transactionFuture.complete(emptyList()); // do not block anyway
+                }
             }
         }, error -> {
             LOG.info("Error processing transaction", error);
