@@ -1,7 +1,10 @@
 package io.axway.iron.spi.kafka;
 
+import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -26,6 +29,7 @@ import static io.axway.iron.assertions.Assertions.assertThat;
 import static io.axway.iron.spi.kafka.Utils.*;
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.UUID.*;
+import static java.util.concurrent.TimeUnit.*;
 import static java.util.function.Function.*;
 import static java.util.stream.Collectors.*;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
@@ -220,5 +224,57 @@ public class SingleKafkaSpiTest {
             assertThat(companies.get(2L)).hasName("Axway").hasAddress("Phoenix");
             assertThat(companies.get(3L)).hasName("Apple").hasAddress("Cupertino");
         });
+    }
+
+    @Test
+    public final void shouldStartFromInitialSnapshotWithNoTx() throws InterruptedException, ExecutionException, TimeoutException, IOException {
+        String storeName = "shouldStartFromInitialSnapshotWithNoTx" + randomUUID();
+
+        // update topic to be sure that the tx ids restart at 0
+        String saveTopic = topic;
+        topic = "topic-" + storeName;
+
+        m_storeManager.close();
+        m_storeManager = initStoreManager();
+
+        // Given a store
+        Store store = m_storeManager.getStore(storeName);
+        // When inserting 4 companies in one transaction
+        Store.TransactionBuilder transaction = store.begin();
+        transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
+        futureGet(transaction.submit());
+
+        // When creating a snapshot for id 0
+        m_storeManager.snapshot();
+
+        //close and reopen factory
+        m_storeManager.close();
+
+        // reset cluster (so empty and reset topic)
+        m_kafkaCluster.close();
+        m_kafkaCluster = KafkaCluster.createStarted(1);
+
+        // init manager from snapshot at id 0 (equivalent to a bootstrap snapshot)
+        m_storeManager = initStoreManager();
+                                   // Then we can reopen the store and query the companies
+        store = m_storeManager.getStore(storeName);
+        store.query(q -> {
+            Map<Long, Company> companies = q.select(Company.class).all().stream().collect(toMap(Company::id, identity()));
+            assertThat(companies).hasSize(1);
+            assertThat(companies.get(0L)).hasName("Google").hasAddress("Palo Alto");
+        });
+
+        // a new transaction would pass correctly
+        transaction = store.begin();
+        transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Datadog").set(CreateCompany::address).to("Chatillon").submit();
+        transaction.submit().get(2, SECONDS);
+
+        store.query(q -> {
+            Map<Long, Company> companies = q.select(Company.class).all().stream().collect(toMap(Company::id, identity()));
+            assertThat(companies).hasSize(2);
+            assertThat(companies.get(0L)).hasName("Google").hasAddress("Palo Alto");
+            assertThat(companies.get(1L)).hasName("Datadog").hasAddress("Chatillon");
+        });
+        topic = saveTopic; //restore topic
     }
 }

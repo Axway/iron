@@ -130,7 +130,9 @@ public class KafkaTransactionStore implements TransactionStore {
 
     @Override
     public void seekTransaction(BigInteger latestProcessedTransactionId) {
-        m_pendingSeek.set(latestProcessedTransactionId.longValueExact() + 1);
+        if (!BigInteger.ZERO.equals(latestProcessedTransactionId)) { // ZERO means initial snapshot => read topic from the beginning
+            m_pendingSeek.set(latestProcessedTransactionId.longValueExact() + 1);
+        }
     }
 
     @Override
