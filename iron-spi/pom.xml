@@ -19,6 +19,13 @@
             <groupId>org.reactivestreams</groupId>
             <artifactId>reactive-streams</artifactId>
         </dependency>
+        <!--FIXME why do we need that ? And manage the version correctly -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
 </project>
