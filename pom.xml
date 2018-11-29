@@ -24,7 +24,7 @@
 
         <!-- This is not the latest Guava version, but since we don't need the latest features of Guava this allows us to be compatible with more versions of Guava -->
         <!-- Iron users can freely overrides that version (with a more recent one) in their pom.xml by declaring Guava with their desired version -->
-        <guava.version>12.0</guava.version>
+        <guava.version>25.0-jre</guava.version>
 
         <jackson.version>2.9.6</jackson.version>
         <jmockit.version>1.42</jmockit.version>
