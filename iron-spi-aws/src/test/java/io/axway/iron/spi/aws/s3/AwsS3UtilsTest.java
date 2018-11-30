@@ -11,7 +11,7 @@ import mockit.Mocked;
 public class AwsS3UtilsTest {
 
     @Mocked
-    private AmazonS3 m_amazonS3;
+    public AmazonS3 m_amazonS3;
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Bucket is not accessible.*")
     public void shouldFindNoS3Bucket() {
