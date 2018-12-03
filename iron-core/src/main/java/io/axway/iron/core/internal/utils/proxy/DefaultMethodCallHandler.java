@@ -7,23 +7,9 @@ import java.lang.reflect.Method;
 import io.axway.iron.error.StoreException;
 
 import static io.axway.alf.assertion.Assertion.checkArgument;
+import static java.lang.invoke.MethodType.methodType;
 
 class DefaultMethodCallHandler {
-    private static final Constructor<MethodHandles.Lookup> METHOD_HANDLES_LOOKUP_CONSTRUCTOR;
-
-    static {
-        Constructor<MethodHandles.Lookup> constructor = null;
-        try {
-            constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
-            if (!constructor.isAccessible()) {
-                constructor.setAccessible(true);
-            }
-        } catch (NoSuchMethodException e) {
-            // ignore
-        } finally {
-            METHOD_HANDLES_LOOKUP_CONSTRUCTOR = constructor;
-        }
-    }
 
     static <T> MethodCallHandler<T> createDefaultMethodCallHandler(Method defaultMethod) {
         checkArgument(defaultMethod.isDefault(), "Method is not a default method", args -> args.add("method", defaultMethod));
@@ -31,8 +17,8 @@ class DefaultMethodCallHandler {
         Class<?> declaringClass = defaultMethod.getDeclaringClass();
         MethodHandle methodHandle;
         try {
-            methodHandle = METHOD_HANDLES_LOOKUP_CONSTRUCTOR.newInstance(declaringClass, MethodHandles.Lookup.PRIVATE)
-                    .unreflectSpecial(defaultMethod, declaringClass);
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(declaringClass, MethodHandles.lookup());
+            methodHandle = lookup.findSpecial(declaringClass, defaultMethod.getName(), methodType(defaultMethod.getReturnType(), defaultMethod.getParameterTypes()), declaringClass);
         } catch (ReflectiveOperationException e) {
             throw new StoreException(e);
         }

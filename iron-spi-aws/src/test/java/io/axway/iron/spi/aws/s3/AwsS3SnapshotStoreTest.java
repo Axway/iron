@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AwsS3SnapshotStoreTest {
 
     @Mocked
-    private AmazonS3 m_amazonS3;
+    public AmazonS3 m_amazonS3;
 
     @Test
     public void shouldCreateS3Bucket() {
