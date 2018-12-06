@@ -4,7 +4,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.*;
-import com.google.common.collect.ImmutableMap;
 import io.axway.iron.error.StoreException;
 
 import static io.axway.iron.core.internal.utils.proxy.DefaultMethodCallHandler.createDefaultMethodCallHandler;
@@ -24,7 +23,7 @@ public class ProxyFactoryBuilder<C> {
         }
     }
 
-    private final ImmutableMap.Builder<Method, MethodCallHandler<C>> m_builder = ImmutableMap.builder();
+    private final Map<Method, MethodCallHandler<C>> m_builder = new HashMap<>();
     private MethodCallHandler<C> m_unhandledMethodCallHandler = (ctx, proxy, method, args) -> {
         throw new StoreException("Method is not implemented by this proxy", a -> a.add("methodName", method));
     };
@@ -85,7 +84,7 @@ public class ProxyFactoryBuilder<C> {
     }
 
     public <T> ProxyFactory<T, C> build(Constructor<T> proxyConstructor) {
-        Map<Method, MethodCallHandler<C>> handlers = m_builder.build();
+        Map<Method, MethodCallHandler<C>> handlers = Map.copyOf(m_builder);
         MethodCallHandler<C> methodCallHandler = (ctx, proxy, method, args) -> {
             MethodCallHandler<C> callHandler = handlers.get(method);
             if (callHandler == null) {

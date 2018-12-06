@@ -2,7 +2,7 @@ package io.axway.iron.core.internal.command;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import com.google.common.collect.ImmutableMap;
+import java.util.stream.*;
 import io.axway.iron.Command;
 import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.core.internal.definition.command.CommandDefinition;
@@ -24,13 +24,10 @@ public class CommandProxyFactory {
     private final Map<Class<? extends Command<?>>, ProxyFactory<? extends Command<?>, CommandProxyContext>> m_commandProxyFactories;
 
     public CommandProxyFactory(Collection<CommandDefinition<? extends Command<?>>> commandDefinitions) {
-        ImmutableMap.Builder<Class<? extends Command<?>>, ProxyFactory<? extends Command<?>, CommandProxyContext>> commandProxyFactories = ImmutableMap
-                .builder();
-
-        commandDefinitions
-                .forEach(commandDefinition -> commandProxyFactories.put(commandDefinition.getCommandClass(), createCommandProxyFactory(commandDefinition)));
-
-        m_commandProxyFactories = commandProxyFactories.build();
+        m_commandProxyFactories = commandDefinitions.stream().
+                collect(Collectors.toUnmodifiableMap( //
+                                                      CommandDefinition::getCommandClass, //
+                                                      CommandProxyFactory::createCommandProxyFactory));
     }
 
     private static <C extends Command<?>> ProxyFactory<C, CommandProxyContext> createCommandProxyFactory(CommandDefinition<C> commandDefinition) {

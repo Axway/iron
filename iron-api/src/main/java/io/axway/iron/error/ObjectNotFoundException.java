@@ -7,7 +7,7 @@ import java.util.*;
  */
 public class ObjectNotFoundException extends StoreException {
     public ObjectNotFoundException(String entityName, String uniqueName, Object uniqueValue) {
-        this(entityName, Collections.singletonList(uniqueName), Collections.singletonList(uniqueValue));
+        this(entityName, List.of(uniqueName), List.of(uniqueValue));
     }
 
     public ObjectNotFoundException(String entityName, List<String> uniqueNames, List<?> uniquesValues) {

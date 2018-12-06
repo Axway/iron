@@ -1,8 +1,7 @@
 package io.axway.iron.core.internal;
 
 import java.util.*;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+import java.util.stream.*;
 import io.axway.iron.Command;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerBuilder;
@@ -94,17 +93,17 @@ public class StoreManagerBuilderImpl implements StoreManagerBuilder {
                                                                                       interfaceValidator);
 
         Collection<CommandDefinition<? extends Command<?>>> commandDefinitions = buildCommandDefinitions(commandDefinitionBuilder);
-        Map<Class<?>, EntityDefinition<?>> entityDefinitions = entityDefinitionBuilder.analyzeEntities(ImmutableSet.copyOf(m_entityClasses));
+        Map<Class<?>, EntityDefinition<?>> entityDefinitions = entityDefinitionBuilder.analyzeEntities(Set.copyOf(m_entityClasses));
 
         CommandProxyFactory commandProxyFactory = new CommandProxyFactory(commandDefinitions);
 
-        return new StoreManagerImpl(m_transactionSerializer, m_transactionStore, m_snapshotSerializer, m_snapshotStore,
-                                    introspectionHelper, commandProxyFactory, commandDefinitions, entityDefinitions);
+        return new StoreManagerImpl(m_transactionSerializer, m_transactionStore, m_snapshotSerializer, m_snapshotStore, introspectionHelper,
+                                    commandProxyFactory, commandDefinitions, entityDefinitions);
     }
 
     private Collection<CommandDefinition<? extends Command<?>>> buildCommandDefinitions(CommandDefinitionBuilder commandDefinitionBuilder) {
-        ImmutableList.Builder<CommandDefinition<? extends Command<?>>> definitions = ImmutableList.builder();
-        m_commandClasses.forEach(commandClass -> definitions.add(commandDefinitionBuilder.analyzeCommandClass(commandClass)));
-        return definitions.build();
+        return m_commandClasses.stream().
+                map(commandDefinitionBuilder::analyzeCommandClass).
+                collect(Collectors.toUnmodifiableList());
     }
 }

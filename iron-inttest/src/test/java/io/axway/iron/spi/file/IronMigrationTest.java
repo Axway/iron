@@ -12,12 +12,10 @@ import java.util.stream.*;
 import javax.annotation.*;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import com.google.common.base.Throwables;
 import io.axway.iron.core.spi.file.IronMigration;
 import io.axway.iron.error.StoreException;
 
 import static java.lang.String.join;
-import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 import static java.util.stream.Stream.*;
 import static org.assertj.core.api.Java6Assertions.assertThat;
@@ -90,12 +88,12 @@ public class IronMigrationTest {
     private Stream<Path> computeExpectedPaths(int lastTenantIdx, Path destIronPath, HashMap<String, Set<String>> snapshotIdsByStoreType) {
         List<Path> expectedPaths = new ArrayList<>();
         // Add global paths
-        for (String usedSourceFileName : snapshotIdsByStoreType.getOrDefault("global", emptySet())) {
+        for (String usedSourceFileName : snapshotIdsByStoreType.getOrDefault("global", Set.of())) {
             Path globalSnapshot = destIronPath.resolve("global").resolve("snapshot").resolve(usedSourceFileName);
             expectedPaths.add(globalSnapshot.resolve("global.snapshot"));
         }
         // Add tenant paths
-        for (String usedSourceFileName : snapshotIdsByStoreType.getOrDefault("tenant", emptySet())) {
+        for (String usedSourceFileName : snapshotIdsByStoreType.getOrDefault("tenant", Set.of())) {
             Path tenantSnapshot = destIronPath.resolve("tenant").resolve("snapshot").resolve(usedSourceFileName);
             IntStream.range(0, lastTenantIdx + 1).boxed().map(n -> tenantSnapshot.resolve(n + ".snapshot")).forEach(expectedPaths::add);
         }
@@ -121,7 +119,7 @@ public class IronMigrationTest {
                                 try {
                                     Files.write(destFilePath, fileContent);
                                 } catch (IOException e) {
-                                    throw Throwables.propagate(e);
+                                    throw new UncheckedIOException(e);
                                 }
                             }
                         }

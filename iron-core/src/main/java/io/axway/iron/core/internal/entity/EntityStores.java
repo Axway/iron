@@ -1,8 +1,7 @@
 package io.axway.iron.core.internal.entity;
 
 import java.util.*;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import java.util.stream.*;
 import io.axway.iron.error.StoreException;
 
 public class EntityStores {
@@ -13,16 +12,16 @@ public class EntityStores {
     public EntityStores(Collection<EntityStore<?>> unsortedEntityStores) {
         List<EntityStore<?>> entityStores = new ArrayList<>(unsortedEntityStores);
         entityStores.sort(Comparator.comparing(s -> s.getEntityDefinition().getEntityName()));
-        m_entityStores = ImmutableList.copyOf(entityStores);
+        m_entityStores = List.copyOf(entityStores);
 
-        ImmutableMap.Builder<Class<?>, EntityStore<?>> entityStoresByClass = ImmutableMap.builder();
-        ImmutableMap.Builder<String, EntityStore<?>> entityStoresByName = ImmutableMap.builder();
-        m_entityStores.forEach(entityStore -> {
-            entityStoresByClass.put(entityStore.getEntityDefinition().getEntityClass(), entityStore);
-            entityStoresByName.put(entityStore.getEntityDefinition().getEntityName(), entityStore);
-        });
-        m_entityStoresByClass = entityStoresByClass.build();
-        m_entityStoresByName = entityStoresByName.build();
+        m_entityStoresByClass = m_entityStores.stream().
+                collect(Collectors.toUnmodifiableMap( //
+                                                      entityStore -> entityStore.getEntityDefinition().getEntityClass(),  //
+                                                      entityStore -> entityStore));
+        m_entityStoresByName = m_entityStores.stream().
+                collect(Collectors.toUnmodifiableMap( //
+                                                      entityStore -> entityStore.getEntityDefinition().getEntityName(), //
+                                                      entityStore -> entityStore));
     }
 
     public List<EntityStore<?>> toList() {

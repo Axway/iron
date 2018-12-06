@@ -12,7 +12,6 @@ import java.util.*;
 import java.util.function.*;
 import java.util.regex.*;
 import javax.annotation.*;
-import com.google.common.annotations.VisibleForTesting;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.core.StoreManagerBuilder;
@@ -152,7 +151,6 @@ public class StoreManagerBuilderConfigurator {
         }
     }
 
-    @VisibleForTesting
     static String getProperty(Properties properties, String key) {
         String property = properties.getProperty(key);
         if (property != null) {

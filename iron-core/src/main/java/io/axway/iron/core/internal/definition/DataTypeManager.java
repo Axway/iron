@@ -1,33 +1,32 @@
 package io.axway.iron.core.internal.definition;
 
 import java.util.*;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import io.axway.iron.core.internal.utils.TypeConverter;
 import io.axway.iron.error.StoreException;
 
-public class DataTypeManager {
-    private static final Set<Class<?>> JDK_DATA_TYPES = ImmutableSet.of(boolean.class, Boolean.class, //
-                                                                        byte.class, Byte.class, //
-                                                                        char.class, Character.class, //
-                                                                        short.class, Short.class, //
-                                                                        int.class, Integer.class, //
-                                                                        long.class, Long.class, //
-                                                                        float.class, Float.class, //
-                                                                        double.class, Double.class, //
-                                                                        String.class, //
-                                                                        Date.class);
+import static java.util.Map.*;
 
-    private static final Map<Class<?>, Class<?>> PRIMITIVES_TYPES_BY_WRAPPER = ImmutableMap.<Class<?>, Class<?>>builder() //
-            .put(Boolean.class, boolean.class) //
-            .put(Byte.class, byte.class) //
-            .put(Character.class, char.class) //
-            .put(Short.class, short.class) //
-            .put(Integer.class, int.class) //
-            .put(Long.class, long.class) //
-            .put(Float.class, float.class) //
-            .put(Double.class, double.class) //
-            .build();
+public class DataTypeManager {
+    private static final Set<Class<?>> JDK_DATA_TYPES = Set.of(boolean.class, Boolean.class, //
+                                                               byte.class, Byte.class, //
+                                                               char.class, Character.class, //
+                                                               short.class, Short.class, //
+                                                               int.class, Integer.class, //
+                                                               long.class, Long.class, //
+                                                               float.class, Float.class, //
+                                                               double.class, Double.class, //
+                                                               String.class, //
+                                                               Date.class);
+
+    private static final Map<Class<?>, Class<?>> PRIMITIVES_TYPES_BY_WRAPPER = Map.ofEntries( //
+                                                                                              entry(Boolean.class, boolean.class), //
+                                                                                              entry(Byte.class, byte.class), //
+                                                                                              entry(Character.class, char.class), //
+                                                                                              entry(Short.class, short.class), //
+                                                                                              entry(Integer.class, int.class), //
+                                                                                              entry(Long.class, long.class), //
+                                                                                              entry(Float.class, float.class), //
+                                                                                              entry(Double.class, double.class));
 
     private static final Map<Class<?>, TypeConverter<?>> TYPE_CONVERTERS;
 
@@ -115,7 +114,7 @@ public class DataTypeManager {
                             .add("value", value));
         });
 
-        TYPE_CONVERTERS = ImmutableMap.copyOf(converters);
+        TYPE_CONVERTERS = Map.copyOf(converters);
     }
 
     public boolean isValidDataType(Class<?> dataTypeClass) {
@@ -144,7 +143,7 @@ public class DataTypeManager {
                 return null;
             }
 
-            Collection<?> params = Collection.class.cast(value);
+            Collection<?> params = (Collection) value;
             Collection<T> converted = new ArrayList<>(params.size());
             for (Object param : params) {
                 converted.add(elementConverter.convert(param));

@@ -1,7 +1,6 @@
 package io.axway.iron.core.internal.definition.entity;
 
 import java.util.*;
-import com.google.common.collect.ImmutableList;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.description.hook.DSLHelper;
 import io.axway.iron.functional.Accessor;
@@ -21,7 +20,7 @@ class DSLHelperImpl implements DSLHelper {
         m_tailEntityClass = tailEntityClass;
         m_methodName = m_introspectionHelper.getMethodName(tailEntityClass, relationAccessor);
 
-        return ImmutableList.of();
+        return List.of();
     }
 
     Class<?> getTailEntityClass() {

@@ -25,7 +25,7 @@ public interface CreatePerson extends Command<Void> {
     default Void execute(ReadWriteTransaction tx) {
         Collection<String> previousCompanyNames = previousCompanyNames();
         if (previousCompanyNames == null) { //TODO command proxy should not return null Collection
-            previousCompanyNames = Collections.emptyList();
+            previousCompanyNames = List.of();
         }
         Collection<Company> previousCompanies = tx.select(Company.class).where(Company::name).allContainedIn(previousCompanyNames);
         Company worksAt = tx.select(Company.class).where(Company::name).equalsToOrNull(worksAt());

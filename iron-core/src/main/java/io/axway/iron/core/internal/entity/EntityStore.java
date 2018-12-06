@@ -5,9 +5,6 @@ import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import java.util.stream.*;
 import javax.annotation.*;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import io.axway.iron.core.internal.definition.entity.AttributeDefinition;
 import io.axway.iron.core.internal.definition.entity.EntityDefinition;
 import io.axway.iron.core.internal.definition.entity.IdDefinition;
@@ -49,25 +46,21 @@ public class EntityStore<E> {
         IdDefinition idDefinition = entityDefinition.getIdDefinition();
         m_idPropertyName = idDefinition != null ? idDefinition.getIdName() : null;
 
-        m_attributes = ImmutableSet
-                .copyOf(entityDefinition.getAttributes().values().stream().map(AttributeDefinition::getAttributeName).collect(Collectors.toList()));
+        m_attributes = entityDefinition.getAttributes().values().stream().map(AttributeDefinition::getAttributeName).collect(Collectors.toUnmodifiableSet());
 
-        ImmutableMap.Builder<String, Map<Object, Long>> uniquesIndex = ImmutableMap.builder();
-        entityDefinition.getUniqueConstraints().forEach(uniqueAttribute -> uniquesIndex.put(uniqueAttribute, new HashMap<>()));
-        m_uniquesIndex = uniquesIndex.build();
+        m_uniquesIndex = entityDefinition.getUniqueConstraints().stream().
+                collect(Collectors.toUnmodifiableMap( //
+                                                      uniqueAttribute -> uniqueAttribute, //
+                                                      uniqueAttribute -> new HashMap<>()));
 
-        ImmutableSet.Builder<String> nonNullAttributes = ImmutableSet.builder();
-        entityDefinition.getAttributes().values().stream() //
+        m_nonNullAttributes = entityDefinition.getAttributes().values().stream() //
                 .filter(attributeDefinition -> !attributeDefinition.isNullable()) //
-                .forEach(attributeDefinition -> nonNullAttributes.add(attributeDefinition.getAttributeName()));
-        m_nonNullAttributes = nonNullAttributes.build();
+                .map(AttributeDefinition::getAttributeName).collect(Collectors.toUnmodifiableSet());
 
-        ImmutableMap.Builder<String, RelationStore> relationStoresBuilder = ImmutableMap.builder();
-        entityDefinition.getRelations().values().forEach(relationDefinition -> {
-            RelationStore relationStore = relationStores.get(relationDefinition);
-            relationStoresBuilder.put(relationDefinition.getRelationName(), relationStore);
-        });
-        m_relationStores = relationStoresBuilder.build();
+        m_relationStores = entityDefinition.getRelations().values().stream().
+                collect(Collectors.toUnmodifiableMap( //
+                                                      RelationDefinition::getRelationName, //
+                                                      relationStores::get));
     }
 
     public void init(Map<Class<?>, EntityStore<?>> entityStores, Map<RelationDefinition, RelationStore> relationStores) {
@@ -130,7 +123,7 @@ public class EntityStore<E> {
             if (relationStore instanceof RelationSimpleStore) {
                 RelationSimpleStore relationSimpleStore = (RelationSimpleStore) relationStore;
                 if (value != null) {
-                    long headInstanceId = value instanceof Long ? (long) value : InstanceProxy.class.cast(value).__id();
+                    long headInstanceId = value instanceof Long ? (long) value : ((InstanceProxy) value).__id();
                     oldValue = relationSimpleStore.set(instance.__id(), headInstanceId);
                 } else {
                     oldValue = relationSimpleStore.remove(instance.__id());
@@ -139,7 +132,7 @@ public class EntityStore<E> {
                 RelationMultipleStore relationMultipleStore = (RelationMultipleStore) relationStore;
                 if (value != null) {
                     Collection<?> collection = (Collection<?>) value;
-                    Collection<Long> idCollection = collection.stream().map(o -> o instanceof Long ? (Long) o : InstanceProxy.class.cast(o).__id())
+                    Collection<Long> idCollection = collection.stream().map(o -> o instanceof Long ? (Long) o : ((InstanceProxy) o).__id())
                             .collect(Collectors.toList());
                     oldValue = relationMultipleStore.set(instance.__id(), idCollection);
                 } else {
@@ -231,7 +224,7 @@ public class EntityStore<E> {
 
     public <H> Runnable updateCollectionAdd(E object, String propertyName, H value) {
         return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
-            long headInstanceId = value instanceof Long ? (Long) value : InstanceProxy.class.cast(value).__id();
+            long headInstanceId = value instanceof Long ? (Long) value : ((InstanceProxy) value).__id();
             boolean rollbackNeeded = relationMultipleStore.add(tailId, headInstanceId);
             return () -> {
                 if (rollbackNeeded) {
@@ -243,7 +236,7 @@ public class EntityStore<E> {
 
     public <H> Runnable updateCollectionAddAll(E object, String propertyName, Collection<H> values) {
         return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
-            Collection<Long> headIds = values.stream().map(o -> o instanceof Long ? (Long) o : InstanceProxy.class.cast(o).__id()).collect(Collectors.toList());
+            Collection<Long> headIds = values.stream().map(o -> o instanceof Long ? (Long) o : ((InstanceProxy) o).__id()).collect(Collectors.toList());
             Collection<Long> addedValues = relationMultipleStore.addAll(tailId, headIds);
             return () -> relationMultipleStore.removeAll(tailId, addedValues);
         });
@@ -251,7 +244,7 @@ public class EntityStore<E> {
 
     public <H> Runnable updateCollectionRemove(E object, String propertyName, H value) {
         return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
-            long headInstanceId = value instanceof Long ? (Long) value : InstanceProxy.class.cast(value).__id();
+            long headInstanceId = value instanceof Long ? (Long) value : ((InstanceProxy) value).__id();
             boolean rollbackNeeded = relationMultipleStore.remove(tailId, headInstanceId);
             return () -> {
                 if (rollbackNeeded) {
@@ -263,20 +256,20 @@ public class EntityStore<E> {
 
     public <H> Runnable updateCollectionRemoveAll(E object, String propertyName, Collection<H> values) {
         return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
-            Collection<Long> headIds = values.stream().map(o -> o instanceof Long ? (Long) o : InstanceProxy.class.cast(o).__id()).collect(Collectors.toList());
+            Collection<Long> headIds = values.stream().map(o -> o instanceof Long ? (Long) o : ((InstanceProxy) o).__id()).collect(Collectors.toList());
             Collection<Long> addedValues = relationMultipleStore.removeAll(tailId, headIds);
             return () -> relationMultipleStore.addAll(tailId, addedValues);
         });
     }
 
-    public <H> Runnable updateCollectionClear(E object, String propertyName) {
+    public Runnable updateCollectionClear(E object, String propertyName) {
         return updateCollection(object, propertyName, (relationMultipleStore, tailId) -> {
             Collection<Long> previousValues = relationMultipleStore.clear(tailId);
             return () -> relationMultipleStore.set(tailId, previousValues);
         });
     }
 
-    private <V, H> Runnable updateCollection(E object, String propertyName, BiFunction<RelationMultipleStore, Long, Runnable> collectionUpdateFunction) {
+    private Runnable updateCollection(E object, String propertyName, BiFunction<RelationMultipleStore, Long, Runnable> collectionUpdateFunction) {
         RelationStore relationStore = m_relationStores.get(propertyName);
         if (!(relationStore instanceof RelationMultipleStore)) {
             throw new StoreException("Property not found or not updatable through CollectionUpdater",
@@ -324,7 +317,7 @@ public class EntityStore<E> {
         serializableEntity.setEntityName(m_entityName);
         serializableEntity.setRelations(toSerializableRelationDefinitionMap());
         serializableEntity.setAttributes(toSerializableAttributeDefinitionMap());
-        serializableEntity.setUniques(m_entityDefinition.getUniqueConstraints().stream().map(ImmutableList::of).collect(Collectors.toList()));
+        serializableEntity.setUniques(m_entityDefinition.getUniqueConstraints().stream().map(List::of).collect(Collectors.toList()));
         serializableEntity.setNextId(m_nextId.get());
 
         serializableEntity.setInstances(m_instancesById.values().stream().map(instanceProxy -> {
@@ -477,7 +470,7 @@ public class EntityStore<E> {
         // check that unique constraints of the model are present in snapshot
         // removed unique constraints are automatically accepted
         for (String unique : m_entityDefinition.getUniqueConstraints()) {
-            List<String> modelConstraint = ImmutableList.of(unique);
+            List<String> modelConstraint = List.of(unique);
             if (!serializableEntity.getUniques().contains(modelConstraint)) {
                 throw new UnrecoverableStoreException("Model defined a new unique constraint which don't exists in the snapshot",
                                                       args -> args.add("entityName", m_entityName).add("uniqueConstraintDefinition", modelConstraint));

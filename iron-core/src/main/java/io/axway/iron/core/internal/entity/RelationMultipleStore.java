@@ -22,7 +22,7 @@ class RelationMultipleStore extends RelationStore {
     void addRelationMethodHandle(ProxyFactoryBuilder<InstanceProxyContext> callHandlerBuilder, EntityStore<?> headEntityStore) {
         callHandlerBuilder.handle(getRelationDefinition().getRelationMethod(), (context, proxy, method, args) -> {
             Collection<Long> headIds = get(context.getId());
-            return Collections.unmodifiableCollection(headIds.stream().map(headEntityStore::getById).collect(Collectors.toList()));
+            return headIds.stream().map(headEntityStore::getById).collect(Collectors.toUnmodifiableList());
         });
     }
 

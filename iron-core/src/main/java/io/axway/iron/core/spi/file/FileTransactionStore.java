@@ -12,8 +12,6 @@ import java.util.stream.*;
 import javax.annotation.*;
 import javax.annotation.concurrent.*;
 import org.reactivestreams.Publisher;
-import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.error.StoreException;
@@ -141,7 +139,7 @@ public class FileTransactionStore implements TransactionStore {
                     return false;
                 }
                 String fileName = path.getFileName().toString();
-                return fileName.compareTo(Strings.padStart(m_consumerStart.toString(), 20, '0')) >= 0;
+                return fileName.compareTo(String.format("%020d", m_consumerStart.longValue())) >= 0;
             })) {
                 pathStream.forEach(path -> {
                     String fileName = path.getFileName().toString();
@@ -151,9 +149,9 @@ public class FileTransactionStore implements TransactionStore {
                     }
                 });
             }
-            Collections.sort(m_txToProcess);
+            m_txToProcess.sort(null);
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new UncheckedIOException(e);
         } finally {
             m_txLock.unlock();
         }

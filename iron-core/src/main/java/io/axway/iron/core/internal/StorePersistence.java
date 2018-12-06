@@ -6,7 +6,6 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 import javax.annotation.*;
-import com.google.common.collect.ImmutableMap;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.Command;
@@ -47,10 +46,10 @@ class StorePersistence {
         m_transactionSerializer = transactionSerializer;
         m_snapshotStore = snapshotStore;
         m_snapshotSerializer = snapshotSerializer;
-
-        ImmutableMap.Builder<String, CommandDefinition<? extends Command<?>>> commandDefinitionsBuilder = ImmutableMap.builder();
-        commandDefinitions.forEach(commandDefinition -> commandDefinitionsBuilder.put(commandDefinition.getCommandClass().getName(), commandDefinition));
-        m_commandDefinitions = commandDefinitionsBuilder.build();
+        m_commandDefinitions = commandDefinitions.stream().
+                collect(Collectors.toUnmodifiableMap( //
+                                                      commandDefinition -> commandDefinition.getCommandClass().getName(),
+                                                      commandDefinition -> commandDefinition));
     }
 
     void persistSnapshot(BigInteger txId, String storeName, Collection<EntityStore<?>> entityStores) {

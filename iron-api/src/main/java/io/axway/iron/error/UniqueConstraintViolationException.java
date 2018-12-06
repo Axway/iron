@@ -8,7 +8,7 @@ import io.axway.iron.description.Unique;
  */
 public class UniqueConstraintViolationException extends StoreException {
     public UniqueConstraintViolationException(String entityName, String uniqueName, Object uniqueValue) {
-        this(entityName, Collections.singletonList(uniqueName), Collections.singletonList(uniqueValue));
+        this(entityName, List.of(uniqueName), List.of(uniqueValue));
     }
 
     public UniqueConstraintViolationException(String entityName, List<String> uniqueNames, List<?> uniquesValues) {

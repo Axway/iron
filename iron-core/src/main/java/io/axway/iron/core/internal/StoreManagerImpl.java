@@ -6,10 +6,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
+import java.util.stream.*;
 import javax.annotation.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.Command;
@@ -39,7 +39,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.flowables.ConnectableFlowable;
 
 import static io.axway.alf.assertion.Assertion.*;
-import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.*;
 
 class StoreManagerImpl implements StoreManager {
@@ -142,7 +141,7 @@ class StoreManagerImpl implements StoreManager {
                 LOG.error("Transaction was already processed and will be ignored",
                           args -> args.add("transactionId", txId).add("latestProcessedTransactionId", m_currentTxId));
                 if (transactionFuture != null) {
-                   transactionFuture.complete(emptyList()); // do not block anyway
+                    transactionFuture.complete(List.of()); // do not block anyway
                 }
             }
         }, error -> {
@@ -160,7 +159,7 @@ class StoreManagerImpl implements StoreManager {
 
     @Override
     public Set<String> listStores() {
-        return Collections.unmodifiableSet(m_stores.asMap().keySet());
+        return Set.copyOf(m_stores.asMap().keySet());
     }
 
     @Nullable
@@ -217,19 +216,16 @@ class StoreManagerImpl implements StoreManager {
     }
 
     private EntityStores createEntityStores() {
-        ImmutableMap.Builder<RelationDefinition, RelationStore> relationStoresBuilder = ImmutableMap.builder();
-        m_entityDefinitions.values().stream().flatMap(entityDefinition -> entityDefinition.getRelations().values().stream()).forEach(relationDefinition -> {
-            RelationStore relationStore = RelationStore.newRelationStore(relationDefinition);
-            relationStoresBuilder.put(relationDefinition, relationStore);
-        });
-        Map<RelationDefinition, RelationStore> relationStores = relationStoresBuilder.build();
+        Map<RelationDefinition, RelationStore> relationStores = m_entityDefinitions.values().stream().
+                flatMap(entityDefinition -> entityDefinition.getRelations().values().stream()).
+                collect(Collectors.toUnmodifiableMap( //
+                                                      relationDefinition -> relationDefinition, //
+                                                      RelationStore::newRelationStore));
 
-        ImmutableMap.Builder<Class<?>, EntityStore<?>> entityStoresBuilder = ImmutableMap.builder();
-        m_entityDefinitions.values().forEach(entityDefinition -> {
-            EntityStore<?> entityStore = createEntityStore(entityDefinition, relationStores);
-            entityStoresBuilder.put(entityDefinition.getEntityClass(), entityStore);
-        });
-        Map<Class<?>, EntityStore<?>> entityStores = entityStoresBuilder.build();
+        Map<Class<?>, EntityStore<?>> entityStores = m_entityDefinitions.values().stream().
+                collect(Collectors.toUnmodifiableMap( //
+                                                      EntityDefinition::getEntityClass, //
+                                                      entityDefinition -> createEntityStore(entityDefinition, relationStores)));
 
         for (EntityStore<?> entityStore : entityStores.values()) {
             entityStore.init(entityStores, relationStores);
@@ -282,7 +278,7 @@ class StoreManagerImpl implements StoreManager {
             ensureOpen();
             TransactionBuilder transactionBuilder = new TransactionBuilderImpl(m_storeName);
             CommandBuilder<C, T> commandBuilder = transactionBuilder.addCommand(commandClass);
-            return new CommandBuilder<C, T>() {
+            return new CommandBuilder<>() {
                 @Override
                 public <V> CommandBuilderValueSetter<C, T, V> set(Accessor<C, V> accessor) {
                     CommandBuilderValueSetter<C, T, V> setter = commandBuilder.set(accessor);

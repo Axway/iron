@@ -4,8 +4,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.*;
 import javax.annotation.*;
-import com.google.common.collect.ImmutableSet;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.description.Transient;
 import io.axway.iron.error.InvalidModelException;
@@ -13,17 +13,10 @@ import io.axway.iron.error.InvalidModelException;
 import static io.axway.iron.description.Constants.RESERVED_PROPERTY_PREFIX;
 
 public class InterfaceValidator {
-    private static final Set<String> FORBIDDEN_METHOD_NAMES;
-
-    static {
-        ImmutableSet.Builder<String> forbiddenMethodNames = ImmutableSet.builder();
-        for (Method method : Object.class.getDeclaredMethods()) {
-            if (method.getParameterCount() == 0) {
-                forbiddenMethodNames.add(method.getName());
-            }
-        }
-        FORBIDDEN_METHOD_NAMES = forbiddenMethodNames.build();
-    }
+    private static final Set<String> FORBIDDEN_METHOD_NAMES = Arrays.stream(Object.class.getDeclaredMethods()).
+            filter(method -> method.getParameterCount() == 0).
+            map(Method::getName).
+            collect(Collectors.toUnmodifiableSet());
 
     private final IntrospectionHelper m_introspectionHelper;
     private final DataTypeManager m_dataTypeManager;

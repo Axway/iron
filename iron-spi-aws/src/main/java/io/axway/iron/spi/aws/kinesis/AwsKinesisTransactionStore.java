@@ -30,7 +30,6 @@ import static io.axway.iron.spi.StoreNamePrefixManagement.readStoreName;
 import static io.axway.iron.spi.aws.AwsUtils.*;
 import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.*;
 import static java.math.BigInteger.ZERO;
-import static java.util.Collections.emptyList;
 
 /**
  * Kinesis transaction store factory to build Kinesis TransactionStore.
@@ -173,7 +172,7 @@ public class AwsKinesisTransactionStore implements TransactionStore {
     @Nullable
     private List<Record> nextRecords() {
         if (!waitTheMinimalDurationToExecuteTheNextProvisioningRequest()) {
-            return emptyList();
+            return List.of();
         }
         // Suboptimal request, should store records in a list instead. To be fixed.
         GetRecordsRequest getRecordsRequest = new GetRecordsRequest().withShardIterator(m_shardIterator).withLimit(1);
@@ -216,7 +215,7 @@ public class AwsKinesisTransactionStore implements TransactionStore {
             LOG.trace("Get records", args -> args.add("streamName", m_streamName).add("record number", records.size())
                     .add("millisBehindLatest", getRecordsResult.getMillisBehindLatest()));
             return records;
-        }, m_durationBetweenRequests).orElse(emptyList());
+        }, m_durationBetweenRequests).orElse(List.of());
     }
 
     /**

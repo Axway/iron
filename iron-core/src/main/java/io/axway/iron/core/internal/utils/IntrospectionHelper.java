@@ -5,24 +5,23 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.*;
-import com.google.common.collect.ImmutableMap;
 import io.axway.iron.core.internal.utils.proxy.ProxyFactoryBuilder;
 import io.axway.iron.error.StoreException;
 import io.axway.iron.functional.Accessor;
 
 import static io.axway.alf.assertion.Assertion.checkState;
+import static java.util.Map.*;
 
 public class IntrospectionHelper {
-    private static final Map<Class<?>, Object> DEFAULT_VALUES = ImmutableMap.<Class<?>, Object>builder() //
-            .put(boolean.class, Boolean.FALSE) //
-            .put(byte.class, (byte) 0) //
-            .put(char.class, '\0') //
-            .put(short.class, (short) 0) //
-            .put(int.class, 0) //
-            .put(long.class, 0L) //
-            .put(float.class, 0f) //
-            .put(double.class, 0d) //
-            .build();
+    private static final Map<Class<?>, Object> DEFAULT_VALUES = Map.ofEntries( //
+                                                                               entry(boolean.class, Boolean.FALSE), //
+                                                                               entry(byte.class, (byte) 0), //
+                                                                               entry(char.class, '\0'), //
+                                                                               entry(short.class, (short) 0), //
+                                                                               entry(int.class, 0), //
+                                                                               entry(long.class, 0L), //
+                                                                               entry(float.class, 0f), //
+                                                                               entry(double.class, 0d));
 
     private final ConcurrentMap<Accessor<?, ?>, String> m_methodReferenceNames = new ConcurrentHashMap<>();
 

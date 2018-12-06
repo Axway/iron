@@ -11,8 +11,6 @@ import java.util.function.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
@@ -117,7 +115,7 @@ public class SampleTest {
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
-            tx1.addCommand(CreateCompany.class).map(ImmutableMap.of("name", "Apple", "address", "Cupertino")).submit();
+            tx1.addCommand(CreateCompany.class).map(Map.of("name", "Apple", "address", "Cupertino")).submit();
             List<?> result = tx1.submit().get();
             assertThat(result.size()).isEqualTo(4);
             assertThat(result.get(0)).isEqualTo(0L);
@@ -168,7 +166,7 @@ public class SampleTest {
             tx8.addCommand(CreatePerson.class) //
                     .set(CreatePerson::id).to("123") //
                     .set(CreatePerson::name).to("bill") //
-                    .set(CreatePerson::previousCompanyNames).to(ImmutableList.of("Google", "Axway")) //
+                    .set(CreatePerson::previousCompanyNames).to(List.of("Google", "Axway")) //
                     .set(CreatePerson::birthDate).to(DATE_FORMAT.parse("01/01/1990")) //
                     .submit();
 

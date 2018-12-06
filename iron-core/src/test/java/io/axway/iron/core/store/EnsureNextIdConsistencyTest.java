@@ -18,9 +18,8 @@ import io.axway.iron.spi.jackson.JacksonTransactionSerializerBuilder;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.reactivex.Flowable;
 
-import static org.assertj.core.api.Assertions.*;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.*;
 
 public class EnsureNextIdConsistencyTest {
 
@@ -67,9 +66,9 @@ public class EnsureNextIdConsistencyTest {
             @Override
             public List<BigInteger> listSnapshots() {
                 if (snapshotId.get() != null) {
-                    return Collections.singletonList(snapshotId.get());
+                    return List.of(snapshotId.get());
                 } else {
-                    return Collections.emptyList();
+                    return List.of();
                 }
             }
 
@@ -96,9 +95,7 @@ public class EnsureNextIdConsistencyTest {
             builder.build();
             fail("Expected error due to snapshot corruption");
         } catch (Exception e) {
-            assertThat(e)
-                    .hasMessage("Error occurred when recovering from latest snapshot")
-                    .hasCauseInstanceOf(UnrecoverableStoreException.class);
+            assertThat(e).hasMessage("Error occurred when recovering from latest snapshot").hasCauseInstanceOf(UnrecoverableStoreException.class);
             assertThat(e.getCause()).hasMessage("Instance id is greater than or equals to nextId {\"args\": {\"instanceId\": 0, \"nextId\": 0}}");
         }
     }

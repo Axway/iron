@@ -12,9 +12,9 @@ public class CommandWithLongCollectionParameterTest {
     @DataProvider(name = "longs")
     public Object[][] providesLongs() {
         return new Object[][]{ //
-                new Object[]{Collections.emptyList(), null}, //
+                new Object[]{List.of(), null}, //
                 new Object[]{Collections.singleton(null), null}, //
-                new Object[]{Collections.singleton(42L), 42L}, //
+                new Object[]{List.of(42L), 42L}, //
                 new Object[]{Arrays.asList(null, null), null}, //
                 new Object[]{Arrays.asList(null, 15L, null), 15L}, //
                 new Object[]{Arrays.asList(1L, 15L, 10L), 26L}, //

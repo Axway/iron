@@ -2,7 +2,6 @@ package io.axway.iron.core.store.relation;
 
 import java.util.*;
 import javax.annotation.*;
-import com.google.common.collect.ImmutableList;
 import io.axway.iron.Command;
 import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.Store;
@@ -53,7 +52,7 @@ class ShouldRollbackRelationTest extends AbstractRelationTest implements Failing
 
         store.createCommand(CarSetAuthorizedDriversCommand.class) //
                 .set(CarSetAuthorizedDriversCommand::plateNumber).to("ZZZ") //
-                .set(CarSetAuthorizedDriversCommand::authorizedDrivers).to(ImmutableList.of("john")) //
+                .set(CarSetAuthorizedDriversCommand::authorizedDrivers).to(List.of("john")) //
                 .submit();
 
         store.createCommand(CarChangeOwner.class) //
@@ -63,7 +62,7 @@ class ShouldRollbackRelationTest extends AbstractRelationTest implements Failing
 
         store.createCommand(CarFailingCommand.class) //
                 .set(CarFailingCommand::plateNumber).to("ZZZ") //
-                .set(CarFailingCommand::authorizedDrivers).to(ImmutableList.of("marie")) //
+                .set(CarFailingCommand::authorizedDrivers).to(List.of("marie")) //
                 .set(CarFailingCommand::previousOwner).to("anna") //
                 .submit().get();
     }

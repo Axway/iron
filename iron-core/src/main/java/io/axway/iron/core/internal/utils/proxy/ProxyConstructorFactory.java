@@ -4,23 +4,22 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.*;
+import java.util.stream.*;
 import javax.annotation.*;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableList;
 import io.axway.iron.core.internal.utils.CompositeClassLoader;
 import io.axway.iron.error.StoreException;
 
 public class ProxyConstructorFactory {
     // cache to avoid to create to many composite class loaders
-    private final LoadingCache<CacheKey, ClassLoader> m_compositeClassLoaderCache = CacheBuilder.newBuilder().weakValues()
-            .build(new CacheLoader<CacheKey, ClassLoader>() {
-                @Override
-                public ClassLoader load(CacheKey key) throws Exception {
-                    return createClassLoader(key.getClassLoaders());
-                }
-            });
+    private final LoadingCache<CacheKey, ClassLoader> m_compositeClassLoaderCache = CacheBuilder.newBuilder().weakValues().build(new CacheLoader<>() {
+        @Override
+        public ClassLoader load(CacheKey key) {
+            return createClassLoader(key.getClassLoaders());
+        }
+    });
 
     public <T> Constructor<T> getProxyConstructor(Class<T> interfaceClass, Class<?>... otherInterfaceClasses) {
         return createProxyConstructor(m_compositeClassLoaderCache, interfaceClass, otherInterfaceClasses);
@@ -59,9 +58,9 @@ public class ProxyConstructorFactory {
     }
 
     private static List<ClassLoader> extractClassloaderList(Class<?>... classes) {
-        List<ClassLoader> classLoaders = new ArrayList<>();
-        Arrays.stream(classes).map(Class::getClassLoader).filter(cl -> !classLoaders.contains(cl)).forEach(classLoaders::add);
-        return ImmutableList.copyOf(classLoaders);
+        return List.copyOf(Arrays.stream(classes).
+                map(Class::getClassLoader).
+                collect(Collectors.toUnmodifiableSet()));
     }
 
     private static ClassLoader createClassLoader(List<ClassLoader> classLoaders) {

@@ -10,7 +10,6 @@ import org.joda.time.DateTime;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import com.google.common.collect.ImmutableMap;
 import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
@@ -254,7 +253,7 @@ public class MultipleRelationsTest {
         tx.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
         tx.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
         tx.addCommand(CreateCompany.class).set(CreateCompany::name).to("Oracle").set(CreateCompany::address).to("Redwood City").submit();
-        tx.addCommand(CreateCompany.class).map(ImmutableMap.of("name", "Apple", "address", "Cupertino")).submit();
+        tx.addCommand(CreateCompany.class).map(Map.of("name", "Apple", "address", "Cupertino")).submit();
         tx.submit();
     }
 
@@ -262,8 +261,7 @@ public class MultipleRelationsTest {
         tx.addCommand(CreatePerson.class).set(CreatePerson::id).to("11").set(CreatePerson::name).to("Marcel").set(CreatePerson::previousCompanyNames)
                 .to(Arrays.asList("Google", "Microsoft")).set(CreatePerson::birthDate).to(new DateTime().minusYears(20).toDate()).submit();
         tx.addCommand(CreatePerson.class).set(CreatePerson::id).to("22").set(CreatePerson::name).to("Sinclair").set(CreatePerson::worksAt).to("Axway")
-                .set(CreatePerson::previousCompanyNames).to(Arrays.asList("Apple")).set(CreatePerson::birthDate).to(new DateTime().minusYears(30).toDate())
-                .submit();
+                .set(CreatePerson::previousCompanyNames).to(List.of("Apple")).set(CreatePerson::birthDate).to(new DateTime().minusYears(30).toDate()).submit();
     }
 
     private void setUpPersonsWithSeveralPreviousCompanies(Store.TransactionBuilder tx) {

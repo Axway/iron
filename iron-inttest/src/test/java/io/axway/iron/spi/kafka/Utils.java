@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import static io.axway.alf.assertion.Assertion.checkState;
 import static java.lang.Thread.currentThread;
@@ -86,7 +85,7 @@ final class Utils {
             currentThread().interrupt();
             throw new IllegalStateException("Thread was stopped while waiting for the future", e);
         } catch (ExecutionException e) {
-            throw new UncheckedExecutionException(e);
+            throw new RuntimeException(e);
         }
     }
 

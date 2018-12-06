@@ -4,7 +4,6 @@ import java.util.*;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import com.google.common.collect.ImmutableList;
 import io.axway.iron.core.model.validation.InvalidDatatypeEntity;
 import io.axway.iron.core.model.validation.InvalidEmptyEntity;
 import io.axway.iron.core.model.validation.InvalidExtendsEntity;
@@ -92,35 +91,35 @@ public class ModelDefinitionValidationTest {
     public Object[][] providesInvalidModels() throws Exception {
         Class<?> invalidNonPublicEntityClass = getClass().getClassLoader().loadClass("io.axway.iron.core.model.validation.InvalidNonPublicEntity");
         return new Object[][]{ //
-                {ImmutableList.of(InvalidNonInterfaceEntity.class)}, //
-                {ImmutableList.of(invalidNonPublicEntityClass)}, //
-                {ImmutableList.of(InvalidMissingEntityAnnotationEntity.class)}, //
-                {ImmutableList.of(InvalidExtendsEntity.class)}, //
-                {ImmutableList.of(InvalidEmptyEntity.class)}, //
-                {ImmutableList.of(InvalidMethodReservedPrefixEntity.class)}, //
-                {ImmutableList.of(InvalidMethodReservedNameEntity.class)}, //
-                {ImmutableList.of(InvalidTransientNonImplementedMethodEntity.class)}, //
-                {ImmutableList.of(InvalidMethodWithArgsEntity.class)}, //
-                {ImmutableList.of(InvalidMethodWithExceptionsEntity.class)}, //
-                {ImmutableList.of(InvalidMethodVoidEntity.class)}, //
-                {ImmutableList.of(InvalidNonnullAndNullableMethodEntity.class)}, //
-                {ImmutableList.of(InvalidUniqueRelationEntity.class)}, //
-                {ImmutableList.of(InvalidIdDefaultEntity.class)}, //
-                {ImmutableList.of(InvalidIdMultipleEntity.class)}, //
-                {ImmutableList.of(InvalidIdNonLongEntity.class)}, //
-                {ImmutableList.of(InvalidIdRelationEntity.class)}, //
-                {ImmutableList.of(InvalidIdUniqueEntity.class)}, //
-                {ImmutableList.of(InvalidNullableMultipleRelationEntity.class)}, //
-                {ImmutableList.of(InvalidMethodWithDefaultImplementationEntity.class)}, //
-                {ImmutableList.of(InvalidNullablePrimitiveEntity.class)}, //
-                {ImmutableList.of(InvalidNonnullPrimitiveWrapperEntity.class)}, //
-                {ImmutableList.of(InvalidDatatypeEntity.class)}, //
-                {ImmutableList.of(InvalidReverseRelationNonMultipleEntity.class, InvalidReverseRelationNonMultipleTargetEntity.class)}, //
-                {ImmutableList.of(InvalidReverseRelationNullableEntity.class, InvalidReverseRelationNullableTargetEntity.class)}, //
-                {ImmutableList.of(InvalidReverseRelationMissingDSLCallEntity.class, InvalidReverseRelationMissingDSLCallTargetEntity.class)}, //
-                {ImmutableList.of(InvalidReverseRelationTailEntityMismatchEntity.class, InvalidReverseRelationTailEntityMismatchTargetEntity.class)}, //
-                {ImmutableList.of(InvalidReverseRelationHeadEntityMismatchEntity.class, InvalidReverseRelationHeadEntityMismatchTargetEntity.class)}, //
-                {ImmutableList.of(InvalidReverseRelationRedundantEntity.class, InvalidReverseRelationRedundantTargetEntity.class)}, //
+                {List.of(InvalidNonInterfaceEntity.class)}, //
+                {List.of(invalidNonPublicEntityClass)}, //
+                {List.of(InvalidMissingEntityAnnotationEntity.class)}, //
+                {List.of(InvalidExtendsEntity.class)}, //
+                {List.of(InvalidEmptyEntity.class)}, //
+                {List.of(InvalidMethodReservedPrefixEntity.class)}, //
+                {List.of(InvalidMethodReservedNameEntity.class)}, //
+                {List.of(InvalidTransientNonImplementedMethodEntity.class)}, //
+                {List.of(InvalidMethodWithArgsEntity.class)}, //
+                {List.of(InvalidMethodWithExceptionsEntity.class)}, //
+                {List.of(InvalidMethodVoidEntity.class)}, //
+                {List.of(InvalidNonnullAndNullableMethodEntity.class)}, //
+                {List.of(InvalidUniqueRelationEntity.class)}, //
+                {List.of(InvalidIdDefaultEntity.class)}, //
+                {List.of(InvalidIdMultipleEntity.class)}, //
+                {List.of(InvalidIdNonLongEntity.class)}, //
+                {List.of(InvalidIdRelationEntity.class)}, //
+                {List.of(InvalidIdUniqueEntity.class)}, //
+                {List.of(InvalidNullableMultipleRelationEntity.class)}, //
+                {List.of(InvalidMethodWithDefaultImplementationEntity.class)}, //
+                {List.of(InvalidNullablePrimitiveEntity.class)}, //
+                {List.of(InvalidNonnullPrimitiveWrapperEntity.class)}, //
+                {List.of(InvalidDatatypeEntity.class)}, //
+                {List.of(InvalidReverseRelationNonMultipleEntity.class, InvalidReverseRelationNonMultipleTargetEntity.class)}, //
+                {List.of(InvalidReverseRelationNullableEntity.class, InvalidReverseRelationNullableTargetEntity.class)}, //
+                {List.of(InvalidReverseRelationMissingDSLCallEntity.class, InvalidReverseRelationMissingDSLCallTargetEntity.class)}, //
+                {List.of(InvalidReverseRelationTailEntityMismatchEntity.class, InvalidReverseRelationTailEntityMismatchTargetEntity.class)}, //
+                {List.of(InvalidReverseRelationHeadEntityMismatchEntity.class, InvalidReverseRelationHeadEntityMismatchTargetEntity.class)}, //
+                {List.of(InvalidReverseRelationRedundantEntity.class, InvalidReverseRelationRedundantTargetEntity.class)}, //
         };
     }
 
@@ -152,7 +151,7 @@ public class ModelDefinitionValidationTest {
     }
 
     @Test(dataProvider = "invalidModels", expectedExceptions = {InvalidModelException.class})
-    public void shouldFailOnInvalidModel(Collection<Class<?>> entityClasses) throws Exception {
+    public void shouldFailOnInvalidModel(Collection<Class<?>> entityClasses) {
         try {
             m_builder.withEntityClass(TargetEntity.class);
             for (Class<?> entityClass : entityClasses) {
@@ -166,7 +165,7 @@ public class ModelDefinitionValidationTest {
     }
 
     @Test
-    public void shouldSuccessOnValidModel() throws Exception {
+    public void shouldSuccessOnValidModel() {
         m_builder //
                 .withEntityClass(ValidEntity.class) //
                 .withEntityClass(TargetWithReverseEntity.class) //
@@ -174,7 +173,7 @@ public class ModelDefinitionValidationTest {
     }
 
     @Test(dataProvider = "invalidCommands", expectedExceptions = {InvalidModelException.class})
-    public void shouldFailOnInvalidCommand(Class<?> commandClass) throws Exception {
+    public void shouldFailOnInvalidCommand(Class<?> commandClass) {
         try {
             //noinspection unchecked not all classes passed here are compatible with the generic definition. It's the goal of the test to verify such checks are done
             m_builder.withCommandClass((Class) commandClass).build();
@@ -185,7 +184,7 @@ public class ModelDefinitionValidationTest {
     }
 
     @Test
-    public void shouldSuccessOnValidCommand() throws Exception {
+    public void shouldSuccessOnValidCommand() {
         m_builder.withCommandClass(ValidCommand.class).build();
     }
 }

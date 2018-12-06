@@ -46,7 +46,7 @@ public abstract class RelationStore {
 
         callHandlerBuilder.handle(reverseRelationDefinition.getReverseRelationMethod(), (context, proxy, method, args) -> {
             Collection<Long> tailIds = m_reverseValues.get(context.getId());
-            return Collections.unmodifiableCollection(tailIds.stream().map(tailEntityStore::getById).collect(Collectors.toList()));
+            return tailIds.stream().map(tailEntityStore::getById).collect(Collectors.toUnmodifiableList());
         });
     }
 }

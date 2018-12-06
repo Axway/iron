@@ -1,7 +1,5 @@
 package io.axway.iron.spi.kafka;
 
-import java.io.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
@@ -24,7 +22,6 @@ import io.axway.iron.sample.model.Person;
 import io.axway.iron.spi.jackson.JacksonSnapshotSerializerBuilder;
 import io.axway.iron.spi.jackson.JacksonTransactionSerializerBuilder;
 
-import static com.google.common.collect.ImmutableMap.of;
 import static io.axway.iron.assertions.Assertions.assertThat;
 import static io.axway.iron.spi.kafka.Utils.*;
 import static java.nio.file.Files.createTempDirectory;
@@ -108,7 +105,8 @@ public class SingleKafkaSpiTest {
                 for (int i = 0; i < 100; i++) {
                     // When inserting 4 companies in one transaction
                     Store.TransactionBuilder transaction = store.begin();
-                    transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("C" + idx + "." + i).set(CreateCompany::address).to("Palo Alto").submit();
+                    transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("C" + idx + "." + i).set(CreateCompany::address).to("Palo Alto")
+                            .submit();
                     futureGet(transaction.submit());
                     System.out.println("Processed " + idx + "." + i);
                 }
@@ -131,7 +129,7 @@ public class SingleKafkaSpiTest {
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
-        transaction.addCommand(CreateCompany.class).map(of("name", "Apple", "address", "Cupertino")).submit();
+        transaction.addCommand(CreateCompany.class).map(Map.of("name", "Apple", "address", "Cupertino")).submit();
         List<Object> result = futureGet(transaction.submit());
 
         // Then they we are inserted and their identifiers are in ascending order
@@ -204,7 +202,7 @@ public class SingleKafkaSpiTest {
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
-        transaction.addCommand(CreateCompany.class).map(of("name", "Apple", "address", "Cupertino")).submit();
+        transaction.addCommand(CreateCompany.class).map(Map.of("name", "Apple", "address", "Cupertino")).submit();
         futureGet(transaction.submit());
 
         // When creating a snapshot
@@ -227,7 +225,7 @@ public class SingleKafkaSpiTest {
     }
 
     @Test
-    public final void shouldStartFromInitialSnapshotWithNoTx() throws InterruptedException, ExecutionException, TimeoutException, IOException {
+    public void shouldStartFromInitialSnapshotWithNoTx() throws InterruptedException, ExecutionException, TimeoutException {
         String storeName = "shouldStartFromInitialSnapshotWithNoTx" + randomUUID();
 
         // update topic to be sure that the tx ids restart at 0
@@ -256,7 +254,7 @@ public class SingleKafkaSpiTest {
 
         // init manager from snapshot at id 0 (equivalent to a bootstrap snapshot)
         m_storeManager = initStoreManager();
-                                   // Then we can reopen the store and query the companies
+        // Then we can reopen the store and query the companies
         store = m_storeManager.getStore(storeName);
         store.query(q -> {
             Map<Long, Company> companies = q.select(Company.class).all().stream().collect(toMap(Company::id, identity()));

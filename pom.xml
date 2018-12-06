@@ -16,9 +16,9 @@
     <properties>
         <revision>0.13.0-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <java.compile.version>11</java.compile.version>
+        <maven.compiler.source>${java.compile.version}</maven.compiler.source>
+        <maven.compiler.target>${java.compile.version}</maven.compiler.target>
         <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
         <bnd.Fragment-Host/>
 

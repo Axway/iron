@@ -29,7 +29,6 @@ import io.reactivex.schedulers.Schedulers;
 import static io.axway.iron.spi.StoreNamePrefixManagement.readStoreName;
 import static java.lang.Long.parseLong;
 import static java.time.Duration.ofMillis;
-import static java.util.Collections.*;
 import static org.apache.kafka.clients.CommonClientConfigs.CLIENT_ID_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.*;
 import static org.apache.kafka.clients.producer.ProducerConfig.*;
@@ -75,7 +74,7 @@ public class KafkaTransactionStore implements TransactionStore {
 
         m_transactionsFlow = Flowable      //
                 .generate(() -> {
-                    // see https://stackoverflow.com/questions/37363119/kafka-producer-org-apache-kafka-common-serialization-stringserializer-could-no
+                              // see https://stackoverflow.com/questions/37363119/kafka-producer-org-apache-kafka-common-serialization-stringserializer-could-no
                               ClassLoader ccl = Thread.currentThread().getContextClassLoader();
                               KafkaConsumer<Integer, byte[]> kafkaConsumer;
                               try {
@@ -86,12 +85,11 @@ public class KafkaTransactionStore implements TransactionStore {
                                   consumerKafkaProperties.put(ENABLE_AUTO_COMMIT_CONFIG, "false");
                                   consumerKafkaProperties.put(SESSION_TIMEOUT_MS_CONFIG, CONSUMER_SESSION_TIMEOUT);
                                   consumerKafkaProperties.put(GROUP_ID_CONFIG, "ironGroup-" + uuid);
-                                  kafkaConsumer = new KafkaConsumer<>(consumerKafkaProperties, new IntegerDeserializer(),
-                                                                      new ByteArrayDeserializer());
+                                  kafkaConsumer = new KafkaConsumer<>(consumerKafkaProperties, new IntegerDeserializer(), new ByteArrayDeserializer());
                               } finally {
                                   Thread.currentThread().setContextClassLoader(ccl);
                               }
-                              kafkaConsumer.assign(singletonList(m_topicPartition));
+                              kafkaConsumer.assign(List.of(m_topicPartition));
                               return kafkaConsumer;
                           },  //
                           (BiConsumer<KafkaConsumer<Integer, byte[]>, Emitter<ConsumerRecords<Integer, byte[]>>>) (consumer, emitter) -> {
@@ -143,14 +141,16 @@ public class KafkaTransactionStore implements TransactionStore {
 
     private void createKafkaTopic(Properties kafkaProperties, String topicName) {
         try (AdminClient adminClient = AdminClient.create(kafkaProperties)) {
-            adminClient.createTopics(singleton(new NewTopic(topicName, 1, (short) 1)))//
+            adminClient.createTopics(List.of(new NewTopic(topicName, 1, (short) 1)))//
                     .all().get();
         } catch (Exception e) {
             Throwable current = e;
-            while(!(current instanceof TopicExistsException) && current.getCause() != null) {
-                 current = current.getCause();
+            while (!(current instanceof TopicExistsException) && current.getCause() != null) {
+                current = current.getCause();
             }
-            if(!(current instanceof TopicExistsException)) throw new RuntimeException(e);
+            if (!(current instanceof TopicExistsException)) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

@@ -2,7 +2,6 @@ package io.axway.iron.core;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.axway.alf.exception.IllegalArgumentFormattedException;
 import io.axway.alf.exception.IllegalStateFormattedException;
 import io.axway.iron.StoreManager;
@@ -111,7 +110,7 @@ public class StoreManagerTest {
     public void shouldNotOpenStoreWithInvalidName(String storeName) {
         try (StoreManager ignored = createStoreManagerFactory()) {
             ignored.getStore(storeName);
-        } catch(UncheckedExecutionException e) {
+        } catch (Exception e) {
             assertThat(e).hasCauseInstanceOf(IllegalArgumentFormattedException.class);
             assertThat(e.getCause()).hasMessageStartingWith("Invalid store name");
         }

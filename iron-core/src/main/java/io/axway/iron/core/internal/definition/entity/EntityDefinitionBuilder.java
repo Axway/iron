@@ -4,8 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import java.util.stream.*;
 import io.axway.iron.core.internal.definition.DataTypeManager;
 import io.axway.iron.core.internal.definition.InterfaceValidator;
 import io.axway.iron.core.internal.definition.InterfaceVisitor;
@@ -39,15 +38,13 @@ public class EntityDefinitionBuilder {
     }
 
     public Map<Class<?>, EntityDefinition<?>> analyzeEntities(Set<Class<?>> entityClasses) {
-        ImmutableMap.Builder<Class<?>, EntityDefinition<?>> entityDefinitionsBuilder = ImmutableMap.builder();
-
         AnalyzeContext context = new AnalyzeContext(entityClasses);
-        entityClasses.forEach(entityClass -> {
-            EntityDefinition<?> entityDefinition = analyzeEntityClass(context, entityClass);
-            entityDefinitionsBuilder.put(entityClass, entityDefinition);
-        });
+        Map<Class<?>, EntityDefinition<?>> entityDefinitions = entityClasses.stream().
+                collect(Collectors.toUnmodifiableMap( //
+                                                      entityClass -> entityClass, //
+                                                      entityClass -> analyzeEntityClass(context, entityClass)
 
-        Map<Class<?>, EntityDefinition<?>> entityDefinitions = entityDefinitionsBuilder.build();
+                ));
 
         for (UnboundedReverseRelation unboundedReverseRelation : context.getUnboundedReverseRelations()) {
             ReverseRelationDefinition reverseRelationDefinition = unboundedReverseRelation.getReverseRelationDefinition();
@@ -76,9 +73,9 @@ public class EntityDefinitionBuilder {
 
     private <E> EntityDefinition<E> analyzeEntityClass(AnalyzeContext context, Class<E> entityClass) {
 
-        ImmutableMap.Builder<String, AttributeDefinition<Object>> attributes = ImmutableMap.builder();
-        ImmutableMap.Builder<String, RelationDefinition> relations = ImmutableMap.builder();
-        ImmutableMap.Builder<String, ReverseRelationDefinition> reverseRelations = ImmutableMap.builder();
+        Map<String, AttributeDefinition<Object>> attributes = new HashMap<>();
+        Map<String, RelationDefinition> relations = new HashMap<>();
+        Map<String, ReverseRelationDefinition> reverseRelations = new HashMap<>();
         List<String> uniqueConstraints = new ArrayList<>();
         List<IdDefinition> idDefinitions = new ArrayList<>();
 
@@ -205,12 +202,12 @@ public class EntityDefinitionBuilder {
             idDefinition = idDefinitions.get(0);
         }
 
-        Collections.sort(uniqueConstraints);
+        uniqueConstraints.sort(null);
 
         Constructor<E> instanceProxyConstructor = m_proxyConstructorFactory.getProxyConstructor(entityClass, InstanceProxy.class);
 
-        return new EntityDefinition<>(entityClass, idDefinition, relations.build(), reverseRelations.build(), attributes.build(),
-                                      ImmutableList.copyOf(uniqueConstraints), instanceProxyConstructor);
+        return new EntityDefinition<>(entityClass, idDefinition, Map.copyOf(relations), Map.copyOf(reverseRelations), Map.copyOf(attributes),
+                                      List.copyOf(uniqueConstraints), instanceProxyConstructor);
     }
 
     private <H, T> ReverseRelationDefinition analyzeReverseRelation(AnalyzeContext context, Class<H> headEntityClass, Class<T> tailEntityClass,

@@ -4,7 +4,6 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 import org.reactivestreams.Publisher;
-import com.google.common.collect.ImmutableList;
 import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.TransactionStore;
@@ -38,7 +37,7 @@ public class TransientStore implements SnapshotStore, TransactionStore {
 
     @Override
     public List<BigInteger> listSnapshots() {
-        return ImmutableList.of();
+        return List.of();
     }
 
     @Override

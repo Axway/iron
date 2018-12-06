@@ -5,7 +5,6 @@ import java.lang.reflect.Field;
 import java.util.*;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import com.google.common.collect.ImmutableMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,7 +15,7 @@ public class StoreManagerBuilderConfiguratorTest {
     @DataProvider(name = "getPropertyDataProvider")
     public Object[][] getPropertyDataProvider() throws Exception {
         System.setProperty("mySysProperty", "mySysValue");
-        setEnv(ImmutableMap.of("MY_VAR_ENV", "myVarEnvValue"));
+        setEnv(Map.of("MY_VAR_ENV", "myVarEnvValue"));
         return new Object[][]{//
                 {"no variable", "myProperty=myValue", "myProperty", "myValue"},//
                 {"a single variable", "myProperty=${otherProperty}\notherProperty=myOtherPropertyValue", "myProperty", "myOtherPropertyValue"},//

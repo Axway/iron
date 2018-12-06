@@ -3,8 +3,6 @@ package io.axway.iron.core.internal.definition.command;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.axway.iron.Command;
 import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.core.internal.command.CommandProxy;
@@ -31,12 +29,12 @@ public class CommandDefinitionBuilder {
     }
 
     public <C extends Command<?>> CommandDefinition<C> analyzeCommandClass(Class<C> commandClass) {
-        ImmutableMap.Builder<String, ParameterDefinition<Object>> parameterDefinitions = ImmutableMap.builder();
+        Map<String, ParameterDefinition<Object>> parameterDefinitions = new HashMap<>();
 
         m_interfaceValidator.validate("Command", commandClass, new InterfaceVisitor() {
             @Override
             public void visitInterface(Class<?> clazz) {
-                Collection<Class<?>> interfaces = ImmutableList.copyOf(clazz.getInterfaces());
+                Collection<Class<?>> interfaces = List.of(clazz.getInterfaces());
                 if (!interfaces.contains(Command.class)) {
                     throw new InvalidModelException("Command class doesn't extends from Command interface",
                                                     args -> args.add("commandClassName", commandClass.getName()));
@@ -113,6 +111,6 @@ public class CommandDefinitionBuilder {
         });
 
         Constructor<C> proxyConstructor = m_proxyConstructorFactory.getProxyConstructor(commandClass, CommandProxy.class);
-        return new CommandDefinition<>(commandClass, parameterDefinitions.build(), proxyConstructor);
+        return new CommandDefinition<>(commandClass, Map.copyOf(parameterDefinitions), proxyConstructor);
     }
 }

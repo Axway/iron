@@ -31,7 +31,7 @@ public class JacksonSerializerTest {
         assertThat(serializableEntity.getAttributes()).containsOnlyKeys("simpleAttribute");
         SerializableAttributeDefinition simpleAttribute = serializableEntity.getAttributes().get("simpleAttribute");
         assertThat(simpleAttribute.getDataType()).isEqualTo("java.lang.String");
-        assertThat(serializableEntity.getUniques()).containsExactly(Collections.singletonList("simpleAttribute"));
+        assertThat(serializableEntity.getUniques()).containsExactly(List.of("simpleAttribute"));
         assertThat(serializableEntity.getNextId()).isEqualTo(1L);
         assertThat(serializableEntity.getInstances()).hasSize(1);
         SerializableInstance serializableInstance = serializableEntity.getInstances().stream().findFirst().get();

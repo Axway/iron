@@ -6,8 +6,6 @@ import java.util.concurrent.*;
 import java.util.function.*;
 import javax.annotation.*;
 import org.assertj.core.api.Assertions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.axway.iron.Command;
 import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.ReadWriteTransaction;
@@ -28,7 +26,6 @@ import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.TransactionStore;
 
-import static com.google.common.collect.ImmutableMap.*;
 import static java.util.stream.Collectors.*;
 
 public class SpiTestHelper {
@@ -37,8 +34,8 @@ public class SpiTestHelper {
 
     @SuppressWarnings("unchecked")
     public static void checkThatCreateCompanySequenceIsRight(Supplier<TransactionStore> transactionStoreFactory, TransactionSerializer transactionSerializer,
-                                                             Supplier<SnapshotStore> snapshotStoreFactory, SnapshotSerializer snapshotSerializer, String storeName)
-            throws Exception {
+                                                             Supplier<SnapshotStore> snapshotStoreFactory, SnapshotSerializer snapshotSerializer,
+                                                             String storeName) throws Exception {
         StoreManagerBuilder factoryBuilder = StoreManagerBuilder.newStoreManagerBuilder() //
                 .withTransactionSerializer(transactionSerializer) //
                 .withTransactionStore(transactionStoreFactory.get()) //
@@ -87,7 +84,7 @@ public class SpiTestHelper {
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
-            tx1.addCommand(CreateCompany.class).map(of("name", "Apple", "address", "Cupertino")).submit();
+            tx1.addCommand(CreateCompany.class).map(Map.of("name", "Apple", "address", "Cupertino")).submit();
             List<?> result = tx1.submit().get();
             Assertions.assertThat(result.size()).isEqualTo(4);
             Assertions.assertThat(result.get(0)).isEqualTo(0L);
@@ -104,10 +101,10 @@ public class SpiTestHelper {
             awaitAndCheckMessage(c1, null);
 
             checkCompanies("Batch1", store,//
-                           of("name", "Google", "address", "Palo Alto"),//
-                           of("name", "Microsoft", "address", "Seattle"),//
-                           of("name", "Axway", "address", "Phoenix"),//
-                           of("name", "Apple", "address", "Cupertino", "country", "USA")//
+                           Map.of("name", "Google", "address", "Palo Alto"),//
+                           Map.of("name", "Microsoft", "address", "Seattle"),//
+                           Map.of("name", "Axway", "address", "Phoenix"),//
+                           Map.of("name", "Apple", "address", "Cupertino", "country", "USA")//
             );
 
             Future<Void> c4 = store.createCommand(DeleteCompany.class).set(DeleteCompany::name).to("Apple").submit();
@@ -115,9 +112,9 @@ public class SpiTestHelper {
             awaitAndCheckMessage(c4, null);
 
             checkCompanies("Batch2", store,//
-                           of("name", "Google", "address", "Palo Alto"),//
-                           of("name", "Microsoft", "address", "Seattle"),//
-                           of("name", "Axway", "address", "Phoenix")//
+                           Map.of("name", "Google", "address", "Palo Alto"),//
+                           Map.of("name", "Microsoft", "address", "Seattle"),//
+                           Map.of("name", "Axway", "address", "Phoenix")//
             );
 
             Future<Void> c5 = store.createCommand(ChangeCompanyAddress.class) //
@@ -140,16 +137,16 @@ public class SpiTestHelper {
             awaitAndCheckMessage(c7, "You cannot delete Google!");
 
             checkCompanies("Batch3", store,//
-                           of("name", "Google", "address", "Palo Alto"),//
-                           of("name", "Microsoft", "address", "Seattle"),//
-                           of("name", "Axway", "address", "Phoenix")//
+                           Map.of("name", "Google", "address", "Palo Alto"),//
+                           Map.of("name", "Microsoft", "address", "Seattle"),//
+                           Map.of("name", "Axway", "address", "Phoenix")//
             );
 
             Store.TransactionBuilder tx8 = store.begin();
             tx8.addCommand(CreatePerson.class) //
                     .set(CreatePerson::id).to("123") //
                     .set(CreatePerson::name).to("bill") //
-                    .set(CreatePerson::previousCompanyNames).to(ImmutableList.of("Google", "Axway")) //
+                    .set(CreatePerson::previousCompanyNames).to(List.of("Google", "Axway")) //
                     .set(CreatePerson::birthDate).to(DATE_FORMAT.parse("01/01/1990")) //
                     .submit();
 
@@ -165,9 +162,9 @@ public class SpiTestHelper {
 
             awaitAndCheckMessage(tx8.submit(), null);
 
-            checkPersons("Batch4", store, of("name", "bill", "id", "123", "birthDate", DATE_FORMAT.parse("01/01/1990")),//
-                         of("name", "john", "id", "456"),//
-                         of("name", "mark", "id", "789")//
+            checkPersons("Batch4", store, Map.of("name", "bill", "id", "123", "birthDate", DATE_FORMAT.parse("01/01/1990")),//
+                         Map.of("name", "john", "id", "456"),//
+                         Map.of("name", "mark", "id", "789")//
             );
 
             Store.TransactionBuilder tx9 = store.begin();
@@ -189,9 +186,9 @@ public class SpiTestHelper {
 
             awaitAndCheckMessage(tx9.submit(), null);
 
-            checkPersons("Batch5", store, of("name", "bill", "id", "123", "salary", 111_111., "birthDate", DATE_FORMAT.parse("01/01/1990")),//
-                         of("name", "john", "id", "456", "salary", 100_000.),//
-                         of("name", "mark", "id", "789", "salary", 123_456.)//
+            checkPersons("Batch5", store, Map.of("name", "bill", "id", "123", "salary", 111_111., "birthDate", DATE_FORMAT.parse("01/01/1990")),//
+                         Map.of("name", "john", "id", "456", "salary", 100_000.),//
+                         Map.of("name", "mark", "id", "789", "salary", 123_456.)//
             );
 
             store.query(checkData);
@@ -221,8 +218,7 @@ public class SpiTestHelper {
         }
     }
 
-    public static void checkThatListSnapshotsReturnTheRightNumberOfSnapshots(TransactionStore transactionStore,
-                                                                             TransactionSerializer transactionSerializer,
+    public static void checkThatListSnapshotsReturnTheRightNumberOfSnapshots(TransactionStore transactionStore, TransactionSerializer transactionSerializer,
                                                                              SnapshotStore snapshotStore, SnapshotSerializer snapshotSerializer,
                                                                              String storeName) throws Exception {
         System.out.println("storeManagerFactory1");
@@ -318,31 +314,34 @@ public class SpiTestHelper {
     //region Tools
 
     @SafeVarargs
-    private static void checkCompanies(String title, Store store, ImmutableMap<Object, Object>... expectedCompanies) {
+    private static void checkCompanies(String title, Store store, Map<Object, Object>... expectedCompanies) {
         store.query(tx -> {
             Collection<Company> companies = tx.select(Company.class).all();
             System.out.printf(title + ": %s%n", companies);
             Assertions.assertThat(companies.stream()//
                                           .map(company -> {
-                                              Builder<Object, Object> map = builder().put("name", company.name())
-                                                      .put("address", Objects.requireNonNull(company.address()));
+                                              Map<Object, Object> map = new HashMap<>();
+                                              map.put("name", company.name());
+                                              map.put("address", Objects.requireNonNull(company.address()));
                                               String country = company.country();
                                               if (country != null) {
                                                   map.put("country", country);
                                               }
-                                              return map.build();
+                                              return Map.copyOf(map);
                                           }).collect(toList())).containsExactlyInAnyOrder(expectedCompanies);
         });
     }
 
     @SafeVarargs
-    private static void checkPersons(String title, Store store, ImmutableMap<Object, Object>... expectedPersons) {
+    private static void checkPersons(String title, Store store, Map<Object, Object>... expectedPersons) {
         store.query(tx -> {
             Collection<Person> persons = tx.select(Person.class).all();
             System.out.printf(title + ": %s%n", persons);
             Assertions.assertThat(persons.stream()//
                                           .map(person -> {
-                                              Builder<Object, Object> map = builder().put("name", person.name()).put("id", person.id());
+                                              Map<Object, Object> map = new HashMap<>();
+                                              map.put("name", person.name());
+                                              map.put("id", person.id());
                                               Date birthDate = person.birthDate();
                                               if (birthDate != null) {
                                                   map.put("birthDate", birthDate);
@@ -351,7 +350,7 @@ public class SpiTestHelper {
                                               if (salary != null) {
                                                   map.put("salary", salary);
                                               }
-                                              return map.build();
+                                              return Map.copyOf(map);
                                           }).collect(toList())).containsExactlyInAnyOrder(expectedPersons);
         });
     }

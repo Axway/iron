@@ -1,6 +1,6 @@
 package io.axway.iron.core.store.relation;
 
-import com.google.common.collect.ImmutableList;
+import java.util.*;
 import io.axway.iron.Store;
 import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.store.StoreTest;
@@ -44,17 +44,17 @@ abstract class AbstractRelationTest implements StoreTest {
 
         tx.addCommand(CarSetAuthorizedDriversCommand.class) //
                 .set(CarSetAuthorizedDriversCommand::plateNumber).to("XYZ") //
-                .set(CarSetAuthorizedDriversCommand::authorizedDrivers).to(ImmutableList.of("john", "marie", "anna")) //
+                .set(CarSetAuthorizedDriversCommand::authorizedDrivers).to(List.of("john", "marie", "anna")) //
                 .submit();
 
         tx.addCommand(CarSetAuthorizedDriversCommand.class) //
                 .set(CarSetAuthorizedDriversCommand::plateNumber).to("123") //
-                .set(CarSetAuthorizedDriversCommand::authorizedDrivers).to(ImmutableList.of("marie", "anna")) //
+                .set(CarSetAuthorizedDriversCommand::authorizedDrivers).to(List.of("marie", "anna")) //
                 .submit();
 
         tx.addCommand(CarSetAuthorizedDriversCommand.class) //
                 .set(CarSetAuthorizedDriversCommand::plateNumber).to("ABC") //
-                .set(CarSetAuthorizedDriversCommand::authorizedDrivers).to(ImmutableList.of("marie")) //
+                .set(CarSetAuthorizedDriversCommand::authorizedDrivers).to(List.of("marie")) //
                 .submit();
 
         tx.submit().get();

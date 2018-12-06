@@ -11,11 +11,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.regex.*;
 import java.util.stream.*;
-import com.google.common.base.Throwables;
 import io.axway.iron.error.StoreException;
 
 import static java.nio.file.Files.copy;
-import static java.util.Arrays.*;
 import static java.util.regex.Pattern.*;
 import static java.util.stream.Collectors.*;
 
@@ -61,7 +59,11 @@ public class IronMigration {
             System.err.println(
                     "Usage of migration tool : java -jar migrationTool.jar uriToIronDirectory globalStoreManagerName storesStoreManagerName uriToTargetDirectory\n"
                             + "\tglobalStoreManagerName and storesStoreManagerName must correspond to the names given in the code of traceability-ui");
-            throw Throwables.propagate(e);
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -111,7 +113,7 @@ public class IronMigration {
                             snapshotDir.toFile().mkdirs();
                             copy(file.toPath(), snapshotDir.resolve(GLOBAL_DIRECTORY_NAME + SNAPSHOT_SUFFIX));
                         } catch (IOException e) {
-                            throw Throwables.propagate(e);
+                            throw new UncheckedIOException(e);
                         }
                     });
         }
@@ -127,42 +129,35 @@ public class IronMigration {
         String transactionIdRegexReplace = "(.*\"transactionId\"\\s*:\\s*)\\d+(\\s*,.*)";
         Pattern transactionIdPattern = compile(transactionIdRegexAlone);
         Set<File> previousSnapshots = new HashSet<>();
-        List<File> snapshots = asList(targetStoresPath.resolve(SNAPSHOT_DIRECTORY_NAME).toFile().listFiles());
-        Collections.sort(snapshots);
-        snapshots.forEach(snapshot -> {
-            Set<String> snapshotNames = stream(snapshot.listFiles()).map(File::getName).collect(toSet());
-            previousSnapshots.stream().
-                    filter(previousSnapshot -> !snapshotNames.contains(previousSnapshot.getName())).
-                    forEach(previousSnapshot -> {
-                        try {
-                            Path targetPath = snapshot.toPath().resolve(previousSnapshot.getName());
-                            Path sourcePath = previousSnapshot.toPath();
-                            long count = countTransactionId(transactionIdPattern, sourcePath);
-                            if (count != 1L) {
-                                throw new StoreException("transactionId not found once", args -> args.add("found count", count));
-                            }
-                            BigInteger newTransactionId = new BigInteger(snapshot.getName());
-                            replaceTransactionIdValue(transactionIdRegexReplace, sourcePath, targetPath, newTransactionId.toString());
-                        } catch (IOException e) {
-                            throw Throwables.propagate(e);
-                        }
-                    });
-            previousSnapshots.clear();
-            previousSnapshots.addAll(stream(snapshot.listFiles()).collect(toSet()));
-        });
+
+        Arrays.stream(targetStoresPath.resolve(SNAPSHOT_DIRECTORY_NAME).toFile().listFiles()).
+                sorted().
+                forEach(snapshot -> {
+                    Set<String> snapshotNames = Arrays.stream(snapshot.listFiles()).map(File::getName).collect(toSet());
+                    previousSnapshots.stream().
+                            filter(previousSnapshot -> !snapshotNames.contains(previousSnapshot.getName())).
+                            forEach(previousSnapshot -> {
+                                try {
+                                    Path targetPath = snapshot.toPath().resolve(previousSnapshot.getName());
+                                    Path sourcePath = previousSnapshot.toPath();
+                                    long count = countTransactionId(transactionIdPattern, sourcePath);
+                                    if (count != 1L) {
+                                        throw new StoreException("transactionId not found once", args -> args.add("found count", count));
+                                    }
+                                    BigInteger newTransactionId = new BigInteger(snapshot.getName());
+                                    replaceTransactionIdValue(transactionIdRegexReplace, sourcePath, targetPath, newTransactionId.toString());
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
+                            });
+                    previousSnapshots.clear();
+                    previousSnapshots.addAll(Arrays.stream(snapshot.listFiles()).collect(toSet()));
+                });
     }
 
     private static long countTransactionId(Pattern transactionIdPattern, Path targetPath) throws IOException {
         try (Stream<String> lines = Files.lines(targetPath)) {
-            // TODO: to be improved with Java 9 Matcher.results()
-            return lines.mapToLong(line -> {
-                Long foundTransactionIdCount = 0L;
-                Matcher matcher = transactionIdPattern.matcher(line);
-                while (matcher.find()) {
-                    foundTransactionIdCount++;
-                }
-                return foundTransactionIdCount;
-            }).sum();
+            return lines.mapToLong(line -> transactionIdPattern.matcher(line).results().count()).sum();
         }
     }
 
