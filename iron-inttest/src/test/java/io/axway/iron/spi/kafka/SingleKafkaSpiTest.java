@@ -3,6 +3,7 @@ package io.axway.iron.spi.kafka;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -74,7 +75,7 @@ public class SingleKafkaSpiTest {
     }
 
     @AfterClass
-    public void tearDown() {
+    public void tearDown() throws Exception {
         tryDeleteDirectory(m_ironPath);
         m_storeManager.close();
         m_kafkaCluster.close();
@@ -91,37 +92,39 @@ public class SingleKafkaSpiTest {
     }
 
     @Test(enabled = false)
-    public final void bench() throws InterruptedException {
+    public final void bench() throws Exception {
         String storeName = "shouldInsertCompanies" + randomUUID();
         int size = 200;
-        Thread[] threads = new Thread[size];
-        for (int j = 0; j < size; j++) {
-            int idx = j;
-            threads[j] = new Thread(() -> {
-                // Given a store
-                StoreManager manager = initStoreManager();
-                Store store = manager.getStore(storeName);
 
-                for (int i = 0; i < 100; i++) {
-                    // When inserting 4 companies in one transaction
-                    Store.TransactionBuilder transaction = store.begin();
-                    transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("C" + idx + "." + i).set(CreateCompany::address).to("Palo Alto")
-                            .submit();
-                    futureGet(transaction.submit());
-                    System.out.println("Processed " + idx + "." + i);
-                }
-                System.out.println("Manager done : " + idx);
-            });
-        }
+        List<Callable<Void>> tasks = IntStream.range(0, size).
+                mapToObj(idx -> (Callable<Void>) () -> {
+                    // Given a store
+                    StoreManager manager = initStoreManager();
+                    Store store = manager.getStore(storeName);
 
-        Arrays.stream(threads).forEach(Thread::start);
-        for (Thread thread : threads) {
-            thread.join();
+                    for (int i = 0; i < 100; i++) {
+                        // When inserting 4 companies in one transaction
+                        Store.TransactionBuilder transaction = store.begin();
+                        transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("C" + idx + "." + i).set(CreateCompany::address).to("Palo Alto")
+                                .submit();
+                        transaction.submit().get();
+                        System.out.println("Processed " + idx + "." + i);
+                    }
+                    System.out.println("Manager done : " + idx);
+                    return null;
+                }).
+                collect(toList());
+
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        try {
+            invokeAll(executorService, tasks);
+        } finally {
+            executorService.shutdown();
         }
     }
 
     @Test
-    public final void shouldInsertCompanies() {
+    public final void shouldInsertCompanies() throws Exception {
         // Given a store
         Store store = m_storeManager.getStore("shouldInsertCompanies" + randomUUID());
         // When inserting 4 companies in one transaction
@@ -130,7 +133,7 @@ public class SingleKafkaSpiTest {
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
         transaction.addCommand(CreateCompany.class).map(Map.of("name", "Apple", "address", "Cupertino")).submit();
-        List<Object> result = futureGet(transaction.submit());
+        List<Object> result = transaction.submit().get();
 
         // Then they we are inserted and their identifiers are in ascending order
         assertThat(result).containsExactly(0L, 1L, 2L, 3L);
@@ -147,21 +150,23 @@ public class SingleKafkaSpiTest {
     }
 
     @Test
-    public final void shouldUpdateCompany() {
+    public final void shouldUpdateCompany() throws Exception {
         // Given a store
         Store store = m_storeManager.getStore("shouldUpdateCompany-" + randomUUID());
         // And a company in the database
-        futureGet(store.createCommand(CreateCompany.class).
+        store.createCommand(CreateCompany.class).
                 set(CreateCompany::name).to("Axway").
                 set(CreateCompany::address).to("Phoenix").
-                submit());
+                submit().
+                get();
 
         // When updating it
-        futureGet(store.createCommand(ChangeCompanyAddress.class).
+        store.createCommand(ChangeCompanyAddress.class).
                 set(ChangeCompanyAddress::name).to("Axway").
                 set(ChangeCompanyAddress::newAddress).to("Puteaux").
                 set(ChangeCompanyAddress::newCountry).to("France").
-                submit());
+                submit().
+                get();
 
         // Then it has the proper values
         store.query(q -> {
@@ -171,19 +176,21 @@ public class SingleKafkaSpiTest {
     }
 
     @Test
-    public final void shouldDeleteCompany() {
+    public final void shouldDeleteCompany() throws Exception {
         // Given a store
         Store store = m_storeManager.getStore("shouldDeleteCompany-" + randomUUID());
         // And a company in the database
-        futureGet(store.createCommand(CreateCompany.class).
+        store.createCommand(CreateCompany.class).
                 set(CreateCompany::name).to("Axway").
                 set(CreateCompany::address).to("Phoenix").
-                submit());
+                submit().
+                get();
 
         // When deleting it
-        futureGet(store.createCommand(DeleteCompany.class).
+        store.createCommand(DeleteCompany.class).
                 set(DeleteCompany::name).to("Axway").
-                submit());
+                submit().
+                get();
 
         // Then it's deleted and the store is empty again
         store.query(q -> {
@@ -192,7 +199,7 @@ public class SingleKafkaSpiTest {
     }
 
     @Test
-    public final void shouldResumeFromSnapshot() {
+    public final void shouldResumeFromSnapshot() throws Exception {
         String storeName = "shouldResumeFromSnapshot" + randomUUID();
 
         // Given a store
@@ -203,7 +210,7 @@ public class SingleKafkaSpiTest {
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Microsoft").set(CreateCompany::address).to("Seattle").submit();
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Axway").set(CreateCompany::address).to("Phoenix").submit();
         transaction.addCommand(CreateCompany.class).map(Map.of("name", "Apple", "address", "Cupertino")).submit();
-        futureGet(transaction.submit());
+        transaction.submit().get();
 
         // When creating a snapshot
         m_storeManager.snapshot();
@@ -225,7 +232,7 @@ public class SingleKafkaSpiTest {
     }
 
     @Test
-    public void shouldStartFromInitialSnapshotWithNoTx() throws InterruptedException, ExecutionException, TimeoutException {
+    public void shouldStartFromInitialSnapshotWithNoTx() throws Exception {
         String storeName = "shouldStartFromInitialSnapshotWithNoTx" + randomUUID();
 
         // update topic to be sure that the tx ids restart at 0
@@ -240,7 +247,7 @@ public class SingleKafkaSpiTest {
         // When inserting 4 companies in one transaction
         Store.TransactionBuilder transaction = store.begin();
         transaction.addCommand(CreateCompany.class).set(CreateCompany::name).to("Google").set(CreateCompany::address).to("Palo Alto").submit();
-        futureGet(transaction.submit());
+        transaction.submit().get();
 
         // When creating a snapshot for id 0
         m_storeManager.snapshot();

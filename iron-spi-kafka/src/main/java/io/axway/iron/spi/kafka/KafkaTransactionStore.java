@@ -149,7 +149,7 @@ public class KafkaTransactionStore implements TransactionStore {
                 current = current.getCause();
             }
             if (!(current instanceof TopicExistsException)) {
-                throw new RuntimeException(e);
+                throw new IllegalStateException(e);
             }
         }
     }

@@ -29,7 +29,7 @@ public class IronMigration {
     private static final String TMP_DIRECTORY_NAME = ".tmp";
     private static final int TX_ID_FILENAME_LENGTH = 20;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
             // Check arguments
             if (args.length != 4) {
@@ -59,16 +59,12 @@ public class IronMigration {
             System.err.println(
                     "Usage of migration tool : java -jar migrationTool.jar uriToIronDirectory globalStoreManagerName storesStoreManagerName uriToTargetDirectory\n"
                             + "\tglobalStoreManagerName and storesStoreManagerName must correspond to the names given in the code of traceability-ui");
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else {
-                throw new RuntimeException(e);
-            }
+            throw e;
         }
     }
 
     private static void copyTenantSnapshots(Path ironPath, Path targetStoresPath) throws IOException {
-        Files.walkFileTree(ironPath, new FileVisitor<Path>() {
+        Files.walkFileTree(ironPath, new FileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 String name = dir.getFileName().toString();

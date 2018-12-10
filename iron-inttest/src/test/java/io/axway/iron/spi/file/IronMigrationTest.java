@@ -35,7 +35,7 @@ public class IronMigrationTest {
 
     @Test(dataProvider = "ironCases")
     public void shouldMigrateIronSnapshotCorrectly(String message, String directory, int lastTenantIdx, @Nullable String expectedErrorMessage)
-            throws IOException {
+            throws Exception {
         Path randomPath = Paths.get("tmp-iron-test", "iron-spi-file-inttest", UUID.randomUUID().toString());
         try {
             Path sourceIronPath = randomPath.resolve(directory);

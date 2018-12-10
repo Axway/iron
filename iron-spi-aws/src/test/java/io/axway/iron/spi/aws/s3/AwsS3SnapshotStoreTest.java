@@ -19,8 +19,8 @@ public class AwsS3SnapshotStoreTest {
     public void shouldCreateS3Bucket() {
         new Expectations() {{
             m_amazonS3.listObjectsV2((ListObjectsV2Request) any).getCommonPrefixes();
-            result = Arrays.asList("blabla/snapshot/123456789012345678901234567890/",     //
-                                   "blabla/snapshot/123456789012345678901234567891/");
+            result = List.of("blabla/snapshot/123456789012345678901234567890/",     //
+                             "blabla/snapshot/123456789012345678901234567891/");
         }};
         String bucketName = createRandomBucketName();
         String directoryName = createDirectoryStoreName();

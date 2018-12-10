@@ -3,7 +3,6 @@ package io.axway.iron.core.internal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -59,7 +58,7 @@ class StoreManagerImpl implements StoreManager {
     private Disposable m_disposableTxFlow;
     private volatile boolean m_closed = false;
 
-    private final Cache<String, StoreImpl> m_stores = CacheBuilder.newBuilder().build();
+    private final Map<String, StoreImpl> m_stores = new ConcurrentHashMap<>();
 
     StoreManagerImpl(TransactionSerializer transactionSerializer, TransactionStore transactionStore, SnapshotSerializer snapshotSerializer,
                      SnapshotStore snapshotStore, IntrospectionHelper introspectionHelper, CommandProxyFactory commandProxyFactory,
@@ -72,79 +71,27 @@ class StoreManagerImpl implements StoreManager {
         m_storePersistence = new StorePersistence(m_commandProxyFactory, m_transactionStore, transactionSerializer, m_snapshotStore, snapshotSerializer,
                                                   commandDefinitions);
 
-        m_storePersistence                                                           //
-                .loadStores(storeName -> {
+        m_storePersistence.
+                loadStores(storeName -> {
                     StoreImpl store = createStore(storeName);
                     m_stores.put(storeName, store);
                     return store.entityStores();
-                })                                                                  //
-                .ifPresent(lastTx -> {
+                }).
+                ifPresent(lastTx -> {
                     m_currentTxId = lastTx;
                     m_lastSnapshotTxId = lastTx;
                     m_transactionStore.seekTransaction(lastTx);
                 });
 
-        ConnectableFlowable<StorePersistence.TransactionToExecute> connectableTransactions = m_storePersistence.allTransactions() //
-                .publish();
+        ConnectableFlowable<StorePersistence.TransactionToExecute> connectableTransactions = m_storePersistence.allTransactions().publish();
+
         Flowable<StorePersistence.TransactionToExecute> transactions
                 = connectableTransactions // to start only when connect is called and not with the first subscription
                 .share(); // because we subscribe the main consumer and the one in charge of notifying recovery done
 
         Completable withTimeout = transactions.takeWhile(t -> !m_closed).timeout(1, SECONDS).ignoreElements();
 
-        m_disposableTxFlow = transactions.subscribe(transaction -> {
-            BigInteger txId = transaction.getTxId();
-            CompletableFuture<List<Object>> transactionFuture = m_futuresBySynchronizationId.getIfPresent(transaction.getSynchronizationId());
-            // if m_currentTxId == 0, this is the particular case of a "bootstrap snapshot" loaded at the very first start (i.e. a snapshot that does not come from passed transactions).
-            // in this case, the first txId may be 0 but we don't want to skip it
-            if (txId.compareTo(m_currentTxId) > 0 || m_currentTxId.equals(BigInteger.ZERO)) {
-                List<Command<?>> commands = transaction.getCommands();
-                Object[] results = new Object[commands.size()];
-                Throwable error = null;
-                try {
-                    StoreImpl store = getStore(transaction.getStoreName());
-                    ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, store.entityStores());
-                    store.m_writeLock.lock();
-                    try {
-                        for (int i = 0; i < commands.size(); i++) {
-                            Command<?> command = commands.get(i);
-                            results[i] = command.execute(tx);
-                            int activeObjectUpdaterCount = tx.getActiveObjectUpdaterCount();
-                            if (activeObjectUpdaterCount > 0) {
-                                String commandName = m_commandProxyFactory.getCommandName(command);
-                                throw new MalformedCommandException(
-                                        "Command leaves some active ObjectUpdater. Command need to be fixed. Transaction has been rollbacked",
-                                        args -> args.add("commandName", commandName).add("activeObjectUpdaterCount", activeObjectUpdaterCount));
-                            }
-                        }
-                    } catch (Exception e) {
-                        error = e;
-                        tx.rollback();
-                        LOG.info("Transaction failed and rollbacked", args -> args.add("transactionId", txId), error);
-                    } finally {
-                        m_currentTxId = txId;
-                        store.m_writeLock.unlock();
-                    }
-                } catch (Exception e) {
-                    error = e;
-                    LOG.info("Error processing transaction", args -> args.add("transactionId", txId), error);
-                }
-
-                if (transactionFuture != null) {
-                    if (error != null) {
-                        transactionFuture.completeExceptionally(error);
-                    } else {
-                        transactionFuture.complete(Arrays.asList(results));
-                    }
-                }
-            } else {
-                LOG.error("Transaction was already processed and will be ignored",
-                          args -> args.add("transactionId", txId).add("latestProcessedTransactionId", m_currentTxId));
-                if (transactionFuture != null) {
-                    transactionFuture.complete(List.of()); // do not block anyway
-                }
-            }
-        }, error -> {
+        m_disposableTxFlow = transactions.subscribe(this::processTransaction, error -> {
             LOG.info("Error processing transaction", error);
             m_futuresBySynchronizationId.asMap().values().forEach(f -> f.completeExceptionally(error));
         });
@@ -158,8 +105,18 @@ class StoreManagerImpl implements StoreManager {
     }
 
     @Override
+    public void close() {
+        LOG.debug("A store manager is going to be closed");
+        ensureOpen();
+        m_closed = true;
+        m_disposableTxFlow.dispose();
+        m_transactionStore.close();
+        m_snapshotStore.close();
+    }
+
+    @Override
     public Set<String> listStores() {
-        return Set.copyOf(m_stores.asMap().keySet());
+        return Set.copyOf(m_stores.keySet());
     }
 
     @Nullable
@@ -169,7 +126,7 @@ class StoreManagerImpl implements StoreManager {
 
         if (m_currentTxId.compareTo(m_lastSnapshotTxId) > 0) {
             BigInteger tx = m_currentTxId;
-            m_stores.asMap().forEach((storeName, store) -> {
+            m_stores.forEach((storeName, store) -> {
                 store.m_readLock.lock();
                 try {
                     m_storePersistence.persistSnapshot(tx, storeName, store.entityStores().toList());
@@ -192,21 +149,11 @@ class StoreManagerImpl implements StoreManager {
     @Override
     public StoreImpl getStore(String storeName) {
         ensureOpen();
-        StoreImpl store = m_stores.getIfPresent(storeName);
-        if (store != null) {
-            return store;
-        }
-
-        AtomicBoolean newStore = new AtomicBoolean(false);
         try {
-            store = m_stores.get(storeName, () -> {
-                newStore.set(true);
-                return createStore(storeName);
-            });
-        } catch (ExecutionException e) {
+            return m_stores.computeIfAbsent(storeName, key -> createStore(storeName));
+        } catch (Exception e) {
             throw new UnrecoverableStoreException(e);
         }
-        return store;
     }
 
     private StoreImpl createStore(String storeName) {
@@ -238,15 +185,58 @@ class StoreManagerImpl implements StoreManager {
         return new EntityStore<>(entityDefinition, relationStores);
     }
 
-    @Override
-    public void close() {
-        LOG.debug("A store manager is going to be closed");
-        ensureOpen();
-        //TODO RRE : why not taking a snapshot before close ?
-        m_closed = true;
-        m_disposableTxFlow.dispose();
-        m_transactionStore.close();
-        m_snapshotStore.close();
+    private void processTransaction(StorePersistence.TransactionToExecute transaction) {
+        BigInteger txId = transaction.getTxId();
+        CompletableFuture<List<Object>> transactionFuture = m_futuresBySynchronizationId.getIfPresent(transaction.getSynchronizationId());
+        // if m_currentTxId == 0, this is the particular case of a "bootstrap snapshot" loaded at the very first start (i.e. a snapshot that does not come from passed transactions).
+        // in this case, the first txId may be 0 but we don't want to skip it
+        if (txId.compareTo(m_currentTxId) > 0 || m_currentTxId.equals(BigInteger.ZERO)) {
+            List<Command<?>> commands = transaction.getCommands();
+            Object[] results = new Object[commands.size()];
+            Throwable error = null;
+            try {
+                StoreImpl store = getStore(transaction.getStoreName());
+                ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, store.entityStores());
+                store.m_writeLock.lock();
+                try {
+                    for (int i = 0; i < commands.size(); i++) {
+                        Command<?> command = commands.get(i);
+                        results[i] = command.execute(tx);
+                        int activeObjectUpdaterCount = tx.getActiveObjectUpdaterCount();
+                        if (activeObjectUpdaterCount > 0) {
+                            String commandName = m_commandProxyFactory.getCommandName(command);
+                            throw new MalformedCommandException(
+                                    "Command leaves some active ObjectUpdater. Command need to be fixed. Transaction has been rollbacked",
+                                    args -> args.add("commandName", commandName).add("activeObjectUpdaterCount", activeObjectUpdaterCount));
+                        }
+                    }
+                } catch (Exception e) {
+                    error = e;
+                    tx.rollback();
+                    LOG.info("Transaction failed and rollbacked", args -> args.add("transactionId", txId), error);
+                } finally {
+                    m_currentTxId = txId;
+                    store.m_writeLock.unlock();
+                }
+            } catch (Exception e) {
+                error = e;
+                LOG.info("Error processing transaction", args -> args.add("transactionId", txId), error);
+            }
+
+            if (transactionFuture != null) {
+                if (error != null) {
+                    transactionFuture.completeExceptionally(error);
+                } else {
+                    transactionFuture.complete(Arrays.asList(results)); // List.of cannot be used since results can contains nulls values
+                }
+            }
+        } else {
+            LOG.error("Transaction was already processed and will be ignored",
+                      args -> args.add("transactionId", txId).add("latestProcessedTransactionId", m_currentTxId));
+            if (transactionFuture != null) {
+                transactionFuture.complete(List.of()); // do not block anyway
+            }
+        }
     }
 
     private void ensureOpen() {

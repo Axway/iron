@@ -15,14 +15,15 @@ public interface MultipleRelationsAddAllTestCommand extends Command<Void> {
         Person person = tx.select(Person.class).where(Person::id).equalsTo(personId());
 
         Company currentCompany = person.worksAt();
-        Company google = tx.select(Company.class).where(Company::name).equalsToOrNull("Google");
-        Company microsoft = tx.select(Company.class).where(Company::name).equalsToOrNull("Microsoft");
-        Company oracle = tx.select(Company.class).where(Company::name).equalsToOrNull("Oracle");
+        Company google = tx.select(Company.class).where(Company::name).equalsTo("Google");
+        Company microsoft = tx.select(Company.class).where(Company::name).equalsTo("Microsoft");
+        Company oracle = tx.select(Company.class).where(Company::name).equalsTo("Oracle");
 
-        tx.update(person) //
-                .onCollection(Person::previousCompanies).addAll(Arrays.asList(oracle, microsoft)) //
-                .addAll(Arrays.asList(currentCompany, google)) //
-                .done();
+        tx.update(person).
+                onCollection(Person::previousCompanies).
+                addAll(List.of(oracle, microsoft)).
+                addAll(List.of(currentCompany, google)).
+                done();
 
         return null;
     }

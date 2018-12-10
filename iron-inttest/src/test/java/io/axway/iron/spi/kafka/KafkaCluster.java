@@ -41,11 +41,11 @@ final class KafkaCluster implements AutoCloseable {
      * @param clusterSize number of nodes in the Kafka cluster
      * @return {@link KafkaCluster} instance
      */
-    static KafkaCluster createStarted(int clusterSize) {
+    static KafkaCluster createStarted(int clusterSize) throws Exception {
         return new KafkaCluster(clusterSize);
     }
 
-    private KafkaCluster(int clusterSize) {
+    private KafkaCluster(int clusterSize) throws Exception {
         checkArgument(clusterSize > 0 && clusterSize < 10, "Cluster must have a size > 0 and < 10", args -> args.add("clusterSize", clusterSize));
 
         LOG.info("Starting a new Kafka cluster", args -> args.add("clusterSize", clusterSize));
@@ -81,7 +81,7 @@ final class KafkaCluster implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
         // Stop all Kafka nodes
         List<Callable<Void>> shutdownTasks = m_embeddedKafkas.stream().map(kafka -> (Callable<Void>) () -> {
             kafka.close();

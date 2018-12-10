@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.*;
 import org.joda.time.DateTime;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
@@ -41,7 +42,11 @@ public class MultipleRelationsTest {
     @AfterClass
     public void afterMethod() throws IOException {
         if (m_storesFilePath.toFile().exists()) {
-            Files.walk(m_storesFilePath).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+            try (Stream<Path> files = Files.walk(m_storesFilePath)) {
+                for (Path path : files.sorted(Comparator.reverseOrder()).collect(Collectors.toList())) {
+                    Files.delete(path);
+                }
+            }
         }
     }
 
@@ -259,16 +264,16 @@ public class MultipleRelationsTest {
 
     private void setUpPersons(Store.TransactionBuilder tx) {
         tx.addCommand(CreatePerson.class).set(CreatePerson::id).to("11").set(CreatePerson::name).to("Marcel").set(CreatePerson::previousCompanyNames)
-                .to(Arrays.asList("Google", "Microsoft")).set(CreatePerson::birthDate).to(new DateTime().minusYears(20).toDate()).submit();
+                .to(List.of("Google", "Microsoft")).set(CreatePerson::birthDate).to(new DateTime().minusYears(20).toDate()).submit();
         tx.addCommand(CreatePerson.class).set(CreatePerson::id).to("22").set(CreatePerson::name).to("Sinclair").set(CreatePerson::worksAt).to("Axway")
                 .set(CreatePerson::previousCompanyNames).to(List.of("Apple")).set(CreatePerson::birthDate).to(new DateTime().minusYears(30).toDate()).submit();
     }
 
     private void setUpPersonsWithSeveralPreviousCompanies(Store.TransactionBuilder tx) {
         tx.addCommand(CreatePerson.class).set(CreatePerson::id).to("11").set(CreatePerson::name).to("Marcel").set(CreatePerson::previousCompanyNames)
-                .to(Arrays.asList("Google", "Microsoft")).set(CreatePerson::birthDate).to(new DateTime().minusYears(20).toDate()).submit();
+                .to(List.of("Google", "Microsoft")).set(CreatePerson::birthDate).to(new DateTime().minusYears(20).toDate()).submit();
         tx.addCommand(CreatePerson.class).set(CreatePerson::id).to("22").set(CreatePerson::name).to("Sinclair").set(CreatePerson::worksAt).to("Axway")
-                .set(CreatePerson::previousCompanyNames).to(Arrays.asList("Apple", "Oracle", "Google")).set(CreatePerson::birthDate)
+                .set(CreatePerson::previousCompanyNames).to(List.of("Apple", "Oracle", "Google")).set(CreatePerson::birthDate)
                 .to(new DateTime().minusYears(30).toDate()).submit();
     }
 }

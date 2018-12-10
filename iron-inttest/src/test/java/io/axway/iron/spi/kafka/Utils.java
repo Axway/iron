@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.*;
 import static io.axway.alf.assertion.Assertion.checkState;
 import static java.lang.Thread.currentThread;
 import static java.util.Comparator.*;
-import static java.util.stream.Collectors.*;
 
 /**
  * This class contains utility methods for the Kafka SPI tests
@@ -72,24 +71,6 @@ final class Utils {
     }
 
     /**
-     * Safely gets the value of a {@link Future} instance.
-     *
-     * @param future instance
-     * @param <T> instance type
-     * @return value of the {@link Future} instance
-     */
-    static <T> T futureGet(Future<T> future) {
-        try {
-            return future.get();
-        } catch (InterruptedException e) {
-            currentThread().interrupt();
-            throw new IllegalStateException("Thread was stopped while waiting for the future", e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * Invokes all the given tasks in the given executor and returns their result
      *
      * @param executorService executor service to use
@@ -97,13 +78,12 @@ final class Utils {
      * @param <T> tasks result type
      * @return the tasks' results
      */
-    static <T> List<T> invokeAll(ExecutorService executorService, List<Callable<T>> tasks) {
-        try {
-            return executorService.invokeAll(tasks).stream().map(Utils::futureGet).collect(toList());
-        } catch (InterruptedException e) {
-            currentThread().interrupt();
-            throw new IllegalStateException("Thread was stopped while invoking the tasks", e);
+    static <T> List<T> invokeAll(ExecutorService executorService, List<Callable<T>> tasks) throws Exception {
+        List<T> results = new ArrayList<>(tasks.size());
+        for (Future<T> future : executorService.invokeAll(tasks)) {
+            results.add(future.get());
         }
+        return results;
     }
 
     /**

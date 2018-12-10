@@ -17,7 +17,7 @@ public class CommandWithLongCollectionParameterTest {
                 new Object[]{List.of(42L), 42L}, //
                 new Object[]{Arrays.asList(null, null), null}, //
                 new Object[]{Arrays.asList(null, 15L, null), 15L}, //
-                new Object[]{Arrays.asList(1L, 15L, 10L), 26L}, //
+                new Object[]{List.of(1L, 15L, 10L), 26L}, //
         };
     }
 
