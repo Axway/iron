@@ -444,7 +444,7 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <Import-Package>javax.annotation;resolution:=optional,com.google.common.*;version="${guava.version}",*</Import-Package>
+                                <Import-Package>javax.annotation;resolution:=optional,*</Import-Package>
                                 <Fragment-Host>${bnd.Fragment-Host}</Fragment-Host>
                                 <Bundle-DocURL>${project.url}</Bundle-DocURL>
                                 <SCM-Revision>${buildNumber}</SCM-Revision>
