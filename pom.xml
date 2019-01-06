@@ -15,19 +15,21 @@
 
     <properties>
         <revision>0.13.0-SNAPSHOT</revision>
+
+        <guava.version>27.0.1-jre</guava.version>
+        <alf.version>0.9.0</alf.version>
+        <slf4j.version>1.7.25</slf4j.version>
+        <jackson.version>2.9.8</jackson.version>
+        <kafka.version>2.1.0</kafka.version>
+        <aws-java-sdk.version>1.11.478</aws-java-sdk.version>
+        <jmockit.version>1.44</jmockit.version>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.compile.version>11</java.compile.version>
         <maven.compiler.source>${java.compile.version}</maven.compiler.source>
         <maven.compiler.target>${java.compile.version}</maven.compiler.target>
         <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
         <bnd.Fragment-Host/>
-
-        <!-- This is not the latest Guava version, but since we don't need the latest features of Guava this allows us to be compatible with more versions of Guava -->
-        <!-- Iron users can freely overrides that version (with a more recent one) in their pom.xml by declaring Guava with their desired version -->
-        <guava.version>25.0-jre</guava.version>
-
-        <jackson.version>2.9.6</jackson.version>
-        <jmockit.version>1.42</jmockit.version>
     </properties>
 
     <licenses>
@@ -140,22 +142,22 @@
             <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
-                <version>2.3.0</version>
+                <version>2.3.1</version>
             </dependency>
             <dependency>
                 <groupId>net.openhft</groupId>
                 <artifactId>chronicle-queue</artifactId>
-                <version>5.16.13</version>
+                <version>5.17.3</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
-                <version>2.0.0</version>
+                <version>${kafka.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.11</artifactId>
-                <version>2.0.0</version>
+                <version>${kafka.version}</version>
             </dependency>
 
             <dependency>
@@ -166,44 +168,44 @@
             <dependency>
                 <groupId>io.reactivex.rxjava2</groupId>
                 <artifactId>rxjava</artifactId>
-                <version>2.2.2</version>
+                <version>2.2.5</version>
             </dependency>
 
             <!-- Amazon AWS -->
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-kinesis</artifactId>
-                <version>1.11.409</version>
+                <version>${aws-java-sdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-s3</artifactId>
-                <version>1.11.409</version>
+                <version>${aws-java-sdk.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>io.axway.alf</groupId>
                 <artifactId>alf-api</artifactId>
-                <version>0.9.0</version>
+                <version>${alf.version}</version>
             </dependency>
 
             <!-- Test -->
             <dependency>
                 <groupId>io.axway.alf</groupId>
                 <artifactId>alf-slf4j</artifactId>
-                <version>0.9.0</version>
+                <version>${alf.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.25</version>
+                <version>${slf4j.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
-                <version>1.7.25</version>
+                <version>${slf4j.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -336,7 +338,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-help-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.1.1</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
@@ -344,7 +346,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.1.1</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
@@ -360,7 +362,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.22.0</version>
+                    <version>2.22.1</version>
                     <configuration>
                         <argLine>
                             -javaagent:${settings.localRepository}/org/jmockit/jmockit/${jmockit.version}/jmockit-${jmockit.version}.jar
@@ -370,7 +372,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>2.22.0</version>
+                    <version>2.22.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>
@@ -385,7 +387,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>flatten-maven-plugin</artifactId>
-                    <version>1.0.1</version>
+                    <version>1.1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
