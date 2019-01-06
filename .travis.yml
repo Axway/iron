@@ -5,6 +5,9 @@ jdk: openjdk11
 install: ci/travis-install.sh
 script: ci/travis-script.sh
 
+git:
+  depth: false
+
 addons:
   sonarcloud:
     organization: 'axway'
