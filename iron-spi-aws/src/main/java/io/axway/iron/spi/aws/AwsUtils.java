@@ -13,8 +13,7 @@ import com.amazonaws.services.kinesis.model.ProvisionedThroughputExceededExcepti
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
+import static java.util.Optional.*;
 
 public final class AwsUtils {
 
@@ -41,10 +40,12 @@ public final class AwsUtils {
     /**
      * Handle retry for amazon quotas
      *
+     * @param <T> the action return type
      * @param actionLabel action label used for logging purpose only
      * @param action the action to retry
      * @param retryLimit retry number limit
      * @param durationInMillis duration between each retry
+     * @return the action result
      * @throws AwsException after retry exhausted
      */
     public static <T> T performAmazonActionWithRetry(String actionLabel, Supplier<T> action, int retryLimit, int durationInMillis) {
@@ -66,9 +67,11 @@ public final class AwsUtils {
     /**
      * Try to perform an Amazon action and increase the duration between requests if some exception is exceeding resource usage exception is thrown.
      *
+     * @param <T> the action return type
      * @param actionLabel action label used for logging purpose only
      * @param action the action to retry
      * @param durationBetweenRequests duration between each retry
+     * @return the action result
      */
     public static <T> Optional<T> tryAmazonAction(String actionLabel, Supplier<T> action, AtomicLong durationBetweenRequests) {
         try {

@@ -15,7 +15,7 @@ public interface StoreManager extends AutoCloseable {
     Pattern STORE_NAME_VALIDATOR_PATTERN = Pattern.compile("[\\w-]+");
 
     /**
-     * Lists every stores already existing in this StoreManager
+     * @return the stores already existing in this StoreManager
      */
     Set<String> listStores();
 

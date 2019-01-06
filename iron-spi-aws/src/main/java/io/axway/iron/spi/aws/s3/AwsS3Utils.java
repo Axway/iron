@@ -12,14 +12,15 @@ public final class AwsS3Utils {
 
     /**
      * Create a AwsS3SnapshotStore with some properties set to configure S3 client:
-     *
-     * @param accessKey - aws access key (optional+)
-     * @param secretKey - aws secret key (optional+)
-     * @param endpoint - s3 endpoint (optional*)
-     * @param port- s3 port (optional*)
-     * @param region - aws region (optional*)
      * (+) to configure the access, both access key and secret key must be provided.
      * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
+     *
+     * @param accessKey aws access key (optional+)
+     * @param secretKey aws secret key (optional+)
+     * @param endpoint s3 endpoint (optional*)
+     * @param port s3 port (optional*)
+     * @param region aws region (optional*)
+     * @return the s3 client
      */
     public static AmazonS3 buildS3Client(@Nullable String accessKey, @Nullable String secretKey, //
                                          @Nullable String endpoint, @Nullable Integer port, @Nullable String region) {
