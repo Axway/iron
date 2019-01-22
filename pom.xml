@@ -66,6 +66,10 @@
             <name>Romain Revol</name>
             <url>https://github.com/rrevol</url>
         </developer>
+        <developer>
+            <name>Fabien Rouge</name>
+            <url>https://github.com/frouge-axway</url>
+        </developer>
     </developers>
 
     <scm>
