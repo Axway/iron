@@ -1,9 +1,11 @@
 package io.axway.iron.core;
 
 import java.util.*;
+import java.util.function.*;
 import io.axway.iron.Command;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.internal.StoreManagerBuilderImpl;
+import io.axway.iron.spi.model.snapshot.SerializableSnapshot;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStore;
@@ -29,6 +31,8 @@ public interface StoreManagerBuilder {
     StoreManagerBuilder withSnapshotSerializer(SnapshotSerializer snapshotSerializer);
 
     StoreManagerBuilder withSnapshotStore(SnapshotStore snapshotStore);
+
+    StoreManagerBuilder withSnapshotLoadingPostProcessor(BiFunction<SerializableSnapshot, String, SerializableSnapshot> snapshotPostProcessor);
 
     StoreManager build();
 }

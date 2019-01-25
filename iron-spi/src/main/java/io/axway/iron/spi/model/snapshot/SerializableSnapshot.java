@@ -9,6 +9,7 @@ public class SerializableSnapshot {
     public static final long SNAPSHOT_MODEL_VERSION = 1;
 
     private long m_snapshotModelVersion;
+    private long m_applicationModelVersion;
     private BigInteger m_transactionId;
     private Collection<SerializableEntity> m_entities;
 
@@ -18,6 +19,14 @@ public class SerializableSnapshot {
 
     public void setSnapshotModelVersion(long snapshotModelVersion) {
         m_snapshotModelVersion = snapshotModelVersion;
+    }
+
+    public long getApplicationModelVersion() {
+        return m_applicationModelVersion;
+    }
+
+    public void setApplicationModelVersion(long applicationModelVersion) {
+        m_applicationModelVersion = applicationModelVersion;
     }
 
     public BigInteger getTransactionId() {
@@ -35,5 +44,4 @@ public class SerializableSnapshot {
     public void setEntities(Collection<SerializableEntity> entities) {
         m_entities = entities;
     }
-
 }
