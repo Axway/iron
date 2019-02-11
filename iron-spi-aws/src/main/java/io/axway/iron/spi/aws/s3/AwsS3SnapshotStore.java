@@ -3,11 +3,14 @@ package io.axway.iron.spi.aws.s3;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.*;
 import java.util.regex.*;
 import java.util.stream.*;
+import javax.annotation.*;
 import org.reactivestreams.Publisher;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -46,8 +49,7 @@ public class AwsS3SnapshotStore implements SnapshotStore {
      * (+) to configure the access, both access key and secret key must be provided.
      * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
      */
-    AwsS3SnapshotStore(String accessKey, String secretKey, String endpoint, Integer port, String region, String bucketName,
-                       String directoryName) {
+    AwsS3SnapshotStore(String accessKey, String secretKey, String endpoint, Integer port, String region, String bucketName, String directoryName) {
         m_amazonS3 = buildS3Client(accessKey, secretKey, endpoint, port, region);
         m_bucketName = checkBucketIsAccessible(m_amazonS3, bucketName);
         m_rootDirectoryName = String.format(ROOT_FORMAT, directoryName);
@@ -104,7 +106,22 @@ public class AwsS3SnapshotStore implements SnapshotStore {
 
     private List<S3ObjectSummary> listSnapshotFilesForId(BigInteger transactionId) {
         String snapshotDirectoryName = getSnapshotDirectoryName(transactionId);
-        return m_amazonS3.listObjectsV2(m_bucketName, snapshotDirectoryName).getObjectSummaries();
+        ListObjectsV2Request listObjectsRequest = new ListObjectsV2Request().withBucketName(m_bucketName).withPrefix(snapshotDirectoryName);
+        return listAllObjects(listObjectsRequest, ListObjectsV2Result::getObjectSummaries);
+    }
+
+    @Nonnull
+    private <T> List<T> listAllObjects(ListObjectsV2Request listObjectsRequest, Function<ListObjectsV2Result, List<T>> listObjectsResultMapper) {
+        List<T> result = new ArrayList<>();
+        ListObjectsV2Result listObjectsResult;
+        do {
+            listObjectsResult = m_amazonS3.listObjectsV2(listObjectsRequest);
+            result.addAll(listObjectsResultMapper.apply(listObjectsResult));
+            //
+            String continuationToken = listObjectsResult.getNextContinuationToken();
+            listObjectsRequest.setContinuationToken(continuationToken);
+        } while (listObjectsResult.isTruncated());
+        return result;
     }
 
     @Override
@@ -113,9 +130,8 @@ public class AwsS3SnapshotStore implements SnapshotStore {
                 .withBucketName(m_bucketName)                         //
                 .withPrefix(m_rootDirectoryName + "/")                //
                 .withDelimiter("/");
-        return m_amazonS3.listObjectsV2(request) //
-                .getCommonPrefixes().stream()
-                .flatMap(prefix -> {
+        return listAllObjects(request, ListObjectsV2Result::getCommonPrefixes) //
+                .stream().flatMap(prefix -> {
                     Matcher matcher = DIRECTORY_PATTERN.matcher(prefix);
                     if (matcher.matches()) {
                         return Stream.of(new BigInteger(matcher.group(1)));

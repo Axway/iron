@@ -77,6 +77,30 @@ public class AwsS3SnapshotIT extends BaseInttest {
         }
     }
 
+    //@Test(enabled = true)
+    // deactivated because take too much time
+    // Cannot be tested with less than 1000 object keys because https://github.com/localstack/localstack/issues/1061
+    public void shouldList1100SnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
+        String bucketName = initS3Configuration();
+        createS3Bucket(bucketName);
+
+        String factoryName = "shouldList1100SnapshotsReturnTheRightNumberOfSnapshots-" + UUID.randomUUID();
+        SnapshotStore s3SnapshotStore = buildAwsS3SnapshotStoreFactory(factoryName, m_configuration);
+        TransactionStore transactionStore = buildFileTransactionStore(getIronSpiAwsInttestFilePath(), factoryName);
+
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+
+        String storeName = createRandomStoreName();
+        try {
+            checkThatList1100SnapshotsReturnTheRightNumberOfSnapshots(transactionStore, transactionSerializer,    //
+                                                                      s3SnapshotStore, snapshotSerializer,  //
+                                                                      storeName);
+        } finally {
+            deleteS3Bucket(bucketName);
+        }
+    }
+
     private String initS3Configuration() {
         initDirectoryName();
         return initBucketName();
