@@ -54,6 +54,14 @@ class StorePersistence {
                                                       commandDefinition -> commandDefinition));
     }
 
+    /**
+     * Called before start of all stores persistence.
+     * @param transactionId the snapshot transaction id
+     */
+    void prePersistSnapshot(BigInteger transactionId) {
+        m_snapshotStore.prePersistSnapshot(transactionId);
+    }
+
     void persistSnapshot(BigInteger txId, String storeName, Collection<EntityStore<?>> entityStores) {
         SerializableSnapshot serializableSnapshot = new SerializableSnapshot();
         serializableSnapshot.setSnapshotModelVersion(SNAPSHOT_MODEL_VERSION);
@@ -66,6 +74,15 @@ class StorePersistence {
         } catch (IOException e) {
             throw new StoreException("Error when creating the store snapshot", args -> args.add("transactionId", txId), e);
         }
+    }
+
+    /**
+     * Called after end of all stores persistence.
+     *
+     * @param transactionId the snapshot transaction id
+     */
+    void postPersistSnapshot(BigInteger transactionId) {
+        m_snapshotStore.postPersistSnapshot(transactionId);
     }
 
     /**

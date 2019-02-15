@@ -9,6 +9,7 @@ import org.reactivestreams.Publisher;
  * SPI for snapshot store.
  */
 public interface SnapshotStore {
+
     /**
      * Initiate the storage part of a snapshot for a given store.
      * In the end one snapshot will contain parts for every stores, so this method is called once for each store at snapshot time.
@@ -19,6 +20,24 @@ public interface SnapshotStore {
      * @throws IOException in case of error when trying to provide access to the {@code OutputStream}
      */
     OutputStream createSnapshotWriter(String storeName, BigInteger transactionId) throws IOException;
+
+    /**
+     * Called before all stores persistence starts.
+     *
+     * @param transactionId the snapshot transaction id
+     */
+    default void prePersistSnapshot(BigInteger transactionId) {
+        // Nothing to do.
+    }
+
+    /**
+     * Called after all stores persistence starts.
+     *
+     * @param transactionId the snapshot transaction id
+     */
+    default void postPersistSnapshot(BigInteger transactionId) {
+        // Nothing to do.
+    }
 
     /**
      * Retrieve an existing snapshot in the store.
@@ -48,7 +67,7 @@ public interface SnapshotStore {
      * Delete a snapshot.
      *
      * @param transactionId the transaction id of the snapshot to be deleted.
-     *  @throws IOException if an I/O error occurs when deleting the snapshot
+     * @throws IOException if an I/O error occurs when deleting the snapshot
      */
     void deleteSnapshot(BigInteger transactionId) throws IOException;
 

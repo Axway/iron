@@ -35,6 +35,7 @@ public class AwsS3SnapshotStore implements SnapshotStore {
     private final AmazonS3 m_amazonS3;
     private final String m_bucketName;
     private final String m_rootDirectoryName;
+    private final StoreLocker m_storeLocker;
 
     /**
      * Create a AwsS3SnapshotStore with some properties set to configure S3 and the bucket :
@@ -49,19 +50,21 @@ public class AwsS3SnapshotStore implements SnapshotStore {
      * (+) to configure the access, both access key and secret key must be provided.
      * (*) to configure the endpoint URL, the endpoint, the port and the region must be provided.
      */
-    AwsS3SnapshotStore(String accessKey, String secretKey, String endpoint, Integer port, String region, String bucketName, String directoryName) {
+    protected AwsS3SnapshotStore(String accessKey, String secretKey, String endpoint, Integer port, String region, String bucketName, String directoryName) {
         m_amazonS3 = buildS3Client(accessKey, secretKey, endpoint, port, region);
         m_bucketName = checkBucketIsAccessible(m_amazonS3, bucketName);
         m_rootDirectoryName = String.format(ROOT_FORMAT, directoryName);
+        m_storeLocker = new StoreLocker(m_amazonS3, m_bucketName, this::getSnapshotDirectoryName);
     }
 
     /**
      * WARNING : only for test
      */
-    AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String rootDirectoryName) {
+    protected AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String rootDirectoryName, StoreLocker storeLocker) {
         m_amazonS3 = amazonS3;
         m_bucketName = bucketName;
         m_rootDirectoryName = rootDirectoryName;
+        m_storeLocker = storeLocker;
     }
 
     @Override
@@ -78,6 +81,16 @@ public class AwsS3SnapshotStore implements SnapshotStore {
                         new PutObjectRequest(m_bucketName, getSnapshotFileName(transactionId, storeName), new ByteArrayInputStream(content), metadata));
             }
         };
+    }
+
+    @Override
+    public void prePersistSnapshot(BigInteger transactionId) {
+        m_storeLocker.lockStore(transactionId);
+    }
+
+    @Override
+    public void postPersistSnapshot(BigInteger transactionId) {
+        m_storeLocker.unlockStore(transactionId);
     }
 
     @Override
@@ -134,7 +147,12 @@ public class AwsS3SnapshotStore implements SnapshotStore {
                 .stream().flatMap(prefix -> {
                     Matcher matcher = DIRECTORY_PATTERN.matcher(prefix);
                     if (matcher.matches()) {
-                        return Stream.of(new BigInteger(matcher.group(1)));
+                        final BigInteger transactionId = new BigInteger(matcher.group(1));
+                        if (m_storeLocker.isStoreLocked(transactionId)) {
+                            return Stream.empty();
+                        } else {
+                            return Stream.of(transactionId);
+                        }
                     } else {
                         return Stream.empty();
                     }
@@ -158,5 +176,37 @@ public class AwsS3SnapshotStore implements SnapshotStore {
 
     private String getSnapshotFileName(BigInteger transactionId, String storeName) {
         return String.format(FILENAME_FORMAT, m_rootDirectoryName, transactionId, storeName);
+    }
+
+    static class StoreLocker {
+
+        private static final String LOCK = "lock";
+
+        private final AmazonS3 m_amazonS3;
+        private final String m_bucketName;
+        private final Function<BigInteger, String> m_getDirectory;
+
+        StoreLocker(AmazonS3 amazonS3, String bucketName, Function<BigInteger, String> getDirectory) {
+            m_amazonS3 = amazonS3;
+            m_bucketName = bucketName;
+            m_getDirectory = getDirectory;
+        }
+
+        void lockStore(BigInteger transactionId) {
+            m_amazonS3.putObject(m_bucketName, getLockObject(transactionId), "locked");
+        }
+
+        void unlockStore(BigInteger transactionId) {
+            m_amazonS3.deleteObject(m_bucketName, getLockObject(transactionId));
+        }
+
+        boolean isStoreLocked(BigInteger transactionId) {
+            return m_amazonS3.doesObjectExist(m_bucketName, getLockObject(transactionId));
+        }
+
+        @Nonnull
+        private String getLockObject(BigInteger transactionId) {
+            return m_getDirectory.apply(transactionId) + LOCK;
+        }
     }
 }
