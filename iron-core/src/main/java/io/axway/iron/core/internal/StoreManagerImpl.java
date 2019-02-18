@@ -28,6 +28,7 @@ import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.error.MalformedCommandException;
 import io.axway.iron.error.UnrecoverableStoreException;
 import io.axway.iron.functional.Accessor;
+import io.axway.iron.spi.model.snapshot.SerializableSnapshot;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
 import io.axway.iron.spi.storage.SnapshotStore;
@@ -61,7 +62,8 @@ class StoreManagerImpl implements StoreManager {
     private final Map<String, StoreImpl> m_stores = new ConcurrentHashMap<>();
 
     StoreManagerImpl(TransactionSerializer transactionSerializer, TransactionStore transactionStore, SnapshotSerializer snapshotSerializer,
-                     SnapshotStore snapshotStore, IntrospectionHelper introspectionHelper, CommandProxyFactory commandProxyFactory,
+                     SnapshotStore snapshotStore, BiFunction<SerializableSnapshot, String, SerializableSnapshot> snapshotPostProcessor,
+                     IntrospectionHelper introspectionHelper, CommandProxyFactory commandProxyFactory,
                      Collection<CommandDefinition<? extends Command<?>>> commandDefinitions, Map<Class<?>, EntityDefinition<?>> entityDefinitions) {
         m_transactionStore = transactionStore;
         m_introspectionHelper = introspectionHelper;
@@ -76,7 +78,7 @@ class StoreManagerImpl implements StoreManager {
                     StoreImpl store = createStore(storeName);
                     m_stores.put(storeName, store);
                     return store.entityStores();
-                }).
+                }, snapshotPostProcessor).
                 ifPresent(lastTx -> {
                     m_currentTxId = lastTx;
                     m_lastSnapshotTxId = lastTx;
