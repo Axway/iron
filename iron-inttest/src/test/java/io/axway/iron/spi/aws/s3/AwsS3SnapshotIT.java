@@ -19,7 +19,7 @@ import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
  */
 public class AwsS3SnapshotIT extends BaseInttest {
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String bucketName = initS3Configuration();
         createS3Bucket(bucketName);
@@ -39,7 +39,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
         }
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshotsSample() throws Exception {
         String storeName = createRandomStoreName();
 
@@ -55,7 +55,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
                                                               storeName);
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         String bucketName = initS3Configuration();
         createS3Bucket(bucketName);

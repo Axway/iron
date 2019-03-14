@@ -24,18 +24,20 @@ import static java.util.stream.Collectors.*;
  * AWS S3 Snapshot Store Factory.
  */
 public class AwsS3SnapshotStore implements SnapshotStore {
+    // snapshot ids
+    private static final String SNAPSHOTS_IDS_DIRECTORY_FORMAT = "%s/snapshots/ids"; //
+    private static final String SNAPSHOTS_IDS_FILE_FORMAT = "%s/snapshots/ids/%d"; //
+    private static final Pattern SNAPSHOTS_IDS_DIRECTORY_PATTERN = Pattern.compile(".*/snapshots/ids/(\\d+)");
+    // snapshot data
+    private static final String SNAPSHOT_DATA_ID_DIRECTORY_FORMAT = "%s/snapshots/data/%d"; //
+    private static final String SNAPSHOT_DATA_ID_STORE_FORMAT = "%s/snapshots/data/%d/%s.snapshot";
+    private static final Pattern SNAPSHOT_DATA_FILE_PATTERN = Pattern.compile(".*/snapshots/data/\\d+/(.+)\\.snapshot");
 
-    private static final String ROOT_FORMAT = "%s/snapshot"; //
-    private static final String DIRECTORY_NAME_FORMAT = "%s/%d/"; //
-    private static final String FILENAME_FORMAT = DIRECTORY_NAME_FORMAT + "%s.snapshot";
-    private static final Pattern DIRECTORY_PATTERN = Pattern.compile(".*/snapshot/(\\d+)/");
-    private static final Pattern FILE_PATTERN = Pattern.compile(".*/snapshot/\\d+/(.+)\\.snapshot");
     private static final String APPLICATION_JSON_CONTENT_TYPE = "application/json";
 
     private final AmazonS3 m_amazonS3;
     private final String m_bucketName;
-    private final String m_rootDirectoryName;
-    private final StoreLocker m_storeLocker;
+    private String m_directoryName;
 
     /**
      * Create a AwsS3SnapshotStore with some properties set to configure S3 and the bucket :
@@ -53,74 +55,67 @@ public class AwsS3SnapshotStore implements SnapshotStore {
     protected AwsS3SnapshotStore(String accessKey, String secretKey, String endpoint, Integer port, String region, String bucketName, String directoryName) {
         m_amazonS3 = buildS3Client(accessKey, secretKey, endpoint, port, region);
         m_bucketName = checkBucketIsAccessible(m_amazonS3, bucketName);
-        m_rootDirectoryName = String.format(ROOT_FORMAT, directoryName);
-        m_storeLocker = new StoreLocker(m_amazonS3, m_bucketName, this::getSnapshotDirectoryName);
+        m_directoryName = directoryName;
     }
 
     /**
      * WARNING : only for test
      */
-    protected AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String rootDirectoryName, StoreLocker storeLocker) {
+    protected AwsS3SnapshotStore(AmazonS3 amazonS3, String bucketName, String directoryName) {
         m_amazonS3 = amazonS3;
         m_bucketName = bucketName;
-        m_rootDirectoryName = rootDirectoryName;
-        m_storeLocker = storeLocker;
+        m_directoryName = directoryName;
     }
 
     @Override
-    public OutputStream createSnapshotWriter(String storeName, BigInteger transactionId) {
-        return new ByteArrayOutputStream() {
+    public SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId) {
+        return new SnapshotStoreWriter() {
             @Override
-            public void close() throws IOException {
-                super.close();
-                byte[] content = toByteArray();
-                ObjectMetadata metadata = new ObjectMetadata();
-                metadata.setContentType(APPLICATION_JSON_CONTENT_TYPE);
-                metadata.setContentLength(content.length);
-                m_amazonS3.putObject(
-                        new PutObjectRequest(m_bucketName, getSnapshotFileName(transactionId, storeName), new ByteArrayInputStream(content), metadata));
+            public Function<String, OutputStream> storeToOutputStream() {
+                return storeName -> new ByteArrayOutputStream() {
+                    @Override
+                    public void close() throws IOException {
+                        super.close();
+                        byte[] content = toByteArray();
+                        ObjectMetadata metadata = new ObjectMetadata();
+                        metadata.setContentType(APPLICATION_JSON_CONTENT_TYPE);
+                        metadata.setContentLength(content.length);
+                        m_amazonS3.putObject(
+                                new PutObjectRequest(m_bucketName, getSnapshotDataFileName(transactionId, storeName), new ByteArrayInputStream(content),
+                                                     metadata));
+                    }
+                };
+            }
+
+            @Override
+            public Supplier<Void> onSuccess() {
+                m_amazonS3.putObject(m_bucketName, getSnapshotIdFile(transactionId), "snapshot");
+                return null;
             }
         };
     }
 
     @Override
-    public void prePersistSnapshot(BigInteger transactionId) {
-        m_storeLocker.lockStore(transactionId);
-    }
-
-    @Override
-    public void postPersistSnapshot(BigInteger transactionId) {
-        m_storeLocker.unlockStore(transactionId);
-    }
-
-    @Override
     public Publisher<StoreSnapshotReader> createSnapshotReader(BigInteger transactionId) {
-        return Flowable.fromIterable(listSnapshotFilesForId(transactionId)) //
-                .flatMap(summary -> {
-                    Matcher matcher = FILE_PATTERN.matcher(summary.getKey());
-                    if (matcher.matches()) {
-                        String store = matcher.group(1);
-                        return Flowable.just(new StoreSnapshotReader() {
-                            @Override
-                            public String storeName() {
-                                return store;
-                            }
-
-                            @Override
-                            public InputStream inputStream() {
-                                return m_amazonS3.getObject(m_bucketName, summary.getKey()).getObjectContent();
-                            }
-                        });
-                    } else {
-                        return Flowable.empty();
+        return Flowable.fromIterable(listSnapshotDataStoresForId(transactionId).
+                stream().map(S3ObjectSummary::getKey).flatMap(key -> extractStoreName(key).
+                map(storeName -> new StoreSnapshotReader() {
+                    @Override
+                    public String storeName() {
+                        return storeName;
                     }
-                });
+
+                    @Override
+                    public InputStream inputStream() {
+                        return m_amazonS3.getObject(m_bucketName, key).getObjectContent();
+                    }
+                })).collect(toList()));
     }
 
-    private List<S3ObjectSummary> listSnapshotFilesForId(BigInteger transactionId) {
-        String snapshotDirectoryName = getSnapshotDirectoryName(transactionId);
-        ListObjectsV2Request listObjectsRequest = new ListObjectsV2Request().withBucketName(m_bucketName).withPrefix(snapshotDirectoryName);
-        return listAllObjects(listObjectsRequest, ListObjectsV2Result::getObjectSummaries);
+    private List<S3ObjectSummary> listSnapshotDataStoresForId(BigInteger transactionId) {
+        String snapshotDataIdDirectory = getSnapshotDataIdDirectory(transactionId);
+        ListObjectsV2Request storesRequest = new ListObjectsV2Request().withBucketName(m_bucketName).withPrefix(snapshotDataIdDirectory);
+        return listAllObjects(storesRequest, ListObjectsV2Result::getObjectSummaries);
     }
 
     @Nonnull
@@ -141,22 +136,15 @@ public class AwsS3SnapshotStore implements SnapshotStore {
     public List<BigInteger> listSnapshots() {
         ListObjectsV2Request request = new ListObjectsV2Request()     //
                 .withBucketName(m_bucketName)                         //
-                .withPrefix(m_rootDirectoryName + "/")                //
-                .withDelimiter("/");
-        return listAllObjects(request, ListObjectsV2Result::getCommonPrefixes) //
-                .stream().flatMap(prefix -> {
-                    Matcher matcher = DIRECTORY_PATTERN.matcher(prefix);
-                    if (matcher.matches()) {
-                        final BigInteger transactionId = new BigInteger(matcher.group(1));
-                        if (m_storeLocker.isStoreLocked(transactionId)) {
-                            return Stream.empty();
-                        } else {
-                            return Stream.of(transactionId);
-                        }
-                    } else {
-                        return Stream.empty();
-                    }
-                }).collect(toList());
+                .withPrefix(getSnapshotIdsPrefix());
+        return listAllObjects(request, ListObjectsV2Result::getObjectSummaries) //
+                .stream().flatMap(this::getSnapshotId).collect(toList());
+    }
+
+    @Nonnull
+    private Stream<BigInteger> getSnapshotId(S3ObjectSummary object) {
+        return extractSnapshotId(object.getKey()).
+                map(BigInteger::new);
     }
 
     @Override
@@ -166,47 +154,36 @@ public class AwsS3SnapshotStore implements SnapshotStore {
 
     @Override
     public void deleteSnapshot(BigInteger transactionId) {
-        listSnapshotFilesForId(transactionId).forEach(summary -> m_amazonS3.deleteObject(m_bucketName, summary.getKey()));
-        m_amazonS3.deleteObject(m_bucketName, getSnapshotDirectoryName(transactionId));
+        // delete snapshot/ids/1234
+        m_amazonS3.deleteObject(m_bucketName, getSnapshotIdFile(transactionId));
+        // delete snapshot/data/1234/xxx
+        listSnapshotDataStoresForId(transactionId).
+                forEach(summary -> m_amazonS3.deleteObject(m_bucketName, summary.getKey()));
+        // delete snapshot/data/1234
+        m_amazonS3.deleteObject(m_bucketName, getSnapshotDataIdDirectory(transactionId));
     }
 
-    private String getSnapshotDirectoryName(BigInteger transactionId) {
-        return String.format(DIRECTORY_NAME_FORMAT, m_rootDirectoryName, transactionId);
+    String getSnapshotIdsPrefix() {
+        return String.format(SNAPSHOTS_IDS_DIRECTORY_FORMAT, m_directoryName) + "/";
     }
 
-    private String getSnapshotFileName(BigInteger transactionId, String storeName) {
-        return String.format(FILENAME_FORMAT, m_rootDirectoryName, transactionId, storeName);
+    String getSnapshotIdFile(BigInteger transactionId) {
+        return String.format(SNAPSHOTS_IDS_FILE_FORMAT, m_directoryName, transactionId);
     }
 
-    static class StoreLocker {
+    String getSnapshotDataFileName(BigInteger transactionId, String storeName) {
+        return String.format(SNAPSHOT_DATA_ID_STORE_FORMAT, m_directoryName, transactionId, storeName);
+    }
 
-        private static final String LOCK = "lock";
+    Stream<String> extractStoreName(String key) {
+        return SNAPSHOT_DATA_FILE_PATTERN.matcher(key).results().map(matchResult -> matchResult.group(1));
+    }
 
-        private final AmazonS3 m_amazonS3;
-        private final String m_bucketName;
-        private final Function<BigInteger, String> m_getDirectory;
+    String getSnapshotDataIdDirectory(BigInteger transactionId) {
+        return String.format(SNAPSHOT_DATA_ID_DIRECTORY_FORMAT, m_directoryName, transactionId);
+    }
 
-        StoreLocker(AmazonS3 amazonS3, String bucketName, Function<BigInteger, String> getDirectory) {
-            m_amazonS3 = amazonS3;
-            m_bucketName = bucketName;
-            m_getDirectory = getDirectory;
-        }
-
-        void lockStore(BigInteger transactionId) {
-            m_amazonS3.putObject(m_bucketName, getLockObject(transactionId), "locked");
-        }
-
-        void unlockStore(BigInteger transactionId) {
-            m_amazonS3.deleteObject(m_bucketName, getLockObject(transactionId));
-        }
-
-        boolean isStoreLocked(BigInteger transactionId) {
-            return m_amazonS3.doesObjectExist(m_bucketName, getLockObject(transactionId));
-        }
-
-        @Nonnull
-        private String getLockObject(BigInteger transactionId) {
-            return m_getDirectory.apply(transactionId) + LOCK;
-        }
+    Stream<String> extractSnapshotId(String key) {
+        return SNAPSHOTS_IDS_DIRECTORY_PATTERN.matcher(key).results().map(matchResult -> matchResult.group(1));
     }
 }

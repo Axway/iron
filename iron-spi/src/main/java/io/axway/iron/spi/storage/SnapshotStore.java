@@ -3,6 +3,7 @@ package io.axway.iron.spi.storage;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.*;
 import org.reactivestreams.Publisher;
 
 /**
@@ -14,29 +15,16 @@ public interface SnapshotStore {
      * Initiate the storage part of a snapshot for a given store.
      * In the end one snapshot will contain parts for every stores, so this method is called once for each store at snapshot time.
      *
-     * @param storeName the name of the store about to be snapshot.
      * @param transactionId the transaction id of the snapshot to be written.
-     * @return the {@code OutputStream} to be used to write the store's snapshot content.
-     * @throws IOException in case of error when trying to provide access to the {@code OutputStream}
+     * @return the {@code SnapshotStoreWriter} to be used to write the store's snapshot content.
      */
-    OutputStream createSnapshotWriter(String storeName, BigInteger transactionId) throws IOException;
+    SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId);
 
-    /**
-     * Called before all stores persistence starts.
-     *
-     * @param transactionId the snapshot transaction id
-     */
-    default void prePersistSnapshot(BigInteger transactionId) {
-        // Nothing to do.
-    }
-
-    /**
-     * Called after all stores persistence starts.
-     *
-     * @param transactionId the snapshot transaction id
-     */
-    default void postPersistSnapshot(BigInteger transactionId) {
-        // Nothing to do.
+    interface SnapshotStoreWriter {
+        Function<String, OutputStream> storeToOutputStream();
+        default Supplier<Void> onSuccess() {//FIXME Could use Runnable but more dedicated to Threads
+            return () -> null;
+        }
     }
 
     /**

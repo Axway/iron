@@ -4,6 +4,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.util.function.*;
 import org.reactivestreams.Publisher;
 import org.testng.annotations.Test;
 import io.axway.iron.Store;
@@ -36,14 +37,20 @@ public class EnsureNextIdConsistencyTest {
         builder.withSnapshotSerializer(new JacksonSnapshotSerializerBuilder().get());
         builder.withTransactionStore(new TransientTransactionStoreBuilder().get());
         builder.withSnapshotStore(new SnapshotStore() {
+
             @Override
-            public OutputStream createSnapshotWriter(String storeName, BigInteger transactionId) {
-                return new ByteArrayOutputStream() {
+            public SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId) {
+                return new SnapshotStoreWriter() {
                     @Override
-                    public void close() throws IOException {
-                        super.close();
-                        snapshotData.set(toByteArray());
-                        snapshotId.set(transactionId);
+                    public Function<String, OutputStream> storeToOutputStream() {
+                        return storeName -> new ByteArrayOutputStream() {
+                            @Override
+                            public void close() throws IOException {
+                                super.close();
+                                snapshotData.set(toByteArray());
+                                snapshotId.set(transactionId);
+                            }
+                        };
                     }
                 };
             }

@@ -4,10 +4,12 @@ import java.io.*;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.*;
 import java.util.regex.*;
 import java.util.stream.*;
 import javax.annotation.*;
 import org.reactivestreams.Publisher;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.reactivex.Flowable;
 
@@ -35,15 +37,26 @@ public class FileSnapshotStore implements SnapshotStore {
     }
 
     @Override
-    public OutputStream createSnapshotWriter(String storeName, BigInteger transactionId) throws IOException {
-        String snapshotFileName = format(m_filenameFormat, storeName, SNAPSHOT_EXT);
-        Path tmpSnapshotFile = ensureDirectoryExists(m_snapshotTmpDir.resolve(format(m_idFormat, transactionId))).resolve(snapshotFileName);
-        Path finalSnapshotFile = getSnapshotDirectory(transactionId).resolve(snapshotFileName);
-        return new BufferedOutputStream(newOutputStream(tmpSnapshotFile)) {
+    public SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId) {
+        return new SnapshotStoreWriter() {
             @Override
-            public void close() throws IOException {
-                super.close();
-                move(tmpSnapshotFile, finalSnapshotFile);
+            public Function<String, OutputStream> storeToOutputStream() {
+                return storeName -> {
+                    String snapshotFileName = format(m_filenameFormat, storeName, SNAPSHOT_EXT);
+                    Path tmpSnapshotFile = ensureDirectoryExists(m_snapshotTmpDir.resolve(format(m_idFormat, transactionId))).resolve(snapshotFileName);
+                    Path finalSnapshotFile = getSnapshotDirectory(transactionId).resolve(snapshotFileName);
+                    try {
+                        return new BufferedOutputStream(newOutputStream(tmpSnapshotFile)) {
+                            @Override
+                            public void close() throws IOException {
+                                super.close();
+                                move(tmpSnapshotFile, finalSnapshotFile);
+                            }
+                        };
+                    } catch (IOException e) {
+                        throw new StoreException("Failed create output stream", args -> args.add("tmpSnapshotFile", tmpSnapshotFile), e);
+                    }
+                };
             }
         };
     }
