@@ -18,8 +18,10 @@ public class SnapshotPersistence {
     private final Supplier<Void> m_onSuccess;
     private SnapshotSerializer m_snapshotSerializer;
     private BigInteger m_transactionId;
+    private long m_applicationModelVersion;
 
-    public SnapshotPersistence(SnapshotStore snapshotStore, SnapshotSerializer snapshotSerializer, BigInteger transactionId) {
+    public SnapshotPersistence(long applicationModelVersion, SnapshotStore snapshotStore, SnapshotSerializer snapshotSerializer, BigInteger transactionId) {
+        m_applicationModelVersion = applicationModelVersion;
         m_snapshotSerializer = snapshotSerializer;
         m_transactionId = transactionId;
         SnapshotStore.SnapshotStoreWriter snapshotWriter = snapshotStore.createSnapshotWriter(m_transactionId);
@@ -30,6 +32,7 @@ public class SnapshotPersistence {
     public void persist(String storeName, List<EntityStore<?>> entityStores) {
         SerializableSnapshot serializableSnapshot = new SerializableSnapshot();
         serializableSnapshot.setSnapshotModelVersion(SNAPSHOT_MODEL_VERSION);
+        serializableSnapshot.setApplicationModelVersion(m_applicationModelVersion);
         serializableSnapshot.setTransactionId(m_transactionId);
         serializableSnapshot.setEntities(entityStores.stream().map(EntityStore::snapshot).collect(toList()));
 

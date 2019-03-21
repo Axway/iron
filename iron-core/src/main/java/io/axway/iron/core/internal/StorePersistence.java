@@ -169,7 +169,7 @@ class StorePersistence {
     }
 
     public SnapshotPersistence buildSnapshotPersistence(BigInteger transactionId) {
-        return new SnapshotPersistence(m_snapshotStore, m_snapshotSerializer, transactionId);
+        return new SnapshotPersistence(m_applicationModelVersion, m_snapshotStore, m_snapshotSerializer, transactionId);
     }
 
     static class TransactionToExecute {
