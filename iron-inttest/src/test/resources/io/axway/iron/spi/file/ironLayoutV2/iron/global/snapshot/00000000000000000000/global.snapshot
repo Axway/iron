@@ -1,0 +1,322 @@
+{
+    "snapshotModelVersion": 1,
+    "transactionId": 0,
+    "entities": [
+        {
+            "entityName": "com.systar.mercury.application.global.model.GlobalCapabilityPO",
+            "relations": {},
+            "attributes": {
+                "capabilityName": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                [
+                    "capabilityName"
+                ]
+            ],
+            "nextId": 8,
+            "instances": [
+                {
+                    "id": 0,
+                    "values": {
+                        "capabilityName": "adminSuperAdminsCapability"
+                    }
+                },
+                {
+                    "id": 1,
+                    "values": {
+                        "capabilityName": "createSuperAdminCapability"
+                    }
+                },
+                {
+                    "id": 2,
+                    "values": {
+                        "capabilityName": "deleteSuperAdminCapability"
+                    }
+                },
+                {
+                    "id": 3,
+                    "values": {
+                        "capabilityName": "adminTenantsCapability"
+                    }
+                },
+                {
+                    "id": 4,
+                    "values": {
+                        "capabilityName": "createTenantCapability"
+                    }
+                },
+                {
+                    "id": 5,
+                    "values": {
+                        "capabilityName": "deleteTenantCapability"
+                    }
+                },
+                {
+                    "id": 6,
+                    "values": {
+                        "capabilityName": "createTenantUserCapability"
+                    }
+                },
+                {
+                    "id": 7,
+                    "values": {
+                        "capabilityName": "deleteTenantUserCapability"
+                    }
+                }
+            ]
+        },
+        {
+            "entityName": "com.systar.mercury.application.global.model.GlobalRolePO",
+            "relations": {
+                "globalCapabilities": {
+                    "headEntityName": "com.systar.mercury.application.global.model.GlobalCapabilityPO",
+                    "cardinality": "MANY"
+                }
+            },
+            "attributes": {
+                "roleName": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                [
+                    "roleName"
+                ]
+            ],
+            "nextId": 1,
+            "instances": [
+                {
+                    "id": 0,
+                    "values": {
+                        "globalCapabilities": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6,
+                            7
+                        ],
+                        "roleName": "superAdminRole"
+                    }
+                }
+            ]
+        },
+        {
+            "entityName": "com.systar.mercury.application.global.model.SuperAdminUserPO",
+            "relations": {
+                "globalRoles": {
+                    "headEntityName": "com.systar.mercury.application.global.model.GlobalRolePO",
+                    "cardinality": "MANY"
+                }
+            },
+            "attributes": {
+                "email": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                },
+                "firstName": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                },
+                "lastName": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                [
+                    "email"
+                ]
+            ],
+            "nextId": 13,
+            "instances": [
+                {
+                    "id": 0,
+                    "values": {
+                        "email": "rgciocan@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 1,
+                    "values": {
+                        "email": "rpainblanc@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 2,
+                    "values": {
+                        "email": "vbonnefond@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 3,
+                    "values": {
+                        "email": "plaplanche@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 4,
+                    "values": {
+                        "email": "zboumediane@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 5,
+                    "values": {
+                        "email": "vchirvasuta@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 6,
+                    "values": {
+                        "email": "usouza@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 7,
+                    "values": {
+                        "email": "jrichard@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 8,
+                    "values": {
+                        "email": "gvauvert@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 9,
+                    "values": {
+                        "email": "sdaclin@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+                {
+                    "id": 10,
+                    "values": {
+                        "email": "imarcu@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+				{
+                    "id": 11,
+                    "values": {
+                        "email": "apailhes@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                },
+				{
+                    "id": 12,
+                    "values": {
+                        "email": "hgiraud@axway.com",
+                        "globalRoles": [
+                            0
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "entityName": "com.systar.mercury.application.global.model.TenantPO",
+            "relations": {},
+            "attributes": {
+                "name": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                },
+                "secretToken": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                },
+                "uniqueName": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                },
+                "partitionId": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                [
+                    "secretToken"
+                ],
+                [
+                    "uniqueName"
+                ],
+                [
+                    "partitionId"
+                ]
+            ],
+            "nextId": 3,
+            "instances": [
+                {
+                    "id": 0,
+                    "values": {
+                        "name": "api-test",
+                        "uniqueName": "apitest",
+                        "secretToken": "YXBpdGVzdA==",
+                        "partitionId": "api-test"
+                    }
+                },
+                {
+                    "id": 1,
+                    "values": {
+                        "name": "Axway",
+                        "uniqueName": "axway",
+                        "secretToken": "dHJjYmx0bW9uaXRvcmluZw==",
+                        "partitionId": "axway"
+                    }
+                },
+                {
+                    "id": 2,
+                    "values": {
+                        "name": "trcblt-test",
+                        "uniqueName": "trcblttest",
+                        "secretToken": "dHJjYmx0dGVzdA==",
+                        "partitionId": "trcblt-test"
+                    }
+                }
+            ]
+        }
+    ]
+}

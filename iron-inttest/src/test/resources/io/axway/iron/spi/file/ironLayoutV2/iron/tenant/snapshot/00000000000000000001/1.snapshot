@@ -1,0 +1,419 @@
+{
+    "snapshotModelVersion": 1,
+    "transactionId": 0,
+    "entities": [
+        {
+            "entityName": "com.systar.mercury.application.tenant.model.CapabilityPO",
+            "relations": {},
+            "attributes": {
+                "capabilityName": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                [
+                    "capabilityName"
+                ]
+            ],
+            "nextId": 10,
+            "instances": [
+                {
+                    "id": 0,
+                    "values": {
+                        "capabilityName": "searchTenantCapability"
+                    }
+                },
+                {
+                    "id": 1,
+                    "values": {
+                        "capabilityName": "adminTenantIndicesCapability"
+                    }
+                },
+                {
+                    "id": 2,
+                    "values": {
+                        "capabilityName": "adminTenantUsersCapability"
+                    }
+                },
+                {
+                    "id": 3,
+                    "values": {
+                        "capabilityName": "createTenantUserCapability"
+                    }
+                },
+                {
+                    "id": 4,
+                    "values": {
+                        "capabilityName": "deleteTenantUserCapability"
+                    }
+                },
+                {
+                    "id": 5,
+                    "values": {
+                        "capabilityName": "createTenantIndexCapability"
+                    }
+                },
+                {
+                    "id": 6,
+                    "values": {
+                        "capabilityName": "deleteTenantIndexCapability"
+                    }
+                },
+                {
+                    "id": 7,
+                    "values": {
+                        "capabilityName": "adminTenantFlowsCapability"
+                    }
+                },
+                {
+                    "id": 8,
+                    "values": {
+                        "capabilityName": "createTenantFlowCapability"
+                    }
+                },
+                {
+                    "id": 9,
+                    "values": {
+                        "capabilityName": "deleteTenantFlowCapability"
+                    }
+                }
+            ]
+        },
+        {
+            "entityName": "com.systar.mercury.application.tenant.model.DistributionPO",
+            "relations": {
+                "index": {
+                    "headEntityName": "com.systar.mercury.application.tenant.model.IndexPO",
+                    "cardinality": "ONE"
+                },
+                "transformation": {
+                    "headEntityName": "com.systar.mercury.application.tenant.model.TransformationPO",
+                    "cardinality": "ZERO_ONE"
+                }
+            },
+            "attributes": {
+                "condition": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                },
+                "name": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                },
+                "order": {
+                    "dataType": "long",
+                    "nullable": false
+                }
+            },
+            "uniques": [],
+            "nextId": 0,
+            "instances": []
+        },
+        {
+            "entityName": "com.systar.mercury.application.tenant.model.FieldPO",
+            "relations": {},
+            "attributes": {
+                "name": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                }
+            },
+            "uniques": [],
+            "nextId": 0,
+            "instances": []
+        },
+        {
+            "entityName": "com.systar.mercury.application.tenant.model.FlowPO",
+            "relations": {
+                "distributionRules": {
+                    "headEntityName": "com.systar.mercury.application.tenant.model.DistributionPO",
+                    "cardinality": "MANY"
+                },
+                "defaultIndex": {
+                    "headEntityName": "com.systar.mercury.application.tenant.model.IndexPO",
+                    "cardinality": "ONE"
+                }
+            },
+            "attributes": {
+                "eventsFormat": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                },
+                "description": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                },
+                "key": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                },
+                "name": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                },
+                "systemFlow": {
+                    "dataType": "boolean",
+                    "nullable": false
+                },
+                "ignoreError": {
+                    "dataType": "boolean",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                [
+                    "key"
+                ]
+            ],
+            "nextId": 5,
+            "instances": [
+                {
+                    "id": 1,
+                    "values": {
+                        "defaultIndex": 0,
+                        "distributionRules": [],
+                        "eventsFormat": "Json",
+                        "ignoreError": false,
+                        "key": "dogfood-json-flow",
+                        "name": "dogfood-json-flow",
+                        "systemFlow": true
+                    }
+                },
+                {
+                    "id": 2,
+                    "values": {
+                        "defaultIndex": 0,
+                        "distributionRules": [],
+                        "eventsFormat": "Plain_Text",
+                        "ignoreError": false,
+                        "key": "dogfood-plaintext-flow",
+                        "name": "dogfood-plaintext-flow",
+                        "systemFlow": true
+                    }
+                },
+                {
+                    "id": 3,
+                    "values": {
+                        "defaultIndex": 0,
+                        "distributionRules": [],
+                        "eventsFormat": "Json",
+                        "ignoreError": false,
+                        "key": "test-json-flow",
+                        "name": "test-json-flow",
+                        "systemFlow": true
+                    }
+                },
+                {
+                    "id": 4,
+                    "values": {
+                        "defaultIndex": 0,
+                        "distributionRules": [],
+                        "eventsFormat": "Plain_Text",
+                        "ignoreError": false,
+                        "key": "test-plaintext-flow",
+                        "name": "test-plaintext-flow",
+                        "systemFlow": true
+                    }
+                }
+            ]
+        },
+        {
+            "entityName": "com.systar.mercury.application.tenant.model.IndexPO",
+            "relations": {},
+            "attributes": {
+                "name": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                },
+                "type": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                [
+                    "name"
+                ]
+            ],
+            "nextId": 2,
+            "instances": [
+                {
+                    "id": 0,
+                    "values": {
+                        "name": "undelivered",
+                        "type": "technical"
+                    }
+                },
+                {
+                    "id": 1,
+                    "values": {
+                        "name": "ingestion errors",
+                        "type": "technical"
+                    }
+                }
+            ]
+        },
+        {
+            "entityName": "com.systar.mercury.application.tenant.model.RolePO",
+            "relations": {
+                "capabilities": {
+                    "headEntityName": "com.systar.mercury.application.tenant.model.CapabilityPO",
+                    "cardinality": "MANY"
+                }
+            },
+            "attributes": {
+                "roleName": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                [
+                    "roleName"
+                ]
+            ],
+            "nextId": 2,
+            "instances": [
+                {
+                    "id": 0,
+                    "values": {
+                        "capabilities": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6,
+                            7,
+                            8,
+                            9
+                        ],
+                        "roleName": "tenantAdminRole"
+                    }
+                },
+                {
+                    "id": 1,
+                    "values": {
+                        "capabilities": [
+                            0
+                        ],
+                        "roleName": "tenantUserRole"
+                    }
+                }
+            ]
+        },
+        {
+            "entityName": "com.systar.mercury.application.tenant.model.TransformationPO",
+            "relations": {
+                "jsonFilteredFields": {
+                    "headEntityName": "com.systar.mercury.application.tenant.model.FieldPO",
+                    "cardinality": "MANY"
+                },
+                "logFields": {
+                    "headEntityName": "com.systar.mercury.application.tenant.model.FieldPO",
+                    "cardinality": "MANY"
+                }
+            },
+            "attributes": {
+                "logMethod": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                },
+                "logPattern": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                },
+                "type": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                }
+            },
+            "uniques": [],
+            "nextId": 0,
+            "instances": []
+        },
+        {
+            "entityName": "com.systar.mercury.application.tenant.model.UserPO",
+            "relations": {
+                "roles": {
+                    "headEntityName": "com.systar.mercury.application.tenant.model.RolePO",
+                    "cardinality": "MANY"
+                }
+            },
+            "attributes": {
+                "email": {
+                    "dataType": "java.lang.String",
+                    "nullable": false
+                },
+                "firstName": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                },
+                "lastName": {
+                    "dataType": "java.lang.String",
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                [
+                    "email"
+                ]
+            ],
+            "nextId": 5,
+            "instances": [
+                {
+                    "id": 0,
+                    "values": {
+                        "email": "traceability-monitoring@test.com",
+                        "roles": [
+                            0,
+                            1
+                        ]
+                    }
+                },
+                {
+                    "id": 1,
+                    "values": {
+                        "email": "ademailly@axway.com",
+                        "roles": [
+                            0,
+                            1
+                        ]
+                    }
+                },
+                {
+                    "id": 2,
+                    "values": {
+                        "email": "lolemetayer@axway.com",
+                        "roles": [
+                            0,
+                            1
+                        ]
+                    }
+                },
+                {
+                    "id": 3,
+                    "values": {
+                        "email": "pivorra@axway.com",
+                        "roles": [
+                            0,
+                            1
+                        ]
+                    }
+                },
+                {
+                    "id": 4,
+                    "values": {
+                        "email": "hgantzer@axway.com",
+                        "roles": [
+                            0,
+                            1
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -25,8 +25,8 @@ import io.axway.iron.spi.aws.kinesis.AwsKinesisException;
 import io.axway.iron.spi.aws.s3.AwsS3Exception;
 
 import static io.axway.alf.assertion.Assertion.checkState;
-import static io.axway.iron.spi.aws.AwsTestHelper.*;
 import static io.axway.iron.spi.aws.AwsTestHelper.buildKinesisClient;
+import static io.axway.iron.spi.aws.AwsTestHelper.*;
 import static io.axway.iron.spi.aws.AwsUtils.performAmazonActionWithRetry;
 import static io.axway.iron.spi.aws.kinesis.AwsKinesisUtils.*;
 
@@ -58,7 +58,7 @@ public abstract class BaseInttest {
         return "directory" + "-" + UUID.randomUUID();
     }
 
-    protected void createS3Bucket(String storeName) {
+    protected void createS3Bucket(String bucketName) {
         AmazonS3 amazonS3 = buildS3Client(m_configuration);
         String region = m_configuration.getProperty(S3_REGION);
         if (region == null) {
@@ -66,7 +66,7 @@ public abstract class BaseInttest {
         }
         checkState(region != null && !region.trim().isEmpty(),
                    "Can't find aws region. Please consider setting it in configuration.properties with " + S3_REGION + " key");
-        createBucketIfNotExists(amazonS3, storeName, region);
+        createBucketIfNotExists(amazonS3, bucketName, region);
     }
 
     /**
@@ -90,9 +90,11 @@ public abstract class BaseInttest {
         }
     }
 
-    protected void deleteS3Bucket(String storeName) {
+    protected void deleteS3Bucket(String bucketName) {
         AmazonS3 amazonS3 = buildS3Client(m_configuration);
-        deleteBucket(amazonS3, storeName);
+        if (amazonS3.doesBucketExistV2(bucketName)) {
+            deleteBucket(amazonS3, bucketName);
+        }
     }
 
     /**
@@ -109,7 +111,7 @@ public abstract class BaseInttest {
             LOG.debug(" OK, bucket ready to delete!");
             amazonS3.deleteBucket(bucketName);
         } catch (AmazonServiceException e) {
-            throw new AwsS3Exception("Can't remove s3 bucket", args -> args.add("storeName", bucketName), e);
+            throw new AwsS3Exception("Can't remove s3 bucket", args -> args.add("bucketName", bucketName), e);
         }
     }
 

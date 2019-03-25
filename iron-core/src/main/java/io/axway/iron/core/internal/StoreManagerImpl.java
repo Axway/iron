@@ -138,7 +138,7 @@ class StoreManagerImpl implements StoreManager {
                     store.m_readLock.unlock();
                 }
             });
-            snapshotPersistence.onSuccess();
+            snapshotPersistence.commit();
 
             m_lastSnapshotTxId = tx;
             return tx;

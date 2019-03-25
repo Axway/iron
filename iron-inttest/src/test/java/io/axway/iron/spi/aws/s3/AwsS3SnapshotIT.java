@@ -19,7 +19,7 @@ import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
  */
 public class AwsS3SnapshotIT extends BaseInttest {
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String bucketName = initS3Configuration();
         createS3Bucket(bucketName);
@@ -39,7 +39,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
         }
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshotsSample() throws Exception {
         String storeName = createRandomStoreName();
 
@@ -55,7 +55,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
                                                               storeName);
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         String bucketName = initS3Configuration();
         createS3Bucket(bucketName);
@@ -77,7 +77,7 @@ public class AwsS3SnapshotIT extends BaseInttest {
         }
     }
 
-    //@Test(enabled = true)
+    //@Test(enabled = false)
     // deactivated because take too much time
     // Cannot be tested with less than 1000 object keys because https://github.com/localstack/localstack/issues/1061
     public void shouldList1100SnapshotsReturnTheRightNumberOfSnapshots() throws Exception {

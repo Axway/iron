@@ -33,7 +33,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
         deleteS3Bucket(m_bucketName);
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
 
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
@@ -44,7 +44,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
                                                             () -> buildAwsS3SnapshotStoreFactory(factoryName, m_configuration), snapshotSerializer, m_storeName);
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void shouldListSnapshotsReturnTheRightNumberOfSnapshots() throws Exception {
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
@@ -55,7 +55,7 @@ public class AwsKinesisTransactionStoreS3SnapshotStoreIT extends BaseInttest {
                                                                             snapshotSerializer, m_storeName);
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void shouldRetrieveCommandsFromSnapshotStoreAndNotFromTransactionStore() throws Exception {
         TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
         SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();

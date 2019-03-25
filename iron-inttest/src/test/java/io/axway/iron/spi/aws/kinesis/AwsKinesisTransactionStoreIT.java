@@ -19,7 +19,7 @@ import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
  */
 public class AwsKinesisTransactionStoreIT extends BaseInttest {
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void shouldCreateCompanySequenceBeRight() throws Exception {
         String randomStoreName = createRandomStoreName();
         String randomFactoryName = "shouldCreateCompanySequenceBeRight-" + UUID.randomUUID();
@@ -38,7 +38,7 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         }
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionFileStore() throws Exception {
         String randomStoreName = createRandomStoreName();
         String randomFactoryName = "shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionFileStore-" + UUID.randomUUID();
@@ -56,7 +56,7 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         }
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void shouldRetrieveCommandsFromSnapshotFileStoreAndNotFromTransactionKinesisStoreSample() throws Exception {
         String randomStoreName = createRandomStoreName();
         String randomFactoryName = UUID.randomUUID().toString();

@@ -3,7 +3,6 @@ package io.axway.iron.core.spi.testing;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.*;
 import org.reactivestreams.Publisher;
 import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.storage.SnapshotStore;
@@ -23,7 +22,7 @@ public class TransientStore implements SnapshotStore, TransactionStore {
 
     @Override
     public SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId) {
-        return () -> storeName -> new OutputStream() {
+        return storeName -> new OutputStream() {
             @Override
             public void write(int b) {
                 // discard all bytes

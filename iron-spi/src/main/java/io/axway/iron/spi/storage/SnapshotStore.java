@@ -3,7 +3,6 @@ package io.axway.iron.spi.storage;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.*;
 import org.reactivestreams.Publisher;
 
 /**
@@ -21,9 +20,10 @@ public interface SnapshotStore {
     SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId);
 
     interface SnapshotStoreWriter {
-        Function<String, OutputStream> storeToOutputStream();
-        default Supplier<Void> onSuccess() {//FIXME Could use Runnable but more dedicated to Threads
-            return () -> null;
+        OutputStream getOutputStream(String storeName);
+
+        default void commit() {
+
         }
     }
 

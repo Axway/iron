@@ -25,13 +25,13 @@ import static java.util.stream.Collectors.*;
  */
 public class AwsS3SnapshotStore implements SnapshotStore {
     // snapshot ids
-    private static final String SNAPSHOTS_IDS_DIRECTORY_FORMAT = "%s/snapshots/ids"; //
-    private static final String SNAPSHOTS_IDS_FILE_FORMAT = "%s/snapshots/ids/%d"; //
-    private static final Pattern SNAPSHOTS_IDS_DIRECTORY_PATTERN = Pattern.compile(".*/snapshots/ids/(\\d+)");
+    private static final String SNAPSHOTS_IDS_DIRECTORY_FORMAT = "%s/snapshot/ids"; //
+    private static final String SNAPSHOTS_IDS_FILE_FORMAT = "%s/snapshot/ids/%d"; //
+    private static final Pattern SNAPSHOTS_IDS_DIRECTORY_PATTERN = Pattern.compile(".*/snapshot/ids/(\\d+)");
     // snapshot data
-    private static final String SNAPSHOT_DATA_ID_DIRECTORY_FORMAT = "%s/snapshots/data/%d"; //
-    private static final String SNAPSHOT_DATA_ID_STORE_FORMAT = "%s/snapshots/data/%d/%s.snapshot";
-    private static final Pattern SNAPSHOT_DATA_FILE_PATTERN = Pattern.compile(".*/snapshots/data/\\d+/(.+)\\.snapshot");
+    private static final String SNAPSHOT_DATA_ID_DIRECTORY_FORMAT = "%s/snapshot/data/%d"; //
+    private static final String SNAPSHOT_DATA_ID_STORE_FORMAT = "%s/snapshot/data/%d/%s.snapshot";
+    private static final Pattern SNAPSHOT_DATA_FILE_PATTERN = Pattern.compile(".*/snapshot/data/\\d+/(.+)\\.snapshot");
 
     private static final String APPLICATION_JSON_CONTENT_TYPE = "application/json";
 
@@ -71,8 +71,8 @@ public class AwsS3SnapshotStore implements SnapshotStore {
     public SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId) {
         return new SnapshotStoreWriter() {
             @Override
-            public Function<String, OutputStream> storeToOutputStream() {
-                return storeName -> new ByteArrayOutputStream() {
+            public OutputStream getOutputStream(String storeName) {
+                return new ByteArrayOutputStream() {
                     @Override
                     public void close() throws IOException {
                         super.close();
@@ -88,9 +88,8 @@ public class AwsS3SnapshotStore implements SnapshotStore {
             }
 
             @Override
-            public Supplier<Void> onSuccess() {
+            public void commit() {
                 m_amazonS3.putObject(m_bucketName, getSnapshotIdFile(transactionId), "snapshot");
-                return null;
             }
         };
     }
