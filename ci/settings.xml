@@ -20,6 +20,7 @@
                 <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
                 <gpg.publicKeyring>ci/pubring.gpg</gpg.publicKeyring>
                 <gpg.secretKeyring>ci/secring.gpg</gpg.secretKeyring>
+                <gpg.executable>gpg2</gpg.executable>
             </properties>
         </profile>
     </profiles>
