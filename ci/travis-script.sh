@@ -5,27 +5,29 @@ echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
 echo "TRAVIS_TAG = $TRAVIS_TAG"
 echo "TRAVIS_PULL_REQUEST = $TRAVIS_PULL_REQUEST"
 
-if [ "$TRAVIS_SECURE_ENV_VARS" = "true" -a "$TRAVIS_PULL_REQUEST" = "false" -a "$SONAR_TOKEN" != "" -a "$GPG_KEYNAME" != "" ]; then
-    echo
-    echo "Build, test and generate Sonar report"
-    mvn -B clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
+MAVEN_PROFILES="release"
+MAVEN_PHASES="clean"
 
-    echo
-    echo "Decrypting GPG files"
-    openssl aes-256-cbc -d -k "$OPENSSL_PASSPHRASE" -in ci/pubring.gpg.enc -out ci/pubring.gpg
-    openssl aes-256-cbc -d -k "$OPENSSL_PASSPHRASE" -in ci/secring.gpg.enc -out ci/secring.gpg
-
-    if [ \("$TRAVIS_BRANCH" = "master" -o "$TRAVIS_TAG" != ""\) -a "$OSSRH_USERNAME" != "" ]; then
-        echo
-        echo "Build, sign with GPG and deploy to OSSRH"
-        mvn -B -P release -DskipTests=true clean deploy
-    else
-        echo
-        echo "Build and sign with GPG"
-        mvn -B -P release -DskipTests=true clean verify
-    fi
-else
-    echo
-    echo "Build and verify"
-    mvn -B clean verify
+if [ -n "$GPG_SECRET_KEYS" -a -n "$GPG_OWNERTRUST" ]; then
+    echo "Configure Maven build to sign artifact with GPG"
+    MAVEN_PROFILES="$MAVEN_PROFILES,sign"
 fi
+
+if [ -n "$SONAR_TOKEN" ]; then
+    echo "Configure Maven build to execute Sonarcloud analysis"
+    MAVEN_PHASES="$MAVEN_PHASES org.jacoco:jacoco-maven-plugin:prepare-agent"
+fi
+
+if [ \("$TRAVIS_BRANCH" = "master" -o -n "$TRAVIS_TAG"\) -a -n "$OSSRH_USERNAME" -a -n "$GPG_SECRET_KEYS" -a -n "$GPG_OWNERTRUST" ]; then
+    echo "Configure Maven build to deploy on Sonatype OSS RH"
+    MAVEN_PROFILES="$MAVEN_PROFILES,ossrh"
+    MAVEN_PHASES="$MAVEN_PHASES deploy"
+else
+    MAVEN_PHASES="$MAVEN_PHASES verify"
+fi
+
+if [ -n "$SONAR_TOKEN" ]; then
+    MAVEN_PHASES="$MAVEN_PHASES sonar:sonar"
+fi
+
+mvn -B -P $MAVEN_PROFILES $MAVEN_PHASES
