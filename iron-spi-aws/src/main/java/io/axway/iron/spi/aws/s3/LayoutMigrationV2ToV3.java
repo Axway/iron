@@ -15,15 +15,27 @@ import io.axway.iron.spi.serializer.SnapshotSerializer;
 import static io.axway.iron.spi.aws.s3.AwsS3Utils.buildS3Client;
 
 /**
- * Layout V2:
- * ironDataStore/global/snapshot/ids/00000
- * ironDataStore/global/snapshot/00000/global.snapshot
- * ironDataStore/global/snapshot/ids/00000
- * ->
- * Layout V3:
+ * This script migrates the iron data store from SPI File layout V2 to SPI AWS layout V3:
  * <ul>
- * <ironDataStore/global/snapshot/ids/00000
- * ironDataStore/global/snapshot/data/00000/global.snapshot
+ *     <li>for each store, only the last snapshot is migrated</li>
+ *     <li>the id of each migrated snapshot is set to 0 (zero)</li>
+ * </ul>
+ * SPI File layout V2:
+ * <ul>
+ * <li>ironDataStore/storeA/snapshot/00000000000000000000/0.snapshot</li>
+ * <li>ironDataStore/storeA/snapshot/00000000000000000001/0.snapshot</li>
+ * <li>ironDataStore/storeA/snapshot/00000000000000000002/0.snapshot</li>
+ * <li>ironDataStore/storeA/snapshot/00000000000000000002/1.snapshot</li>
+ * <li>ironDataStore/storeB/snapshot/00000000000000000000/0.snapshot</li>
+ * </ul>
+ *
+ * SPI AWS layout V3:
+ * <ul>
+ * <li>ironDataStore/storeA/snapshot/data/0/0.snapshot</li>
+ * <li>ironDataStore/storeA/snapshot/data/0/1.snapshot</li>
+ * <li>ironDataStore/storeA/snapshot/ids/0</li>
+ * <li>ironDataStore/storeB/snapshot/data/0/0.snapshot</li>
+ * <li>ironDataStore/storeB/snapshot/ids/0</li>
  * </ul>
  */
 public class LayoutMigrationV2ToV3 {
@@ -59,7 +71,7 @@ public class LayoutMigrationV2ToV3 {
             }
         } catch (Exception e) {
             System.out.println("Usage of Layout Migration : java " + LayoutMigrationV2ToV3.class
-                                       + " storeSourceFsDirectory storeDestinationS3Bucket storeDestinationS3Directory [endpoint port]");
+                                       + " awsRegion storeSourceFsDirectory storeDestinationS3Bucket storeDestinationS3Directory [endpoint port]");
             System.out.println("Example: java " + LayoutMigrationV2ToV3.class + " us-east-1 /data/iron bucket iron");
             System.out.println("         java " + LayoutMigrationV2ToV3.class + " us-east-1 /data/iron bucket iron 127.0.0.1 4572");
             throw e;

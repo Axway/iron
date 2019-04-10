@@ -17,17 +17,17 @@ public class AwsS3SnapshotStoreTest {
         AwsS3SnapshotStore awsS3SnapshotStore = new AwsS3SnapshotStore(m_amazonS3, "bucketName", "directory");
         //
         String snapshotIdsPrefix = awsS3SnapshotStore.getSnapshotIdsPrefix();
-        assertThat(snapshotIdsPrefix).isEqualTo("directory/snapshots/ids/");
+        assertThat(snapshotIdsPrefix).isEqualTo("directory/snapshot/ids/");
         //
         String snapshotDataIdDirectory = awsS3SnapshotStore.getSnapshotDataIdDirectory(BigInteger.valueOf(1234L));
-        assertThat(snapshotDataIdDirectory).isEqualTo("directory/snapshots/data/1234");
+        assertThat(snapshotDataIdDirectory).isEqualTo("directory/snapshot/data/1234");
         //
         String snapshotDataFileName = awsS3SnapshotStore.getSnapshotDataFileName(BigInteger.valueOf(1234L), "storeName");
-        assertThat(snapshotDataFileName).isEqualTo("directory/snapshots/data/1234/storeName.snapshot");
+        assertThat(snapshotDataFileName).isEqualTo("directory/snapshot/data/1234/storeName.snapshot");
         assertThat(awsS3SnapshotStore.extractStoreName(snapshotDataFileName)).containsExactly("storeName");
         //
         String snapshotIdFile = awsS3SnapshotStore.getSnapshotIdFile(BigInteger.valueOf(1234L));
-        assertThat(snapshotIdFile).isEqualTo("directory/snapshots/ids/1234");
+        assertThat(snapshotIdFile).isEqualTo("directory/snapshot/ids/1234");
         assertThat(awsS3SnapshotStore.extractSnapshotId(snapshotIdFile)).containsExactly("1234");
     }
 }
