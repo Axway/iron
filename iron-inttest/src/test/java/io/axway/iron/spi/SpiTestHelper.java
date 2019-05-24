@@ -241,13 +241,51 @@ public class SpiTestHelper {
         try (StoreManager factory = factoryBuilder //
                 .build()) {
             Store store = factory.getStore(storeName);
-            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(1);
+            factory.snapshot();
+            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(0);
             Store.TransactionBuilder tx1 = store.begin();
             tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("MyCompany1").submit();
             tx1.submit().get();
-            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(1);
+            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(0);
             factory.snapshot();
-            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(2);
+            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(1);
+        }
+    }
+
+    public static void checkThatList1100SnapshotsReturnTheRightNumberOfSnapshots(TransactionStore transactionStore, TransactionSerializer transactionSerializer,
+                                                                                 SnapshotStore snapshotStore, SnapshotSerializer snapshotSerializer,
+                                                                                 String storeName) throws Exception {
+        System.out.println("storeManagerFactory1");
+
+        StoreManagerBuilder factoryBuilder = StoreManagerBuilder.newStoreManagerBuilder() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStore(transactionStore) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStore(snapshotStore) //
+                .withEntityClass(Company.class) //
+                .withEntityClass(Person.class) //
+                .withCommandClass(ChangeCompanyAddress.class) //
+                .withCommandClass(CreateCompany.class) //
+                .withCommandClass(CreatePerson.class) //
+                .withCommandClass(DeleteCompany.class) //
+                .withCommandClass(PersonJoinCompany.class) //
+                .withCommandClass(PersonLeaveCompany.class) //
+                .withCommandClass(PersonRaiseSalary.class);
+
+        try (StoreManager factory = factoryBuilder //
+                .build()) {
+            Store store = factory.getStore(storeName);
+            for (int idx = 0; idx < 1100; idx++) {
+                System.out.println("Idx:" + idx);
+                Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(idx);
+                Store.TransactionBuilder tx1 = store.begin();
+                tx1.addCommand(CreateCompany.class).set(CreateCompany::name).to("MyCompany" + idx).submit();
+                tx1.submit().get();
+                Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(idx);
+                factory.snapshot();
+                Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(idx + 1);
+            }
+            Assertions.assertThat(snapshotStore.listSnapshots()).hasSize(1100);
         }
     }
 

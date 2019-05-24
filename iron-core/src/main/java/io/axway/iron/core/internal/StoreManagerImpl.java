@@ -128,14 +128,18 @@ class StoreManagerImpl implements StoreManager {
 
         if (m_currentTxId.compareTo(m_lastSnapshotTxId) > 0) {
             BigInteger tx = m_currentTxId;
+
+            SnapshotPersistence snapshotPersistence = m_storePersistence.buildSnapshotPersistence(tx);
             m_stores.forEach((storeName, store) -> {
                 store.m_readLock.lock();
                 try {
-                    m_storePersistence.persistSnapshot(tx, storeName, store.entityStores().toList());
+                    snapshotPersistence.persist(storeName, store.entityStores().toList());
                 } finally {
                     store.m_readLock.unlock();
                 }
             });
+            snapshotPersistence.commit();
+
             m_lastSnapshotTxId = tx;
             return tx;
         } else {

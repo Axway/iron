@@ -36,14 +36,20 @@ public class EnsureNextIdConsistencyTest {
         builder.withSnapshotSerializer(new JacksonSnapshotSerializerBuilder().get());
         builder.withTransactionStore(new TransientTransactionStoreBuilder().get());
         builder.withSnapshotStore(new SnapshotStore() {
+
             @Override
-            public OutputStream createSnapshotWriter(String storeName, BigInteger transactionId) {
-                return new ByteArrayOutputStream() {
+            public SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId) {
+                return new SnapshotStoreWriter() {
                     @Override
-                    public void close() throws IOException {
-                        super.close();
-                        snapshotData.set(toByteArray());
-                        snapshotId.set(transactionId);
+                    public OutputStream getOutputStream(String storeName) {
+                        return new ByteArrayOutputStream() {
+                            @Override
+                            public void close() throws IOException {
+                                super.close();
+                                snapshotData.set(toByteArray());
+                                snapshotId.set(transactionId);
+                            }
+                        };
                     }
                 };
             }

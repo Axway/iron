@@ -54,20 +54,6 @@ class StorePersistence {
                                                       commandDefinition -> commandDefinition));
     }
 
-    void persistSnapshot(BigInteger txId, String storeName, Collection<EntityStore<?>> entityStores) {
-        SerializableSnapshot serializableSnapshot = new SerializableSnapshot();
-        serializableSnapshot.setSnapshotModelVersion(SNAPSHOT_MODEL_VERSION);
-        serializableSnapshot.setApplicationModelVersion(m_applicationModelVersion);
-        serializableSnapshot.setTransactionId(txId);
-        serializableSnapshot.setEntities(entityStores.stream().map(EntityStore::snapshot).collect(Collectors.toList()));
-
-        try (OutputStream out = m_snapshotStore.createSnapshotWriter(storeName, txId)) {
-            m_snapshotSerializer.serializeSnapshot(out, serializableSnapshot);
-        } catch (IOException e) {
-            throw new StoreException("Error when creating the store snapshot", args -> args.add("transactionId", txId), e);
-        }
-    }
-
     /**
      * Load the stores.
      *
@@ -126,7 +112,7 @@ class StorePersistence {
             m_applicationModelVersion = postProcess.getConsistentApplicationModelVersion();
         });
 
-        if (!latestSnapshotTxId.isPresent()) {
+        if (latestSnapshotTxId.isEmpty()) {
             LOG.info("Store has no snapshot, store is empty, creating it's first snapshot");
         }
 
@@ -180,6 +166,10 @@ class StorePersistence {
 
         return new TransactionToExecute(transactionInput.storeName(), transactionInput.getTransactionId(), serializableTransaction.getSynchronizationId(),
                                         commands);
+    }
+
+    public SnapshotPersistence buildSnapshotPersistence(BigInteger transactionId) {
+        return new SnapshotPersistence(m_applicationModelVersion, m_snapshotStore, m_snapshotSerializer, transactionId);
     }
 
     static class TransactionToExecute {

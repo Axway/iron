@@ -45,11 +45,15 @@ public class AwsKinesisTransactionStoreIT extends BaseInttest {
         Supplier<SnapshotStore> fileSnapshotStoreFactory = () -> buildFileSnapshotStore(getIronSpiAwsInttestFilePath(), randomFactoryName, null);
         Supplier<TransactionStore> fileTransactionStoreFactory = () -> buildFileTransactionStore(getIronSpiAwsInttestFilePath(), randomFactoryName);
 
-        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
-        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
-        SpiTestHelper.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(fileTransactionStoreFactory, transactionSerializer,         //
-                                                                                         fileSnapshotStoreFactory, snapshotSerializer, //
-                                                                                         randomStoreName);
+        try {
+            TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+            SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+            SpiTestHelper.checkThatCommandIsExecutedFromSnapshotStoreNotFromTransactionStore(fileTransactionStoreFactory, transactionSerializer,         //
+                                                                                             fileSnapshotStoreFactory, snapshotSerializer, //
+                                                                                             randomStoreName);
+        } finally {
+            deleteKinesisStream(randomFactoryName);
+        }
     }
 
     @Test(enabled = false)

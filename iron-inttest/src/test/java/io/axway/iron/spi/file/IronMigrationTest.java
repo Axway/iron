@@ -15,6 +15,7 @@ import org.testng.annotations.Test;
 import io.axway.iron.core.spi.file.IronMigration;
 import io.axway.iron.error.StoreException;
 
+import static io.axway.iron.spi.file.FileTestHelper.getResourceFileAsString;
 import static java.lang.String.join;
 import static java.util.stream.Collectors.*;
 import static java.util.stream.Stream.*;
@@ -107,8 +108,8 @@ public class IronMigrationTest {
                     for (String type : new String[]{"snapshot", "tx"}) {
                         for (String id : new String[]{"00000000000000000000", "00000000000000000001", "00000000000000000002", "00000000000000000003"}) {
                             String sourceFile = id + "." + type;
-                            List<String> fileContent = getResourceFileAsString(
-                                    join("/", "io", "axway", "iron", "spi", "file", directory, storeName, type, sourceFile));
+                            List<String> fileContent = getResourceFileAsString(IronMigrationTest.class,
+                                                                               join("/", "io", "axway", "iron", "spi", "file", directory, storeName, type, sourceFile));
                             if (fileContent != null) {
                                 if ("snapshot".equals(type)) {
                                     snapshotIdsByStoreType.computeIfAbsent("global".equals(storeName) ? "global" : "tenant", t -> new HashSet<>()).add(id);
@@ -126,17 +127,5 @@ public class IronMigrationTest {
                     }
                 });
         return snapshotIdsByStoreType;
-    }
-
-    private List<String> getResourceFileAsString(String fileName) {
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(fileName)) {
-            if (is != null) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-                return reader.lines().collect(toList());
-            }
-            return null;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

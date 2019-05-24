@@ -21,8 +21,8 @@ public class TransientStore implements SnapshotStore, TransactionStore {
     }
 
     @Override
-    public OutputStream createSnapshotWriter(String storeName, BigInteger transactionId) {
-        return new OutputStream() {
+    public SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId) {
+        return storeName -> new OutputStream() {
             @Override
             public void write(int b) {
                 // discard all bytes
