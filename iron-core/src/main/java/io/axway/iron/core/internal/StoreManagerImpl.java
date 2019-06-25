@@ -427,39 +427,45 @@ class StoreManagerImpl implements StoreManager {
         /**
          * Strong reference to the transaction {@code Future}. Not need to be used.
          */
-        @SuppressWarnings("unused")
-        private final Object m_txFuture;
-        private final Future<T> m_commandFuture;
+        private final CompletableFuture<List<Object>> m_txFuture;
+        private int m_commandIndex;
 
         CommandFutureWrapper(CompletableFuture<List<Object>> txFuture, int commandIndex) {
             m_txFuture = txFuture;
-            //noinspection unchecked
-            m_commandFuture = txFuture.thenApply(values -> (T) values.get(commandIndex));
+            m_commandIndex = commandIndex;
         }
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            return m_commandFuture.cancel(mayInterruptIfRunning);
+            return m_txFuture.cancel(mayInterruptIfRunning);
         }
 
         @Override
         public boolean isCancelled() {
-            return m_commandFuture.isCancelled();
+            return m_txFuture.isCancelled();
         }
 
         @Override
         public boolean isDone() {
-            return m_commandFuture.isDone();
+            return m_txFuture.isDone();
         }
 
         @Override
         public T get() throws InterruptedException, ExecutionException {
-            return m_commandFuture.get();
+            return getValue(m_txFuture.get());
         }
 
         @Override
         public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return m_commandFuture.get(timeout, unit);
+            return getValue(m_txFuture.get(timeout, unit));
+        }
+
+        /**
+         * Return the result corresponding to the wrapped command.
+         * /!\ Do not replace call to this method by {txFuture.thenApply}, because that would allow txFuture to be collected before a result is returned.
+         */
+        private T getValue(List<Object> values) {
+            return (T) values.get(m_commandIndex);
         }
     }
 }
