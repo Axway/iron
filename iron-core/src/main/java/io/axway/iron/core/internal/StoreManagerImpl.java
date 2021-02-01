@@ -9,6 +9,7 @@ import java.util.stream.*;
 import javax.annotation.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.axway.alf.exception.FormattedRuntimeException;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.Command;
@@ -16,6 +17,7 @@ import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.internal.command.CommandProxyFactory;
+import io.axway.iron.core.internal.command.management.MaintenanceModeCommand;
 import io.axway.iron.core.internal.definition.command.CommandDefinition;
 import io.axway.iron.core.internal.definition.entity.EntityDefinition;
 import io.axway.iron.core.internal.definition.entity.RelationDefinition;
@@ -26,6 +28,7 @@ import io.axway.iron.core.internal.transaction.ReadOnlyTransactionImpl;
 import io.axway.iron.core.internal.transaction.ReadWriteTransactionImpl;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.error.MalformedCommandException;
+import io.axway.iron.error.StoreException;
 import io.axway.iron.error.UnrecoverableStoreException;
 import io.axway.iron.functional.Accessor;
 import io.axway.iron.spi.model.snapshot.SerializableSnapshot;
@@ -57,9 +60,9 @@ class StoreManagerImpl implements StoreManager {
     private BigInteger m_lastSnapshotTxId = BigInteger.ONE.negate();
 
     private Disposable m_disposableTxFlow;
-    private volatile boolean m_closed = false;
 
     private final Map<String, StoreImpl> m_stores = new ConcurrentHashMap<>();
+    private State state = State.OPEN;
 
     StoreManagerImpl(TransactionSerializer transactionSerializer, TransactionStore transactionStore, SnapshotSerializer snapshotSerializer,
                      SnapshotStore snapshotStore, BiFunction<SerializableSnapshot, String, SerializableSnapshot> snapshotPostProcessor,
@@ -91,7 +94,7 @@ class StoreManagerImpl implements StoreManager {
                 = connectableTransactions // to start only when connect is called and not with the first subscription
                 .share(); // because we subscribe the main consumer and the one in charge of notifying recovery done
 
-        Completable withTimeout = transactions.takeWhile(t -> !m_closed).timeout(1, SECONDS).ignoreElements();
+        Completable withTimeout = transactions.takeWhile(t -> !(state == State.CLOSE)).timeout(1, SECONDS).ignoreElements();
 
         m_disposableTxFlow = transactions.subscribe(this::processTransaction, error -> {
             LOG.info("Error processing transaction", error);
@@ -110,10 +113,28 @@ class StoreManagerImpl implements StoreManager {
     public void close() {
         LOG.debug("A store manager is going to be closed");
         ensureOpen();
-        m_closed = true;
+        state = State.CLOSE;
         m_disposableTxFlow.dispose();
         m_transactionStore.close();
         m_snapshotStore.close();
+    }
+
+    @Override
+    public void maintenance() {
+        LOG.info("A store manager is put in maintenance mode");
+        m_stores.forEach((storeName, store) -> {
+            try {
+                store.createCommand(MaintenanceModeCommand.class).submit().get();
+            } catch (Exception e) {
+                throw new FormattedRuntimeException("Can't set store to maintenance mode", arguments -> arguments.add("storeName", storeName), e);
+            }
+        });
+        try {
+            snapshot();
+        } catch (Exception e) {
+            throw new FormattedRuntimeException(
+                    "Maintenance snapshot failed. Trigger a manual snapshot before restarting to recover in nominal mode (use REST API)", e);
+        }
     }
 
     @Override
@@ -127,6 +148,7 @@ class StoreManagerImpl implements StoreManager {
         ensureOpen();
 
         if (m_currentTxId.compareTo(m_lastSnapshotTxId) > 0) {
+
             BigInteger tx = m_currentTxId;
 
             SnapshotPersistence snapshotPersistence = m_storePersistence.buildSnapshotPersistence(tx);
@@ -150,6 +172,11 @@ class StoreManagerImpl implements StoreManager {
     @Override
     public BigInteger lastSnapshotTransactionId() {
         return m_lastSnapshotTxId;
+    }
+
+    @Override
+    public State getState() {
+        return state;
     }
 
     @Override
@@ -207,6 +234,13 @@ class StoreManagerImpl implements StoreManager {
                 try {
                     for (int i = 0; i < commands.size(); i++) {
                         Command<?> command = commands.get(i);
+                        if (command instanceof MaintenanceModeCommand) {
+                            state = State.READONLY;
+                            LOG.warn("Store enters maintenance mode (read only). Do a snapshot + restart to recover to nominal mode.");
+                        } else if (state == State.READONLY) {
+                            throw new StoreException(
+                                    "ReadWriteTransaction can't be executed, store is in maintenance mode. Do a snapshot + restart to recover to nominal mode.");
+                        }
                         results[i] = command.execute(tx);
                         int activeObjectUpdaterCount = tx.getActiveObjectUpdaterCount();
                         if (activeObjectUpdaterCount > 0) {
@@ -246,7 +280,7 @@ class StoreManagerImpl implements StoreManager {
     }
 
     private void ensureOpen() {
-        checkState(!m_closed, "Store has been closed");
+        checkState(!(state == State.CLOSE), "Store has been closed");
     }
 
     private class StoreImpl implements Store {

@@ -24,7 +24,7 @@ public class FakeStoreManagerBuilderImpl implements StoreManagerBuilder {
     }
 
     @Override
-    public <T> StoreManagerBuilder withCommandClass(Class<? extends Command<T>> commandClass) {
+    public <T> StoreManagerBuilder withCommandClass(Class<? extends Command<?>> commandClass) {
         return null; // not implement here
     }
 

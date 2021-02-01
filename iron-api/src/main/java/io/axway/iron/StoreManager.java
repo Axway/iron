@@ -45,9 +45,20 @@ public interface StoreManager extends AutoCloseable {
     void close();
 
     /**
+     * Set stores to readonly and then produce a snapshot
+     */
+    void maintenance();
+
+    /**
      * The transaction ID of the latest snapshot.
      *
      * @return the transaction ID of the last created snapshot
      */
     BigInteger lastSnapshotTransactionId();
+
+    State getState();
+
+    enum State {
+        OPEN, CLOSE, READONLY
+    }
 }

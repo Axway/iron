@@ -109,6 +109,7 @@ final class KafkaCluster implements AutoCloseable {
                 m_logDir = createDirectories(rootPath.resolve("zookeeper-log"));
                 final int port = providePort();
                 m_connectionString = "localhost:" + port;
+                LOG.info("ZK address " + m_connectionString);
 
                 m_factory = ServerCnxnFactory.createFactory(new InetSocketAddress("localhost", port), 1024);
                 ZooKeeperServer zkServer = new ZooKeeperServer(m_snapshotDir.toFile(), m_logDir.toFile(), 2000);
@@ -146,6 +147,8 @@ final class KafkaCluster implements AutoCloseable {
             m_zookeeper = new EmbeddedZookeeper(rootPath);
 
             m_connectionString = "localhost:" + providePort();
+            LOG.info("Kafka address " + m_connectionString);
+
             m_logDir = createDirectories(rootPath.resolve("kafka-log"));
             Properties kafkaProps = new Properties();
             kafkaProps.setProperty("min.insync.replicas", valueOf(clusterSize / 2 + 1));
