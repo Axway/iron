@@ -56,13 +56,13 @@ class StoreManagerImpl implements StoreManager {
     private final Cache<String, CompletableFuture<List<Object>>> m_futuresBySynchronizationId = CacheBuilder.newBuilder().weakValues().build();
     private final SnapshotStore m_snapshotStore;
 
+    private final Disposable m_disposableTxFlow;
+
     private BigInteger m_currentTxId = BigInteger.ONE.negate();
     private BigInteger m_lastSnapshotTxId = BigInteger.ONE.negate();
 
-    private Disposable m_disposableTxFlow;
-
     private final Map<String, StoreImpl> m_stores = new ConcurrentHashMap<>();
-    private State state = State.OPEN;
+    private volatile State state = State.OPEN;
 
     StoreManagerImpl(TransactionSerializer transactionSerializer, TransactionStore transactionStore, SnapshotSerializer snapshotSerializer,
                      SnapshotStore snapshotStore, BiFunction<SerializableSnapshot, String, SerializableSnapshot> snapshotPostProcessor,
