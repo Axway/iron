@@ -2,12 +2,15 @@ package io.axway.iron.core.spi.file;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.*;
 import java.util.stream.*;
 import javax.annotation.*;
 import org.reactivestreams.Publisher;
+import io.axway.alf.exception.FormattedRuntimeException;
 import io.axway.iron.error.StoreException;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.reactivex.Flowable;
@@ -96,6 +99,31 @@ public class FileSnapshotStore implements SnapshotStore {
     }
 
     @Override
+    public void lockReadOnly(boolean wantLock) {
+        boolean lockExists = isReadOnlyLockSet();
+        if (wantLock && !lockExists) {
+            try {
+                Files.createFile(getReadonlyLock());
+            } catch (FileAlreadyExistsException e) {
+                // We don't care
+            } catch (Exception e) {
+                throw new RuntimeException("Can't create readonly lock", e);
+            }
+        } else if (!wantLock && lockExists) {
+            try {
+                Files.deleteIfExists(getReadonlyLock());
+            } catch (IOException e) {
+                throw new FormattedRuntimeException("Can't delete readonly lock", e);
+            }
+        }
+    }
+
+    @Override
+    public boolean isReadOnlyLockSet() {
+        return Files.exists(getReadonlyLock());
+    }
+
+    @Override
     public void deleteSnapshot(BigInteger transactionId) throws IOException {
         try (Stream<Path> walkStream = walk(getSnapshotDirectory(transactionId))) {
             walkStream        //
@@ -108,5 +136,9 @@ public class FileSnapshotStore implements SnapshotStore {
     @Nonnull
     private Path getSnapshotDirectory(BigInteger transactionId) {
         return ensureDirectoryExists(m_snapshotDir.resolve(format(m_idFormat, transactionId)));
+    }
+
+    private Path getReadonlyLock() {
+        return m_snapshotDir.resolve("readonly.lock");
     }
 }

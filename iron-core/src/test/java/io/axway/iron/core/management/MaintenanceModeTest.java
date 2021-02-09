@@ -17,18 +17,18 @@ public class MaintenanceModeTest {
         try (StoreManager storeManager = IronTestHelper.createTransientStore()) {
             Store store = IronTestHelper.getRandomTransientStore(storeManager);
 
-            assertThat(storeManager.getState()).isEqualTo(StoreManager.State.OPEN);
+            assertThat(storeManager.isReadOnly()).isEqualTo(false);
 
             String simpleEntityId = "shouldBeCreated";
             store.createCommand(CreateSimpleEntity.class).set(CreateSimpleEntity::id).to(simpleEntityId).submit().get();
 
-            storeManager.maintenance();
+            storeManager.setReadonly(true);
 
             assertThatCode(() -> store.createCommand(CreateSimpleEntity.class).
                     set(CreateSimpleEntity::id).to("willBeRejected").
                     submit().get()).
-                    withFailMessage("Store shouldn't accept command while in Maintenance mode").
-                    hasMessageContaining("ReadWriteTransaction can't be executed, store is in maintenance mode");
+                    withFailMessage("Store shouldn't accept command while in readonly").
+                    hasMessageContaining("ReadWriteTransaction can't be executed, store is in readonly");
 
             assertThatCode(() -> {
                 Collection<SimpleEntity> entities = store.query(readOnlyTransaction -> {
@@ -37,7 +37,7 @@ public class MaintenanceModeTest {
 
                 assertThat(entities.size()).isEqualTo(1);
                 assertThat(entities.stream().findFirst().orElseThrow().id()).isEqualTo(simpleEntityId);
-                assertThat(storeManager.getState()).isEqualTo(StoreManager.State.READONLY);
+                assertThat(storeManager.isReadOnly()).isEqualTo(true);
             }).
                     withFailMessage("Store should continue to accept query even in Maintenance mode").
                     doesNotThrowAnyException();

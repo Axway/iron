@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import io.axway.alf.log.Logger;
+import io.axway.alf.log.LoggerFactory;
 
 import static io.axway.alf.assertion.Assertion.checkState;
 import static java.lang.Thread.currentThread;
@@ -74,8 +76,8 @@ final class Utils {
      * Invokes all the given tasks in the given executor and returns their result
      *
      * @param executorService executor service to use
-     * @param tasks tasks to invoke
-     * @param <T> tasks result type
+     * @param tasks           tasks to invoke
+     * @param <T>             tasks result type
      * @return the tasks' results
      */
     static <T> List<T> invokeAll(ExecutorService executorService, List<Callable<T>> tasks) throws Exception {

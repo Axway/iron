@@ -17,7 +17,7 @@ import io.axway.iron.ReadOnlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.internal.command.CommandProxyFactory;
-import io.axway.iron.core.internal.command.management.MaintenanceModeCommand;
+import io.axway.iron.core.internal.command.management.ReadonlyCommand;
 import io.axway.iron.core.internal.definition.command.CommandDefinition;
 import io.axway.iron.core.internal.definition.entity.EntityDefinition;
 import io.axway.iron.core.internal.definition.entity.RelationDefinition;
@@ -46,6 +46,7 @@ import static java.util.concurrent.TimeUnit.*;
 
 class StoreManagerImpl implements StoreManager {
     private static final Logger LOG = LoggerFactory.getLogger(StoreManagerImpl.class);
+    public static final String SYSTEM_STORE_NAME = "iron";
 
     private final TransactionStore m_transactionStore;
     private final IntrospectionHelper m_introspectionHelper;
@@ -56,13 +57,14 @@ class StoreManagerImpl implements StoreManager {
     private final Cache<String, CompletableFuture<List<Object>>> m_futuresBySynchronizationId = CacheBuilder.newBuilder().weakValues().build();
     private final SnapshotStore m_snapshotStore;
 
-    private final Disposable m_disposableTxFlow;
-
     private BigInteger m_currentTxId = BigInteger.ONE.negate();
     private BigInteger m_lastSnapshotTxId = BigInteger.ONE.negate();
 
+    private Disposable m_disposableTxFlow;
+    private volatile boolean m_closed = false;
+
     private final Map<String, StoreImpl> m_stores = new ConcurrentHashMap<>();
-    private volatile State state = State.OPEN;
+    public static final String READONLY_ERROR = "ReadWriteTransaction can't be executed, store is in readonly";
 
     StoreManagerImpl(TransactionSerializer transactionSerializer, TransactionStore transactionStore, SnapshotSerializer snapshotSerializer,
                      SnapshotStore snapshotStore, BiFunction<SerializableSnapshot, String, SerializableSnapshot> snapshotPostProcessor,
@@ -94,7 +96,7 @@ class StoreManagerImpl implements StoreManager {
                 = connectableTransactions // to start only when connect is called and not with the first subscription
                 .share(); // because we subscribe the main consumer and the one in charge of notifying recovery done
 
-        Completable withTimeout = transactions.takeWhile(t -> !(state == State.CLOSE)).timeout(1, SECONDS).ignoreElements();
+        Completable withTimeout = transactions.takeWhile(t -> !m_closed).timeout(1, SECONDS).ignoreElements();
 
         m_disposableTxFlow = transactions.subscribe(this::processTransaction, error -> {
             LOG.info("Error processing transaction", error);
@@ -113,24 +115,18 @@ class StoreManagerImpl implements StoreManager {
     public void close() {
         LOG.debug("A store manager is going to be closed");
         ensureOpen();
-        state = State.CLOSE;
+        m_closed = true;
         m_disposableTxFlow.dispose();
         m_transactionStore.close();
         m_snapshotStore.close();
     }
 
     @Override
-    public void maintenance() {
-        LOG.info("A store manager is put in maintenance mode");
-        m_stores.forEach((storeName, store) -> {
-            try {
-                store.createCommand(MaintenanceModeCommand.class).submit().get();
-            } catch (Exception e) {
-                throw new FormattedRuntimeException("Can't set store to maintenance mode", arguments -> arguments.add("storeName", storeName), e);
-            }
-        });
+    public void setReadonly(boolean active) {
+        LOG.info("Changing readonly state", arguments -> arguments.add("readonly", active));
+        ensureOpen();
         try {
-            snapshot();
+            getSystemStore().createCommand(ReadonlyCommand.class).set(ReadonlyCommand::value).to(active).submit().get();
         } catch (Exception e) {
             throw new FormattedRuntimeException(
                     "Maintenance snapshot failed. Trigger a manual snapshot before restarting to recover in nominal mode (use REST API)", e);
@@ -175,15 +171,26 @@ class StoreManagerImpl implements StoreManager {
     }
 
     @Override
-    public State getState() {
-        return state;
+    public boolean isReadOnly() {
+        return m_storePersistence.isReadonly();
     }
 
     @Override
     public StoreImpl getStore(String storeName) {
+        checkArgument(!storeName.equals(SYSTEM_STORE_NAME), "Invalid store name, reserved for system store",
+                      arguments -> arguments.add("storeName", storeName));
         ensureOpen();
         try {
             return m_stores.computeIfAbsent(storeName, key -> createStore(storeName));
+        } catch (Exception e) {
+            throw new UnrecoverableStoreException(e);
+        }
+    }
+
+    private StoreImpl getSystemStore() {
+        ensureOpen();
+        try {
+            return m_stores.computeIfAbsent(SYSTEM_STORE_NAME, key -> createStore(SYSTEM_STORE_NAME));
         } catch (Exception e) {
             throw new UnrecoverableStoreException(e);
         }
@@ -228,19 +235,22 @@ class StoreManagerImpl implements StoreManager {
             Object[] results = new Object[commands.size()];
             Throwable error = null;
             try {
+                if (transaction.getStoreName().equals(SYSTEM_STORE_NAME)) {
+                    Optional.ofNullable(transactionFuture).ifPresent(txFuture -> txFuture.complete(Collections.singletonList(null)));
+                    return;
+                }
+                if (transaction instanceof StorePersistence.TransactionToDiscard) {
+                    Optional.ofNullable(transactionFuture).ifPresent(txFuture -> {
+                        txFuture.completeExceptionally(new StoreException(READONLY_ERROR));
+                    });
+                    return;
+                }
                 StoreImpl store = getStore(transaction.getStoreName());
                 ReadWriteTransactionImpl tx = new ReadWriteTransactionImpl(m_introspectionHelper, store.entityStores());
                 store.m_writeLock.lock();
                 try {
                     for (int i = 0; i < commands.size(); i++) {
                         Command<?> command = commands.get(i);
-                        if (command instanceof MaintenanceModeCommand) {
-                            state = State.READONLY;
-                            LOG.warn("Store enters maintenance mode (read only). Do a snapshot + restart to recover to nominal mode.");
-                        } else if (state == State.READONLY) {
-                            throw new StoreException(
-                                    "ReadWriteTransaction can't be executed, store is in maintenance mode. Do a snapshot + restart to recover to nominal mode.");
-                        }
                         results[i] = command.execute(tx);
                         int activeObjectUpdaterCount = tx.getActiveObjectUpdaterCount();
                         if (activeObjectUpdaterCount > 0) {
@@ -280,7 +290,7 @@ class StoreManagerImpl implements StoreManager {
     }
 
     private void ensureOpen() {
-        checkState(!(state == State.CLOSE), "Store has been closed");
+        checkState(!m_closed, "Store has been closed");
     }
 
     private class StoreImpl implements Store {

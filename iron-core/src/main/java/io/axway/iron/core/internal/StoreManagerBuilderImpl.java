@@ -15,7 +15,7 @@ import io.axway.iron.core.internal.definition.entity.EntityDefinition;
 import io.axway.iron.core.internal.definition.entity.EntityDefinitionBuilder;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.core.internal.utils.proxy.ProxyConstructorFactory;
-import io.axway.iron.core.internal.command.management.MaintenanceModeCommand;
+import io.axway.iron.core.internal.command.management.ReadonlyCommand;
 import io.axway.iron.spi.model.snapshot.SerializableSnapshot;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
@@ -48,7 +48,7 @@ public class StoreManagerBuilderImpl implements StoreManagerBuilder {
     }
 
     @Override
-    public <T> StoreManagerBuilder withCommandClass(Class<? extends Command<?>> commandClass) {
+    public StoreManagerBuilder withCommandClass(Class<? extends Command<?>> commandClass) {
         checkState(m_commandClasses.add(commandClass), "Command class %s has been already added", args -> args.add("commandClass", commandClass.getName()));
         return this;
     }
@@ -103,8 +103,8 @@ public class StoreManagerBuilderImpl implements StoreManagerBuilder {
         EntityDefinitionBuilder entityDefinitionBuilder = new EntityDefinitionBuilder(introspectionHelper, proxyConstructorFactory, dataTypeManager,
                                                                                       interfaceValidator);
 
-        // Adding command for maintenanceMode
-        m_commandClasses.add(MaintenanceModeCommand.class);
+        // Adding readonly command
+        m_commandClasses.add(ReadonlyCommand.class);
 
         Collection<CommandDefinition<? extends Command<?>>> commandDefinitions = buildCommandDefinitions(commandDefinitionBuilder);
         Map<Class<?>, EntityDefinition<?>> entityDefinitions = entityDefinitionBuilder.analyzeEntities(Set.copyOf(m_entityClasses));

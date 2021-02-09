@@ -20,13 +20,12 @@ public interface SnapshotStore {
     SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId);
 
     interface SnapshotStoreWriter {
-        OutputStream getOutputStream(String storeName);
 
+        OutputStream getOutputStream(String storeName);
         default void commit() {
 
         }
     }
-
     /**
      * Retrieve an existing snapshot in the store.
      *
@@ -43,6 +42,10 @@ public interface SnapshotStore {
      * @throws IOException if an I/O error occurs when listing the snapshots
      */
     List<BigInteger> listSnapshots() throws IOException;
+
+    void lockReadOnly(boolean value);
+
+    boolean isReadOnlyLockSet();
 
     /**
      * Dispose any resource the store may have open.

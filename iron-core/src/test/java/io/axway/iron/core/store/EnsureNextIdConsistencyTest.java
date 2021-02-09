@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import org.reactivestreams.Publisher;
 import org.testng.annotations.Test;
+import io.axway.alf.exception.IllegalStateFormattedException;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerBuilder;
@@ -76,6 +77,16 @@ public class EnsureNextIdConsistencyTest {
                 } else {
                     return List.of();
                 }
+            }
+
+            @Override
+            public void lockReadOnly(boolean value) {
+                throw new IllegalStateFormattedException("NYI");
+            }
+
+            @Override
+            public boolean isReadOnlyLockSet() {
+                return false;
             }
 
             @Override

@@ -14,6 +14,7 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import io.axway.alf.exception.IllegalStateFormattedException;
 import io.axway.iron.spi.storage.SnapshotStore;
 import io.reactivex.Flowable;
 
@@ -138,6 +139,16 @@ public class AwsS3SnapshotStore implements SnapshotStore {
                 .withPrefix(getSnapshotIdsPrefix());
         return listAllObjects(request, ListObjectsV2Result::getObjectSummaries) //
                 .stream().flatMap(this::getSnapshotId).collect(toList());
+    }
+
+    @Override
+    public void lockReadOnly(boolean value) {
+        throw new IllegalStateFormattedException("NYI");
+    }
+
+    @Override
+    public boolean isReadOnlyLockSet() {
+        throw new IllegalStateFormattedException("NYI");
     }
 
     @Nonnull

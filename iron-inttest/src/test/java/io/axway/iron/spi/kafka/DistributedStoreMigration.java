@@ -33,7 +33,7 @@ public class DistributedStoreMigration {
     private KafkaCluster m_kafkaCluster;
     private Path m_ironPath;
 
-    private static String topic = "iron-kafka-test-" + randomUUID().toString();
+    private static final String topic = "iron-kafka-test-" + randomUUID().toString();
 
     @BeforeClass
     public void setUp() throws Exception {
@@ -67,57 +67,54 @@ public class DistributedStoreMigration {
 
     @Test
     public final void shouldMigrateDistributedStore() throws ExecutionException, InterruptedException {
-        StoreManager storeManagerNodeA = initStoreManager(SuperHeroV1.class, CreateSuperHeroV1.class, null);
-        StoreManager storeManagerNodeB = initStoreManager(SuperHeroV1.class, CreateSuperHeroV1.class, null);
+        try (StoreManager storeManagerNodeA = initStoreManager(SuperHeroV1.class, CreateSuperHeroV1.class, null);
+             StoreManager storeManagerNodeB = initStoreManager(SuperHeroV1.class, CreateSuperHeroV1.class, null)) {
 
-        Store kafkaStoreNodeA = storeManagerNodeA.getStore("kafkaStore");
-        Store kafkaStoreNodeB = storeManagerNodeB.getStore("kafkaStore");
+            Store kafkaStoreNodeA = storeManagerNodeA.getStore("kafkaStore");
+            Store kafkaStoreNodeB = storeManagerNodeB.getStore("kafkaStore");
 
-        // Creating two superheroes
-        SuperHeroV1 bruceWayne = kafkaStoreNodeA.createCommand(CreateSuperHeroV1.class).
-                set(CreateSuperHeroV1::firstName).to("Bruce").
-                set(CreateSuperHeroV1::lastName).to("Wayne").
-                submit().get();
-        assertThat(bruceWayne.id()).isEqualTo(0);
+            // Creating two superheroes
+            SuperHeroV1 bruceWayne = kafkaStoreNodeA.createCommand(CreateSuperHeroV1.class).
+                    set(CreateSuperHeroV1::firstName).to("Bruce").
+                    set(CreateSuperHeroV1::lastName).to("Wayne").
+                    submit().get();
+            assertThat(bruceWayne.id()).isEqualTo(0);
 
-        SuperHeroV1 bruceBanner = kafkaStoreNodeB.createCommand(CreateSuperHeroV1.class).
-                set(CreateSuperHeroV1::firstName).to("Bruce").
-                set(CreateSuperHeroV1::lastName).to("Banner").
-                submit().get();
-        assertThat(bruceBanner.id()).isEqualTo(1);
+            SuperHeroV1 bruceBanner = kafkaStoreNodeB.createCommand(CreateSuperHeroV1.class).
+                    set(CreateSuperHeroV1::firstName).to("Bruce").
+                    set(CreateSuperHeroV1::lastName).to("Banner").
+                    submit().get();
+            assertThat(bruceBanner.id()).isEqualTo(1);
 
-        // Waiting a bit so that the two stores are in sync
-        Thread.sleep(500);
+            // Waiting a bit so that the two stores are in sync
+            Thread.sleep(500);
 
-        // Checking creation is effective
-        Collection<SuperHeroV1> contentFromStoreNodeA = kafkaStoreNodeA.query(readOnlyTransaction -> {
-            return readOnlyTransaction.select(SuperHeroV1.class).all();
-        });
-        assertThat(contentFromStoreNodeA).hasSize(2);
+            // Checking creation is effective
+            Collection<SuperHeroV1> contentFromStoreNodeA = kafkaStoreNodeA.query(readOnlyTransaction -> {
+                return readOnlyTransaction.select(SuperHeroV1.class).all();
+            });
+            assertThat(contentFromStoreNodeA).hasSize(2);
 
-        Collection<SuperHeroV1> contentFromStoreNodeB = kafkaStoreNodeB.query(readOnlyTransaction -> {
-            return readOnlyTransaction.select(SuperHeroV1.class).all();
-        });
-        assertThat(contentFromStoreNodeB).hasSize(2);
+            Collection<SuperHeroV1> contentFromStoreNodeB = kafkaStoreNodeB.query(readOnlyTransaction -> {
+                return readOnlyTransaction.select(SuperHeroV1.class).all();
+            });
+            assertThat(contentFromStoreNodeB).hasSize(2);
 
-        // Activating maintenance mode
-        storeManagerNodeA.maintenance();
+            // Activating maintenance mode
+            storeManagerNodeA.setReadonly(true);
 
-        // All store should be in maintenance
-        Assertions.assertThatCode(() -> kafkaStoreNodeA.createCommand(CreateSuperHeroV1.class).
-                set(CreateSuperHeroV1::firstName).to("Peter").
-                set(CreateSuperHeroV1::lastName).to("Parker").
-                submit().get()).
-                hasMessageContaining("maintenance");
-        Assertions.assertThatCode(() -> kafkaStoreNodeB.createCommand(CreateSuperHeroV1.class).
-                set(CreateSuperHeroV1::firstName).to("Peter").
-                set(CreateSuperHeroV1::lastName).to("Parker").
-                submit().get()).
-                hasMessageContaining("maintenance");
-
-        // Restarting storeNodeA with new version
-        storeManagerNodeA.snapshot();
-        storeManagerNodeA.close();
+            // All store should be in maintenance
+            Assertions.assertThatCode(() -> kafkaStoreNodeA.createCommand(CreateSuperHeroV1.class).
+                    set(CreateSuperHeroV1::firstName).to("Peter").
+                    set(CreateSuperHeroV1::lastName).to("Parker").
+                    submit().get()).
+                    hasMessageContaining("readonly");
+            Assertions.assertThatCode(() -> kafkaStoreNodeB.createCommand(CreateSuperHeroV1.class).
+                    set(CreateSuperHeroV1::firstName).to("Peter").
+                    set(CreateSuperHeroV1::lastName).to("Parker").
+                    submit().get()).
+                    hasMessageContaining("readonly");
+        }
 
         // Waiting for close to be effective
         Thread.sleep(500);

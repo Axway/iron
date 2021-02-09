@@ -16,6 +16,7 @@ public class TransientStore implements SnapshotStore, TransactionStore {
     private long m_nextId;
 
     private final Object m_lock = new Object();
+    private boolean m_readonly = false;
 
     TransientStore() {
     }
@@ -38,6 +39,16 @@ public class TransientStore implements SnapshotStore, TransactionStore {
     @Override
     public List<BigInteger> listSnapshots() {
         return List.of();
+    }
+
+    @Override
+    public void lockReadOnly(boolean value) {
+        m_readonly = value;
+    }
+
+    @Override
+    public boolean isReadOnlyLockSet() {
+        return m_readonly;
     }
 
     @Override
