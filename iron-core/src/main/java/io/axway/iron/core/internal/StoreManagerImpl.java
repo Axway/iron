@@ -122,14 +122,16 @@ class StoreManagerImpl implements StoreManager {
     }
 
     @Override
-    public void setReadonly(boolean active) {
-        LOG.info("Changing readonly state", arguments -> arguments.add("readonly", active));
+    public void setReadonly(boolean readonly) {
+        LOG.info("Changing readonly state", arguments -> arguments.add("readonly", readonly));
         ensureOpen();
         try {
-            getSystemStore().createCommand(ReadonlyCommand.class).set(ReadonlyCommand::value).to(active).submit().get();
+            getSystemStore().createCommand(ReadonlyCommand.class).set(ReadonlyCommand::readonly).to(readonly).submit().get();
+            if (readonly) {
+                snapshot();
+            }
         } catch (Exception e) {
-            throw new FormattedRuntimeException(
-                    "Maintenance snapshot failed. Trigger a manual snapshot before restarting to recover in nominal mode (use REST API)", e);
+            throw new FormattedRuntimeException("Can't change readonly state.", e);
         }
     }
 

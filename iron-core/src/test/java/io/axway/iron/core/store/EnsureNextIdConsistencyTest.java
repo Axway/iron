@@ -80,16 +80,6 @@ public class EnsureNextIdConsistencyTest {
             }
 
             @Override
-            public void lockReadOnly(boolean value) {
-                throw new IllegalStateFormattedException("NYI");
-            }
-
-            @Override
-            public boolean isReadOnlyLockSet() {
-                return false;
-            }
-
-            @Override
             public void deleteSnapshot(BigInteger transactionId) {
                 // nothing to do
             }

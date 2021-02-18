@@ -43,10 +43,6 @@ public interface SnapshotStore {
      */
     List<BigInteger> listSnapshots() throws IOException;
 
-    void lockReadOnly(boolean value);
-
-    boolean isReadOnlyLockSet();
-
     /**
      * Dispose any resource the store may have open.
      */

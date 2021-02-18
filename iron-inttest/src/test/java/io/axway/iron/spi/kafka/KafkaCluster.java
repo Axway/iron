@@ -17,7 +17,7 @@ import kafka.server.RunningAsBroker;
 import scala.collection.mutable.ArraySeq;
 
 import static io.axway.alf.assertion.Assertion.checkArgument;
-import static io.axway.iron.spi.kafka.Utils.*;
+import static io.axway.iron.spi.Utils.*;
 import static java.lang.String.valueOf;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.*;
@@ -139,18 +139,17 @@ final class KafkaCluster implements AutoCloseable {
 
     private static final class EmbeddedKafka implements AutoCloseable {
         private final String m_connectionString;
-        private final Path m_logDir;
         private final KafkaServer m_broker;
 
         private EmbeddedKafka(String zookeeperConnectionString, Path rootPath, int clusterSize) {
             m_connectionString = "localhost:" + providePort();
             LOG.info("Kafka address " + m_connectionString);
 
-            m_logDir = createDirectories(rootPath.resolve("kafka-log"));
+            Path logDir = createDirectories(rootPath.resolve("kafka-log"));
             Properties kafkaProps = new Properties();
             kafkaProps.setProperty("min.insync.replicas", valueOf(clusterSize / 2 + 1));
             kafkaProps.setProperty("listeners", "PLAINTEXT://" + m_connectionString);
-            kafkaProps.setProperty("log.dirs", m_logDir.toAbsolutePath().toString());
+            kafkaProps.setProperty("log.dirs", logDir.toAbsolutePath().toString());
             kafkaProps.setProperty("num.partition", valueOf(clusterSize / 2 + 1));
             kafkaProps.setProperty("zookeeper.connect", zookeeperConnectionString);
             kafkaProps.setProperty("offsets.topic.replication.factor", valueOf(clusterSize / 2 + 1));

@@ -97,6 +97,15 @@ public class ChronicleTransactionStore implements TransactionStore {
         m_chronicleQueue.close();
     }
 
+    @Override
+    public void lockReadOnly(boolean readonly) {
+    }
+
+    @Override
+    public boolean isReadOnlyLockSet() {
+        return false;
+    }
+
     private Path ensureDirectoryExists(Path dir) {
         try {
             return Files.createDirectories(dir);

@@ -141,16 +141,6 @@ public class AwsS3SnapshotStore implements SnapshotStore {
                 .stream().flatMap(this::getSnapshotId).collect(toList());
     }
 
-    @Override
-    public void lockReadOnly(boolean value) {
-        throw new IllegalStateFormattedException("NYI");
-    }
-
-    @Override
-    public boolean isReadOnlyLockSet() {
-        throw new IllegalStateFormattedException("NYI");
-    }
-
     @Nonnull
     private Stream<BigInteger> getSnapshotId(S3ObjectSummary object) {
         return extractSnapshotId(object.getKey()).

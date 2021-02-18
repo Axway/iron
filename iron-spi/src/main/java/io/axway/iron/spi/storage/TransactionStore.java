@@ -41,6 +41,16 @@ public interface TransactionStore {
     }
 
     /**
+     * Set a readonly lock indicator on the store
+     */
+    void lockReadOnly(boolean readonly);
+
+    /**
+     * Retrieve the lock state
+     */
+    boolean isReadOnlyLockSet();
+
+    /**
      * An access to the content of a transaction
      */
     interface TransactionInput {

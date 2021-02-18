@@ -2,8 +2,11 @@ package io.axway.iron.core.spi.file;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
@@ -12,6 +15,7 @@ import java.util.stream.*;
 import javax.annotation.*;
 import javax.annotation.concurrent.*;
 import org.reactivestreams.Publisher;
+import io.axway.alf.exception.FormattedRuntimeException;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.error.StoreException;
@@ -169,6 +173,31 @@ public class FileTransactionStore implements TransactionStore {
         initExistingFiles();
     }
 
+    @Override
+    public void lockReadOnly(boolean wantLock) {
+        boolean lockExists = isReadOnlyLockSet();
+        if (wantLock && !lockExists) {
+            try {
+                Files.createFile(getReadonlyLock());
+            } catch (FileAlreadyExistsException e) {
+                // Don't care
+            } catch (Exception e) {
+                throw new RuntimeException("Can't create readonly lock", e);
+            }
+        } else if (!wantLock && lockExists) {
+            try {
+                Files.deleteIfExists(getReadonlyLock());
+            } catch (IOException e) {
+                throw new FormattedRuntimeException("Can't delete readonly lock", e);
+            }
+        }
+    }
+
+    @Override
+    public boolean isReadOnlyLockSet() {
+        return Files.exists(getReadonlyLock());
+    }
+
     private long retrieveNextTxId() {
         try (Stream<Path> dirList = Files.list(m_transactionDir)) {
             return dirList //
@@ -182,5 +211,9 @@ public class FileTransactionStore implements TransactionStore {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private Path getReadonlyLock() {
+        return m_transactionDir.resolve("readonly.lock");
     }
 }

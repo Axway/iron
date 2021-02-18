@@ -116,8 +116,8 @@ class StorePersistence {
         if (latestSnapshotTxId.isEmpty()) {
             LOG.info("Store has no snapshot, store is empty, creating it's first snapshot");
         }
-        if (m_snapshotStore.isReadOnlyLockSet()) {
-            LOG.info("Store persistence is in readonly");
+        if (m_transactionStore.isReadOnlyLockSet()) {
+            LOG.info("Transaction store is in readonly");
         }
         return latestSnapshotTxId;
     }
@@ -161,7 +161,7 @@ class StorePersistence {
         if (transactionInput.storeName().equals(StoreManagerImpl.SYSTEM_STORE_NAME)) {
             SerializableCommand firstCommand = serializableTransaction.getCommands().get(0);
             if (firstCommand.getCommandName().equals(ReadonlyCommand.class.getName())) {
-                setReadonly((boolean) firstCommand.getParameters().get("value"));
+                setReadonly((boolean) firstCommand.getParameters().get(ReadonlyCommand.READONLY_PARAMETER_NAME));
             }
         }
 
@@ -187,11 +187,11 @@ class StorePersistence {
     }
 
     public boolean isReadonly() {
-        return m_snapshotStore.isReadOnlyLockSet();
+        return m_transactionStore.isReadOnlyLockSet();
     }
 
     public void setReadonly(boolean readonly) {
-        m_snapshotStore.lockReadOnly(readonly);
+        m_transactionStore.lockReadOnly(readonly);
     }
 
     static class TransactionToDiscard extends TransactionToExecute {

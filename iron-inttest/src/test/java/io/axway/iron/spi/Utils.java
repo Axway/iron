@@ -1,4 +1,4 @@
-package io.axway.iron.spi.kafka;
+package io.axway.iron.spi;
 
 import java.io.*;
 import java.net.DatagramSocket;
@@ -18,7 +18,7 @@ import static java.util.Comparator.*;
 /**
  * This class contains utility methods for the Kafka SPI tests
  */
-final class Utils {
+public final class Utils {
     private static final AtomicInteger PORT = new AtomicInteger(1024);
 
     /**
@@ -26,7 +26,7 @@ final class Utils {
      *
      * @return available port
      */
-    static int providePort() {
+    public static int providePort() {
         while (true) {
             // Pick a port
             int port = PORT.incrementAndGet();
@@ -49,7 +49,7 @@ final class Utils {
      * @param path path to delete
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    static void tryDeleteDirectory(Path path) {
+    public static void tryDeleteDirectory(Path path) {
         try {
             Files.walk(path).sorted(reverseOrder()).map(Path::toFile).forEach(File::delete);
         } catch (IOException e) {
@@ -63,7 +63,7 @@ final class Utils {
      * @param timeUnit unit of the sleep time
      * @param duration duration of the sleep time
      */
-    static void sleep(TimeUnit timeUnit, long duration) {
+    public static void sleep(TimeUnit timeUnit, long duration) {
         try {
             timeUnit.sleep(duration);
         } catch (InterruptedException e) {
@@ -80,7 +80,7 @@ final class Utils {
      * @param <T>             tasks result type
      * @return the tasks' results
      */
-    static <T> List<T> invokeAll(ExecutorService executorService, List<Callable<T>> tasks) throws Exception {
+    public static <T> List<T> invokeAll(ExecutorService executorService, List<Callable<T>> tasks) throws Exception {
         List<T> results = new ArrayList<>(tasks.size());
         for (Future<T> future : executorService.invokeAll(tasks)) {
             results.add(future.get());
@@ -94,7 +94,7 @@ final class Utils {
      * @param prefix temporary directory prefix
      * @return path to newly created temporary directory
      */
-    static Path createTempDirectory(String prefix) {
+    public static Path createTempDirectory(String prefix) {
         try {
             return Files.createTempDirectory(prefix);
         } catch (IOException e) {
@@ -108,7 +108,7 @@ final class Utils {
      * @param directory directory to create
      * @return directory created
      */
-    static Path createDirectories(Path directory) {
+    public static Path createDirectories(Path directory) {
         try {
             return Files.createDirectories(directory);
         } catch (IOException e) {

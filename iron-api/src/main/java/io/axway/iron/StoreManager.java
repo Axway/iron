@@ -45,7 +45,10 @@ public interface StoreManager extends AutoCloseable {
     void close();
 
     /**
-     * Set stores to readonly
+     * Change readonly state
+     * If switching to active then a snapshot is automatically made
+     *
+     * @param active if true then switch to readonly else resume to nominal mode
      */
     void setReadonly(boolean active);
 
