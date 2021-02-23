@@ -47,7 +47,7 @@ public class StoreManagerBuilderImpl implements StoreManagerBuilder {
     }
 
     @Override
-    public <T> StoreManagerBuilder withCommandClass(Class<? extends Command<T>> commandClass) {
+    public StoreManagerBuilder withCommandClass(Class<? extends Command<?>> commandClass) {
         checkState(m_commandClasses.add(commandClass), "Command class %s has been already added", args -> args.add("commandClass", commandClass.getName()));
         return this;
     }
