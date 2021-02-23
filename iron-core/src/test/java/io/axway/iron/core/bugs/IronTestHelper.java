@@ -2,6 +2,7 @@ package io.axway.iron.core.bugs;
 
 import java.nio.file.Path;
 import java.util.*;
+import io.axway.iron.Command;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerBuilder;
@@ -21,7 +22,7 @@ import io.axway.iron.spi.storage.TransactionStore;
 final public class IronTestHelper {
 
     static StoreManager createTransientStore() {
-       return StoreManagerBuilder.newStoreManagerBuilder() //
+        return StoreManagerBuilder.newStoreManagerBuilder() //
                 .withSnapshotSerializer(buildJacksonSnapshotSerializer())       //
                 .withTransactionSerializer(buildJacksonTransactionSerializer()) //
                 .withSnapshotStore(buildTransientSnapshotStoreFactory())       //
@@ -33,7 +34,20 @@ final public class IronTestHelper {
                 .build();
     }
 
-    static Store getRandomTransientStore(StoreManager storeManager){
+    static StoreManager createTransientStore(List<Class<?>> entityClasses, List<Class<? extends Command<?>>> commandClasses) {
+        StoreManagerBuilder storeManagerBuilder = StoreManagerBuilder.newStoreManagerBuilder().
+                withSnapshotSerializer(buildJacksonSnapshotSerializer()).
+                withTransactionSerializer(buildJacksonTransactionSerializer()).
+                withSnapshotStore(buildTransientSnapshotStoreFactory()).
+                withTransactionStore(buildTransientTransactionStoreFactory());
+
+        commandClasses.forEach(storeManagerBuilder::withCommandClass);
+        entityClasses.forEach(storeManagerBuilder::withEntityClass);
+
+        return storeManagerBuilder.build();
+    }
+
+    static Store getRandomTransientStore(StoreManager storeManager) {
         return storeManager.getStore("iron-test-bugs-" + UUID.randomUUID().toString());
     }
 

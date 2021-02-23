@@ -184,7 +184,7 @@ public class EntityStore<E> {
                         Map<Object, Long> index = e.getValue();
                         Long indexedId = index.get(attributeValue);
                         if (indexedId != null && indexedId == instance.__id()) {
-                            index.remove(attributeName);
+                            index.remove(attributeValue);
                         }
                     }
                 }

@@ -22,7 +22,7 @@ public interface StoreManagerBuilder {
 
     StoreManagerBuilder withEntityClass(Class<?> entityClass);
 
-    <T> StoreManagerBuilder withCommandClass(Class<? extends Command<T>> commandClass);
+    StoreManagerBuilder withCommandClass(Class<? extends Command<?>> commandClass);
 
     StoreManagerBuilder withTransactionSerializer(TransactionSerializer transactionSerializer);
 
