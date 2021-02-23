@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 import javax.annotation.*;
+import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -85,10 +86,57 @@ public class BlueGreenMigrationTest {
             assertThat(storeManagerNodeBlue.isReadOnly()).
                     withFailMessage("Restarting a readonly store should preserve its state provided you point the same tx store").
                     isTrue();
+
+            Store kafkaStoreNodeBlue = storeManagerNodeBlue.getStore("kafkaStore");
+            assertThatCode(() -> kafkaStoreNodeBlue.createCommand(CreateSuperHeroV1.class).
+                    set(CreateSuperHeroV1::firstName).to("Peter").
+                    set(CreateSuperHeroV1::lastName).to("Parker").
+                    submit().get()).
+                    withFailMessage("A write command shouldn't be processed by a readonly store").
+                    hasMessageContaining("readonly");
         }
 
-        // Definition of the migration
-        BiFunction<SerializableSnapshot, String, SerializableSnapshot> migration = (snapshot, name) -> {
+        // Definition of the migration from superHeroV1 to V2
+        BiFunction<SerializableSnapshot, String, SerializableSnapshot> migration = buildMigrationFromSuperHeroV1ToV2();
+
+        // Initiating a new migrated store manager with the same content for snapshot but brand new tx dir
+        try (StoreManager storeManagerNodeGreen = initStoreManager(m_snapshotDirNodeBlue, m_txDirNodeGreen, SuperHeroV2.class, CreateSuperHeroV2.class,
+                                                                   migration)) {
+            assertThat(storeManagerNodeGreen.isReadOnly()).
+                    withFailMessage("ReadLock is on tx store so starting this with its proper tx store shouldn't resume it as readonly ").
+                    isFalse();
+
+            // Checking content as a SuperHeroV2
+            Store kafkaStoreNodeAMigrated = storeManagerNodeGreen.getStore("kafkaStore");
+            Collection<SuperHeroV2> superHeroMigrated = kafkaStoreNodeAMigrated.query(readOnlyTransaction -> {
+                return readOnlyTransaction.select(SuperHeroV2.class).all();
+            });
+            assertThat(superHeroMigrated.stream().map(SuperHeroV2::nickName)).
+                    withFailMessage("Once migrated, the super hero should be none by its nickname").
+                    containsExactlyInAnyOrder("Batman");
+
+            // Checking that store is not anymore in readonly
+            assertThatCode(() -> kafkaStoreNodeAMigrated.createCommand(CreateSuperHeroV2.class).
+                    set(CreateSuperHeroV2::nickName).to("Spiderman").
+                    submit().get()).doesNotThrowAnyException();
+
+            // Checking that mutation is effective
+            String newSuperHeroName = kafkaStoreNodeAMigrated.query(readOnlyTransaction -> {
+                return readOnlyTransaction.select(SuperHeroV2.class).all().
+                        stream().
+                        filter(superHeroV2 -> superHeroV2.nickName().equals("Spiderman")).
+                        findFirst().
+                        map(SuperHeroV2::nickName).
+                        orElseThrow();
+            });
+            assertThat(newSuperHeroName).isEqualTo("Spiderman");
+            System.out.println("Here comes : " + superHeroMigrated);
+        }
+    }
+
+    @NotNull
+    private BiFunction<SerializableSnapshot, String, SerializableSnapshot> buildMigrationFromSuperHeroV1ToV2() {
+        return (snapshot, name) -> {
             if (snapshot.getApplicationModelVersion() >= 1) {
                 return snapshot;
             }
@@ -115,21 +163,6 @@ public class BlueGreenMigrationTest {
                     });
             return snapshot;
         };
-
-        // Initiating a new store manager with the same content for snapshot but brand new tx dir
-        StoreManager storeManagerNodeGreen = initStoreManager(m_snapshotDirNodeBlue, m_txDirNodeGreen, SuperHeroV2.class, CreateSuperHeroV2.class, migration);
-        assertThat(storeManagerNodeGreen.isReadOnly()).
-                withFailMessage("ReadLock is on tx store so starting this with its proper tx store shouldn't resume it as readonly ").
-                isFalse();
-
-        Store kafkaStoreNodeAMigrated = storeManagerNodeGreen.getStore("kafkaStore");
-        Collection<SuperHeroV2> superHeroMigrated = kafkaStoreNodeAMigrated.query(readOnlyTransaction -> {
-            return readOnlyTransaction.select(SuperHeroV2.class).all();
-        });
-        assertThat(superHeroMigrated.stream().map(SuperHeroV2::nickName)).
-                withFailMessage("Once migrated, the super hero should be none by its nickname").
-                containsExactlyInAnyOrder("Batman");
-        System.out.println("HHere comes : " + superHeroMigrated);
     }
 
     private StoreManager initStoreManager(Path snapshotWorkingDir, Path txWorkingDir, Class<?> entityClass, Class<? extends Command<?>> commandClass,

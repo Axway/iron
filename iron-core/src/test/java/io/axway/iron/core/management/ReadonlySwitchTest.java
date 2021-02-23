@@ -10,10 +10,10 @@ import io.axway.iron.core.model.simple.SimpleEntity;
 
 import static org.assertj.core.api.Assertions.*;
 
-public class MaintenanceModeTest {
+public class ReadonlySwitchTest {
 
     @Test
-    public void ensureMaintenanceModeIsWorking() throws Exception {
+    public void shouldStoreManagerHandleReadonlySwitch() throws Exception {
         try (StoreManager storeManager = IronTestHelper.createTransientStore()) {
             Store store = IronTestHelper.getRandomTransientStore(storeManager);
 

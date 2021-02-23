@@ -139,4 +139,14 @@ public class StoreManagerTest {
         storeManagerFactory.setReadonly(false);
         assertThatCode(() -> storeManagerFactory.getStore("whatever").createCommand(SimpleCommand.class).submit().get()).doesNotThrowAnyException();
     }
+
+    @Test
+    public void shouldNotFailWhenSwitchingToReadonlyTwiceInARow() {
+        StoreManager storeManagerFactory = createStoreManagerFactory();
+        assertThatCode(() -> storeManagerFactory.getStore("whatever").createCommand(SimpleCommand.class).submit().get()).doesNotThrowAnyException();
+        storeManagerFactory.setReadonly(true);
+        assertThatCode(() -> storeManagerFactory.setReadonly(true)).
+                withFailMessage("Switching to readonly shouldn't fail if store is already in readonly").
+                doesNotThrowAnyException();
+    }
 }

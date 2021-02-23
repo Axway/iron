@@ -30,7 +30,7 @@ import static io.axway.iron.spi.file.FileTestHelper.*;
 import static io.axway.iron.spi.jackson.JacksonTestHelper.*;
 import static java.util.Comparator.*;
 import static java.util.stream.Collectors.*;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 public class FileStoreTest {
 
@@ -323,6 +323,50 @@ public class FileStoreTest {
                 return tx.select(Person.class).all();
             }).stream().map(Person::id).collect(toList());
             assertThat(store2PersonIds).containsExactlyInAnyOrder("myPersonId2_1", "myPersonId2_3");
+        }
+    }
+
+    @Test
+    public void shouldHandleReadwriteLockingAndUnlocking() {
+        // Given an iron store
+        Path filePath = Paths.get("tmp-iron-test", "iron-spi-file-inttest");
+
+        String directory = "read-write-locking-test-" + UUID.randomUUID();
+        Supplier<TransactionStore> transactionStoreFactory = () -> buildFileTransactionStore(filePath, directory);
+        Supplier<SnapshotStore> snapshotStoreFactory = () -> buildFileSnapshotStore(filePath, directory);
+
+        TransactionSerializer transactionSerializer = buildJacksonTransactionSerializer();
+        SnapshotSerializer snapshotSerializer = buildJacksonSnapshotSerializer();
+
+        // When
+        // - I add a transaction and then do a snapshot
+        StoreManagerBuilder factoryBuilder1 = StoreManagerBuilder.newStoreManagerBuilder() //
+                .withTransactionSerializer(transactionSerializer) //
+                .withTransactionStore(transactionStoreFactory.get()) //
+                .withSnapshotSerializer(snapshotSerializer) //
+                .withSnapshotStore(snapshotStoreFactory.get()) //
+                .withEntityClass(Company.class) //
+                .withEntityClass(Person.class) //
+                .withCommandClass(CreatePerson.class) //
+                ;
+        try (StoreManager storeManager = factoryBuilder1.build()) {
+            Store store1 = storeManager.getStore("store1");
+            assertThatCode(() -> store1.createCommand(CreatePerson.class).
+                    set(CreatePerson::id).to("Batman").
+                    set(CreatePerson::name).to("Bruce").
+                    submit().get()).doesNotThrowAnyException();
+
+            storeManager.setReadonly(true);
+            assertThatCode(() -> store1.createCommand(CreatePerson.class).
+                    set(CreatePerson::id).to("Spiderman").
+                    set(CreatePerson::name).to("Peter").
+                    submit().get()).hasMessageContaining("readonly");
+
+            storeManager.setReadonly(true);
+            assertThatCode(() -> store1.createCommand(CreatePerson.class).
+                    set(CreatePerson::id).to("Spiderman").
+                    set(CreatePerson::name).to("Peter").
+                    submit().get()).hasMessageContaining("readonly");
         }
     }
 }
