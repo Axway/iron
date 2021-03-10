@@ -17,7 +17,7 @@ public class ReadonlySwitchTest {
         try (StoreManager storeManager = IronTestHelper.createTransientStore()) {
             Store store = IronTestHelper.getRandomTransientStore(storeManager);
 
-            assertThat(storeManager.isReadOnly()).isEqualTo(false);
+            assertThat(storeManager.isReadonly()).isEqualTo(false);
 
             String simpleEntityId = "shouldBeCreated";
             store.createCommand(CreateSimpleEntity.class).set(CreateSimpleEntity::id).to(simpleEntityId).submit().get();
@@ -31,13 +31,13 @@ public class ReadonlySwitchTest {
                     hasMessageContaining("ReadWriteTransaction can't be executed, store is in readonly");
 
             assertThatCode(() -> {
-                Collection<SimpleEntity> entities = store.query(readOnlyTransaction -> {
-                    return readOnlyTransaction.select(SimpleEntity.class).all();
+                Collection<SimpleEntity> entities = store.query(readonlyTransaction -> {
+                    return readonlyTransaction.select(SimpleEntity.class).all();
                 });
 
                 assertThat(entities.size()).isEqualTo(1);
                 assertThat(entities.stream().findFirst().orElseThrow().id()).isEqualTo(simpleEntityId);
-                assertThat(storeManager.isReadOnly()).isEqualTo(true);
+                assertThat(storeManager.isReadonly()).isEqualTo(true);
             }).
                     withFailMessage("Store should continue to accept query even in Maintenance mode").
                     doesNotThrowAnyException();

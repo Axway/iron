@@ -42,12 +42,12 @@ public class TransientStore implements SnapshotStore, TransactionStore {
     }
 
     @Override
-    public void lockReadOnly(boolean value) {
+    public void lockReadonly(boolean value) {
         m_readonly = value;
     }
 
     @Override
-    public boolean isReadOnlyLockSet() {
+    public boolean isReadonlyLockSet() {
         return m_readonly;
     }
 

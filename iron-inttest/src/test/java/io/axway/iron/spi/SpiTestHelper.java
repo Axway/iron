@@ -7,7 +7,7 @@ import java.util.function.*;
 import javax.annotation.*;
 import org.assertj.core.api.Assertions;
 import io.axway.iron.Command;
-import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadonlyTransaction;
 import io.axway.iron.ReadWriteTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
@@ -51,7 +51,7 @@ public class SpiTestHelper {
                 .withCommandClass(PersonLeaveCompany.class) //
                 .withCommandClass(PersonRaiseSalary.class);
 
-        Consumer<ReadOnlyTransaction> listInstances = tx -> {
+        Consumer<ReadonlyTransaction> listInstances = tx -> {
             System.out.printf("Persons:%n");
             tx.select(Person.class).all().forEach(person -> {
                 Company company = person.worksAt();
@@ -67,7 +67,7 @@ public class SpiTestHelper {
             });
         };
 
-        Consumer<ReadOnlyTransaction> checkData = tx -> {
+        Consumer<ReadonlyTransaction> checkData = tx -> {
             Person bill = tx.select(Person.class).where(Person::id).equalsTo("123");
             Company billCompany = bill.worksAt();
             Assertions.assertThat(billCompany).isNotNull();

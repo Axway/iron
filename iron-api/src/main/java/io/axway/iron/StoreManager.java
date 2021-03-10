@@ -59,5 +59,5 @@ public interface StoreManager extends AutoCloseable {
      */
     BigInteger lastSnapshotTransactionId();
 
-    boolean isReadOnly();
+    boolean isReadonly();
 }

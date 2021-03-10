@@ -10,20 +10,20 @@ import io.axway.iron.functional.Accessor;
  */
 public interface Store {
     /**
-     * Query the store data thanks a {@link ReadOnlyTransaction}.
+     * Query the store data thanks a {@link ReadonlyTransaction}.
      *
-     * @param storeQuery the store query. The provided {@link ReadOnlyTransaction} must not be used outside the scope of the query method.
+     * @param storeQuery the store query. The provided {@link ReadonlyTransaction} must not be used outside the scope of the query method.
      */
-    void query(Consumer<ReadOnlyTransaction> storeQuery);
+    void query(Consumer<ReadonlyTransaction> storeQuery);
 
     /**
-     * Query the store data thanks a {@link ReadOnlyTransaction} and return a result.
+     * Query the store data thanks a {@link ReadonlyTransaction} and return a result.
      *
-     * @param storeQuery the store query. The provided {@link ReadOnlyTransaction} must not be used outside the scope of the query method.
-     * @param <T> the return type of the query
+     * @param storeQuery the store query. The provided {@link ReadonlyTransaction} must not be used outside the scope of the query method.
+     * @param <T>        the return type of the query
      * @return the result of the {@code storeQuery} function
      */
-    <T> T query(Function<ReadOnlyTransaction, T> storeQuery);
+    <T> T query(Function<ReadonlyTransaction, T> storeQuery);
 
     /**
      * Issue a transaction composed of a single command.

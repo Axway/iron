@@ -140,12 +140,12 @@ public class KafkaTransactionStore implements TransactionStore {
     }
 
     @Override
-    public void lockReadOnly(boolean readonly) {
+    public void lockReadonly(boolean readonly) {
         // Kafka don't support readonly lock
     }
 
     @Override
-    public boolean isReadOnlyLockSet() {
+    public boolean isReadonlyLockSet() {
         return false;
     }
 

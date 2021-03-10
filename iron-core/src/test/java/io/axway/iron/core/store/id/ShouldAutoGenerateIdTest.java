@@ -1,6 +1,6 @@
 package io.axway.iron.core.store.id;
 
-import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadonlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.store.SucceedingStoreTest;
@@ -25,7 +25,7 @@ public class ShouldAutoGenerateIdTest implements SucceedingStoreTest {
     }
 
     @Override
-    public void verify(ReadOnlyTransaction tx) {
+    public void verify(ReadonlyTransaction tx) {
         SimpleEntityWithId i1 = tx.select(SimpleEntityWithId.class).where(SimpleEntityWithId::id).equalsTo(0L);
         SimpleEntityWithId i2 = tx.select(SimpleEntityWithId.class).where(SimpleEntityWithId::id).equalsTo(1L);
         assertThat(i1.id()).isEqualTo(0);

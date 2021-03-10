@@ -15,6 +15,7 @@ import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.spi.file.FileSnapshotStoreBuilder;
 import io.axway.iron.core.spi.file.FileTransactionStoreBuilder;
+import io.axway.iron.error.ReadonlyException;
 import io.axway.iron.sample.command.CreateSuperHeroV1;
 import io.axway.iron.sample.command.CreateSuperHeroV2;
 import io.axway.iron.sample.model.SuperHeroV1;
@@ -30,7 +31,8 @@ import static java.util.UUID.*;
 import static org.assertj.core.api.Assertions.*;
 
 public class BlueGreenMigrationTest {
-    private static final String storeName = "iron-kafka-test-" + randomUUID().toString();
+    private static final String storeName = "iron-bluegreen-test-" + randomUUID().toString();
+    public static final String STORE_NAME = "myStore";
     private Path m_snapshotDirNodeBlue;
     private Path m_txDirNodeBlue;
     private Path m_txDirNodeGreen;
@@ -54,18 +56,18 @@ public class BlueGreenMigrationTest {
 
         try (StoreManager storeManagerNodeBlue = initStoreManager(m_snapshotDirNodeBlue, m_txDirNodeBlue, SuperHeroV1.class, CreateSuperHeroV1.class, null)) {
 
-            Store kafkaStoreNodeBlue = storeManagerNodeBlue.getStore("kafkaStore");
+            Store myStoreNodeBlue = storeManagerNodeBlue.getStore(STORE_NAME);
 
             // Creating two superheroes
-            SuperHeroV1 bruceWayne = kafkaStoreNodeBlue.createCommand(CreateSuperHeroV1.class).
+            SuperHeroV1 bruceWayne = myStoreNodeBlue.createCommand(CreateSuperHeroV1.class).
                     set(CreateSuperHeroV1::firstName).to("Bruce").
                     set(CreateSuperHeroV1::lastName).to("Wayne").
                     submit().get();
             assertThat(bruceWayne.id()).isEqualTo(0);
 
             // Checking creation is effective
-            Collection<SuperHeroV1> contentFromStoreNodeBlue = kafkaStoreNodeBlue.query(readOnlyTransaction -> {
-                return readOnlyTransaction.select(SuperHeroV1.class).all();
+            Collection<SuperHeroV1> contentFromStoreNodeBlue = myStoreNodeBlue.query(readonlyTransaction -> {
+                return readonlyTransaction.select(SuperHeroV1.class).all();
             });
             assertThat(contentFromStoreNodeBlue).hasSize(1);
 
@@ -73,27 +75,27 @@ public class BlueGreenMigrationTest {
             storeManagerNodeBlue.setReadonly(true);
 
             // All store should be in maintenance
-            assertThatCode(() -> kafkaStoreNodeBlue.createCommand(CreateSuperHeroV1.class).
+            assertThatCode(() -> myStoreNodeBlue.createCommand(CreateSuperHeroV1.class).
                     set(CreateSuperHeroV1::firstName).to("Peter").
                     set(CreateSuperHeroV1::lastName).to("Parker").
                     submit().get()).
                     withFailMessage("A write command shouldn't be processed by a readonly store").
-                    hasMessageContaining("readonly");
+                    hasRootCauseInstanceOf(ReadonlyException.class);
         }
 
         // Reopening storeManagerNodeBlue should be in readonly
         try (StoreManager storeManagerNodeBlue = initStoreManager(m_snapshotDirNodeBlue, m_txDirNodeBlue, SuperHeroV1.class, CreateSuperHeroV1.class, null)) {
-            assertThat(storeManagerNodeBlue.isReadOnly()).
+            assertThat(storeManagerNodeBlue.isReadonly()).
                     withFailMessage("Restarting a readonly store should preserve its state provided you point the same tx store").
                     isTrue();
 
-            Store kafkaStoreNodeBlue = storeManagerNodeBlue.getStore("kafkaStore");
-            assertThatCode(() -> kafkaStoreNodeBlue.createCommand(CreateSuperHeroV1.class).
+            Store myStoreNodeBlue = storeManagerNodeBlue.getStore(STORE_NAME);
+            assertThatCode(() -> myStoreNodeBlue.createCommand(CreateSuperHeroV1.class).
                     set(CreateSuperHeroV1::firstName).to("Peter").
                     set(CreateSuperHeroV1::lastName).to("Parker").
                     submit().get()).
                     withFailMessage("A write command shouldn't be processed by a readonly store").
-                    hasMessageContaining("readonly");
+                    hasRootCauseInstanceOf(ReadonlyException.class);
         }
 
         // Definition of the migration from superHeroV1 to V2
@@ -102,27 +104,27 @@ public class BlueGreenMigrationTest {
         // Initiating a new migrated store manager with the same content for snapshot but brand new tx dir
         try (StoreManager storeManagerNodeGreen = initStoreManager(m_snapshotDirNodeBlue, m_txDirNodeGreen, SuperHeroV2.class, CreateSuperHeroV2.class,
                                                                    migration)) {
-            assertThat(storeManagerNodeGreen.isReadOnly()).
+            assertThat(storeManagerNodeGreen.isReadonly()).
                     withFailMessage("ReadLock is on tx store so starting this with its proper tx store shouldn't resume it as readonly ").
                     isFalse();
 
             // Checking content as a SuperHeroV2
-            Store kafkaStoreNodeAMigrated = storeManagerNodeGreen.getStore("kafkaStore");
-            Collection<SuperHeroV2> superHeroMigrated = kafkaStoreNodeAMigrated.query(readOnlyTransaction -> {
-                return readOnlyTransaction.select(SuperHeroV2.class).all();
+            Store myStoreNodeAMigrated = storeManagerNodeGreen.getStore(STORE_NAME);
+            Collection<SuperHeroV2> superHeroMigrated = myStoreNodeAMigrated.query(readonlyTransaction -> {
+                return readonlyTransaction.select(SuperHeroV2.class).all();
             });
             assertThat(superHeroMigrated.stream().map(SuperHeroV2::nickName)).
                     withFailMessage("Once migrated, the super hero should be none by its nickname").
                     containsExactlyInAnyOrder("Batman");
 
             // Checking that store is not anymore in readonly
-            assertThatCode(() -> kafkaStoreNodeAMigrated.createCommand(CreateSuperHeroV2.class).
+            assertThatCode(() -> myStoreNodeAMigrated.createCommand(CreateSuperHeroV2.class).
                     set(CreateSuperHeroV2::nickName).to("Spiderman").
                     submit().get()).doesNotThrowAnyException();
 
             // Checking that mutation is effective
-            String newSuperHeroName = kafkaStoreNodeAMigrated.query(readOnlyTransaction -> {
-                return readOnlyTransaction.select(SuperHeroV2.class).all().
+            String newSuperHeroName = myStoreNodeAMigrated.query(readonlyTransaction -> {
+                return readonlyTransaction.select(SuperHeroV2.class).all().
                         stream().
                         filter(superHeroV2 -> superHeroV2.nickName().equals("Spiderman")).
                         findFirst().

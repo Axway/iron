@@ -116,7 +116,7 @@ class StorePersistence {
         if (latestSnapshotTxId.isEmpty()) {
             LOG.info("Store has no snapshot, store is empty, creating it's first snapshot");
         }
-        if (m_transactionStore.isReadOnlyLockSet()) {
+        if (m_transactionStore.isReadonlyLockSet()) {
             LOG.info("Transaction store is in readonly");
         }
         return latestSnapshotTxId;
@@ -187,11 +187,11 @@ class StorePersistence {
     }
 
     public boolean isReadonly() {
-        return m_transactionStore.isReadOnlyLockSet();
+        return m_transactionStore.isReadonlyLockSet();
     }
 
     public void setReadonly(boolean readonly) {
-        m_transactionStore.lockReadOnly(readonly);
+        m_transactionStore.lockReadonly(readonly);
     }
 
     static class TransactionToDiscard extends TransactionToExecute {

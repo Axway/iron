@@ -119,7 +119,7 @@ public class StoreManagerTest {
     @Test
     public void shouldNotOpenStoreNamedIron() {
         try (StoreManager ignored = createStoreManagerFactory()) {
-            assertThatCode(() -> ignored.getStore("iron")).hasMessageStartingWith("Invalid store name, reserved for system store");
+            assertThatCode(() -> ignored.getStore("ironSystem")).hasMessageStartingWith("Invalid store name, reserved for system store");
         }
     }
 

@@ -13,7 +13,7 @@ import io.axway.alf.exception.FormattedRuntimeException;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.Command;
-import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadonlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.internal.command.CommandProxyFactory;
@@ -24,11 +24,11 @@ import io.axway.iron.core.internal.definition.entity.RelationDefinition;
 import io.axway.iron.core.internal.entity.EntityStore;
 import io.axway.iron.core.internal.entity.EntityStores;
 import io.axway.iron.core.internal.entity.RelationStore;
-import io.axway.iron.core.internal.transaction.ReadOnlyTransactionImpl;
+import io.axway.iron.core.internal.transaction.ReadonlyTransactionImpl;
 import io.axway.iron.core.internal.transaction.ReadWriteTransactionImpl;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.error.MalformedCommandException;
-import io.axway.iron.error.StoreException;
+import io.axway.iron.error.ReadonlyException;
 import io.axway.iron.error.UnrecoverableStoreException;
 import io.axway.iron.functional.Accessor;
 import io.axway.iron.spi.model.snapshot.SerializableSnapshot;
@@ -46,7 +46,7 @@ import static java.util.concurrent.TimeUnit.*;
 
 class StoreManagerImpl implements StoreManager {
     private static final Logger LOG = LoggerFactory.getLogger(StoreManagerImpl.class);
-    public static final String SYSTEM_STORE_NAME = "iron";
+    public static final String SYSTEM_STORE_NAME = "ironSystem";
 
     private final TransactionStore m_transactionStore;
     private final IntrospectionHelper m_introspectionHelper;
@@ -173,7 +173,7 @@ class StoreManagerImpl implements StoreManager {
     }
 
     @Override
-    public boolean isReadOnly() {
+    public boolean isReadonly() {
         return m_storePersistence.isReadonly();
     }
 
@@ -243,7 +243,7 @@ class StoreManagerImpl implements StoreManager {
                 }
                 if (transaction instanceof StorePersistence.TransactionToDiscard) {
                     Optional.ofNullable(transactionFuture).ifPresent(txFuture -> {
-                        txFuture.completeExceptionally(new StoreException(READONLY_ERROR));
+                        txFuture.completeExceptionally(new ReadonlyException(READONLY_ERROR));
                     });
                     return;
                 }
@@ -297,7 +297,7 @@ class StoreManagerImpl implements StoreManager {
 
     private class StoreImpl implements Store {
         private final String m_storeName;
-        private final ReadOnlyTransactionImpl m_readOnlyTransaction;
+        private final ReadonlyTransactionImpl m_readonlyTransaction;
         private final EntityStores m_entityStores;
         private final ReadWriteLock m_readWriteLock = new ReentrantReadWriteLock();
         private final Lock m_readLock = m_readWriteLock.readLock();
@@ -305,7 +305,7 @@ class StoreManagerImpl implements StoreManager {
 
         private StoreImpl(String storeName, EntityStores entityStores) {
             m_storeName = storeName;
-            m_readOnlyTransaction = new ReadOnlyTransactionImpl(m_introspectionHelper, entityStores);
+            m_readonlyTransaction = new ReadonlyTransactionImpl(m_introspectionHelper, entityStores);
             m_entityStores = entityStores;
         }
 
@@ -346,22 +346,22 @@ class StoreManagerImpl implements StoreManager {
         }
 
         @Override
-        public void query(Consumer<ReadOnlyTransaction> storeQuery) {
+        public void query(Consumer<ReadonlyTransaction> storeQuery) {
             ensureOpen();
             m_readLock.lock();
             try {
-                storeQuery.accept(m_readOnlyTransaction);
+                storeQuery.accept(m_readonlyTransaction);
             } finally {
                 m_readLock.unlock();
             }
         }
 
         @Override
-        public <T> T query(Function<ReadOnlyTransaction, T> storeQuery) {
+        public <T> T query(Function<ReadonlyTransaction, T> storeQuery) {
             ensureOpen();
             m_readLock.lock();
             try {
-                return storeQuery.apply(m_readOnlyTransaction);
+                return storeQuery.apply(m_readonlyTransaction);
             } finally {
                 m_readLock.unlock();
             }

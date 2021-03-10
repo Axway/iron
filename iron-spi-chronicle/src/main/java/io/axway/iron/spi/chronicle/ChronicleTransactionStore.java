@@ -98,11 +98,11 @@ public class ChronicleTransactionStore implements TransactionStore {
     }
 
     @Override
-    public void lockReadOnly(boolean readonly) {
+    public void lockReadonly(boolean readonly) {
     }
 
     @Override
-    public boolean isReadOnlyLockSet() {
+    public boolean isReadonlyLockSet() {
         return false;
     }
 

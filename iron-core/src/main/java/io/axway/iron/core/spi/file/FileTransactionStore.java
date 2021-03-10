@@ -5,8 +5,6 @@ import java.math.BigInteger;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
@@ -174,8 +172,8 @@ public class FileTransactionStore implements TransactionStore {
     }
 
     @Override
-    public void lockReadOnly(boolean wantLock) {
-        boolean lockExists = isReadOnlyLockSet();
+    public void lockReadonly(boolean wantLock) {
+        boolean lockExists = isReadonlyLockSet();
         if (wantLock && !lockExists) {
             try {
                 Files.createFile(getReadonlyLock());
@@ -194,7 +192,7 @@ public class FileTransactionStore implements TransactionStore {
     }
 
     @Override
-    public boolean isReadOnlyLockSet() {
+    public boolean isReadonlyLockSet() {
         return Files.exists(getReadonlyLock());
     }
 
