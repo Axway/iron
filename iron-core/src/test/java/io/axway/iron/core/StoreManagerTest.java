@@ -13,7 +13,7 @@ import io.axway.iron.spi.storage.SnapshotStore;
 import io.axway.iron.spi.storage.TransactionStore;
 
 import static io.axway.iron.core.bugs.IronTestHelper.*;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 public class StoreManagerTest {
 
@@ -117,9 +117,36 @@ public class StoreManagerTest {
     }
 
     @Test
+    public void shouldNotOpenStoreNamedIron() {
+        try (StoreManager ignored = createStoreManagerFactory()) {
+            assertThatCode(() -> ignored.getStore("ironSystem")).hasMessageStartingWith("Invalid store name, reserved for system store");
+        }
+    }
+
+    @Test
     public void shouldOpenStoreWithValidName() {
         try (StoreManager ignored = createStoreManagerFactory()) {
             ignored.getStore("a-zA-Z0-9_");
         }
+    }
+
+    @Test
+    public void shouldHandleReadonly() {
+        StoreManager storeManagerFactory = createStoreManagerFactory();
+        assertThatCode(() -> storeManagerFactory.getStore("whatever").createCommand(SimpleCommand.class).submit().get()).doesNotThrowAnyException();
+        storeManagerFactory.setReadonly(true);
+        assertThatCode(() -> storeManagerFactory.getStore("whatever").createCommand(SimpleCommand.class).submit().get()).hasMessageContaining("readonly");
+        storeManagerFactory.setReadonly(false);
+        assertThatCode(() -> storeManagerFactory.getStore("whatever").createCommand(SimpleCommand.class).submit().get()).doesNotThrowAnyException();
+    }
+
+    @Test
+    public void shouldNotFailWhenSwitchingToReadonlyTwiceInARow() {
+        StoreManager storeManagerFactory = createStoreManagerFactory();
+        assertThatCode(() -> storeManagerFactory.getStore("whatever").createCommand(SimpleCommand.class).submit().get()).doesNotThrowAnyException();
+        storeManagerFactory.setReadonly(true);
+        assertThatCode(() -> storeManagerFactory.setReadonly(true)).
+                withFailMessage("Switching to readonly shouldn't fail if store is already in readonly").
+                doesNotThrowAnyException();
     }
 }

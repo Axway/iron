@@ -1,6 +1,6 @@
 package io.axway.iron.core.store.relation;
 
-import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadonlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.core.store.SucceedingStoreTest;
 import io.axway.iron.core.store.relation.command.CarChangeOwner;
@@ -16,7 +16,7 @@ class ShouldUpdateSimpleRelationHeadTest extends AbstractRelationTest implements
     }
 
     @Override
-    public void verify(ReadOnlyTransaction tx) {
+    public void verify(ReadonlyTransaction tx) {
         Person george = tx.select(Person.class).where(Person::name).equalsTo("george");
         assertThat(george).isNotNull();
 

@@ -6,6 +6,7 @@ import io.axway.iron.Command;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerBuilder;
+import io.axway.iron.core.model.simple.CreateSimpleEntity;
 import io.axway.iron.core.model.simple.SimpleCommand;
 import io.axway.iron.core.model.simple.SimpleEntity;
 import io.axway.iron.core.spi.file.FileSnapshotStoreBuilder;
@@ -21,7 +22,7 @@ import io.axway.iron.spi.storage.TransactionStore;
 
 final public class IronTestHelper {
 
-    static StoreManager createTransientStore() {
+    public static StoreManager createTransientStore() {
         return StoreManagerBuilder.newStoreManagerBuilder() //
                 .withSnapshotSerializer(buildJacksonSnapshotSerializer())       //
                 .withTransactionSerializer(buildJacksonTransactionSerializer()) //
@@ -31,6 +32,7 @@ final public class IronTestHelper {
                 .withCommandClass(CommandWithLongParameterCommand.class) //
                 .withCommandClass(CommandWithLongCollectionParameterCommand.class) //
                 .withEntityClass(SimpleEntity.class) //
+                .withCommandClass(CreateSimpleEntity.class)//
                 .build();
     }
 
@@ -47,7 +49,7 @@ final public class IronTestHelper {
         return storeManagerBuilder.build();
     }
 
-    static Store getRandomTransientStore(StoreManager storeManager) {
+    public static Store getRandomTransientStore(StoreManager storeManager) {
         return storeManager.getStore("iron-test-bugs-" + UUID.randomUUID().toString());
     }
 

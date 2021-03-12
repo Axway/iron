@@ -8,6 +8,7 @@ import java.util.concurrent.*;
 import org.apache.kafka.common.utils.Time;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
+import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import kafka.server.KafkaConfig;
@@ -16,7 +17,7 @@ import kafka.server.RunningAsBroker;
 import scala.collection.mutable.ArraySeq;
 
 import static io.axway.alf.assertion.Assertion.checkArgument;
-import static io.axway.iron.spi.kafka.Utils.*;
+import static io.axway.iron.spi.Utils.*;
 import static java.lang.String.valueOf;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.*;
@@ -52,6 +53,7 @@ final class KafkaCluster implements AutoCloseable {
         long startup = System.currentTimeMillis();
 
         m_rootPath = createTempDirectory("kafka-cluster-");
+        LOG.info("Creating new kafka cluster work dir", arguments -> arguments.add("workDir", m_rootPath));
         m_executorService = Executors.newCachedThreadPool();
 
         // Start a single zookeeper no matter how many kafka you want
@@ -61,7 +63,7 @@ final class KafkaCluster implements AutoCloseable {
         List<Callable<EmbeddedKafka>> startupTasks = new ArrayList<>(clusterSize);
         for (int i = 0; i < clusterSize; i++) {
             Path kafkaPath = m_rootPath.resolve("node-" + i);
-            startupTasks.add(() -> new EmbeddedKafka(kafkaPath, clusterSize));
+            startupTasks.add(() -> new EmbeddedKafka(m_zookeeper.getConnectionString(), kafkaPath, clusterSize));
         }
         m_embeddedKafkas = invokeAll(m_executorService, startupTasks);
         m_connectionString = m_embeddedKafkas.stream().map(EmbeddedKafka::getConnectionString).collect(joining(","));
@@ -109,13 +111,13 @@ final class KafkaCluster implements AutoCloseable {
                 m_logDir = createDirectories(rootPath.resolve("zookeeper-log"));
                 final int port = providePort();
                 m_connectionString = "localhost:" + port;
+                LOG.info("ZK address " + m_connectionString);
 
                 m_factory = ServerCnxnFactory.createFactory(new InetSocketAddress("localhost", port), 1024);
-                ZooKeeperServer zkServer = new ZooKeeperServer(m_snapshotDir.toFile(), m_logDir.toFile(), 2000);
-                m_factory.setMaxClientCnxnsPerHost(0);
+                ZooKeeperServer zkServer = new ZooKeeperServer(new FileTxnSnapLog(m_snapshotDir.toFile(), m_logDir.toFile()), 2000, null);
                 m_factory.startup(zkServer);
                 while (!zkServer.isRunning()) {
-                    sleep(MILLISECONDS, 20);
+                    sleep(MILLISECONDS, 100);
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException("Cannot start the Zookeeper server", e);
@@ -136,30 +138,27 @@ final class KafkaCluster implements AutoCloseable {
     }
 
     private static final class EmbeddedKafka implements AutoCloseable {
-        private final EmbeddedZookeeper m_zookeeper;
         private final String m_connectionString;
-        private final Path m_logDir;
         private final KafkaServer m_broker;
 
-        private EmbeddedKafka(Path rootPath, int clusterSize) {
-            // Start zookeeper
-            m_zookeeper = new EmbeddedZookeeper(rootPath);
-
+        private EmbeddedKafka(String zookeeperConnectionString, Path rootPath, int clusterSize) {
             m_connectionString = "localhost:" + providePort();
-            m_logDir = createDirectories(rootPath.resolve("kafka-log"));
+            LOG.info("Kafka address " + m_connectionString);
+
+            Path logDir = createDirectories(rootPath.resolve("kafka-log"));
             Properties kafkaProps = new Properties();
             kafkaProps.setProperty("min.insync.replicas", valueOf(clusterSize / 2 + 1));
             kafkaProps.setProperty("listeners", "PLAINTEXT://" + m_connectionString);
-            kafkaProps.setProperty("log.dirs", m_logDir.toAbsolutePath().toString());
+            kafkaProps.setProperty("log.dirs", logDir.toAbsolutePath().toString());
             kafkaProps.setProperty("num.partition", valueOf(clusterSize / 2 + 1));
-            kafkaProps.setProperty("zookeeper.connect", m_zookeeper.getConnectionString());
+            kafkaProps.setProperty("zookeeper.connect", zookeeperConnectionString);
             kafkaProps.setProperty("offsets.topic.replication.factor", valueOf(clusterSize / 2 + 1));
             kafkaProps.setProperty("group.initial.rebalance.delay.ms", String.valueOf(0));
 
             m_broker = new KafkaServer(new KafkaConfig(kafkaProps), Time.SYSTEM, empty(), new ArraySeq<>(0));
             m_broker.startup();
             while (m_broker.brokerState().currentState() != RunningAsBroker.state()) {
-                sleep(MILLISECONDS, 20);
+                sleep(MILLISECONDS, 100);
             }
         }
 
@@ -171,7 +170,6 @@ final class KafkaCluster implements AutoCloseable {
         public void close() {
             m_broker.shutdown();
             m_broker.awaitShutdown();
-            m_zookeeper.close();
         }
     }
 }

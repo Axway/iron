@@ -9,10 +9,10 @@ import io.axway.iron.functional.Accessor;
  * The read only transaction permit to read the store model through the {{@link #select(Class)} method.<br>
  * Many read only transaction can be performed simultaneously but no command execution is performed at the same.
  */
-public interface ReadOnlyTransaction {
+public interface ReadonlyTransaction {
     /**
      * @param entityClass the entity class of the instance(s) to be loaded
-     * @param <E> the type corresponding to the entity class (automatically inferred)
+     * @param <E>         the type corresponding to the entity class (automatically inferred)
      * @return a fluent interface to continue the call
      */
     <E> From<E> select(Class<E> entityClass);

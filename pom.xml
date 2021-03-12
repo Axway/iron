@@ -84,7 +84,7 @@
     </issueManagement>
 
     <ciManagement>
-        <url>https://travis-ci.org/Axway/iron</url>
+        <url>https://travis-ci.com/Axway/iron</url>
         <system>Travis CI</system>
     </ciManagement>
 

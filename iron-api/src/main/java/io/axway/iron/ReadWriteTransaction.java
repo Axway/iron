@@ -7,12 +7,12 @@ import io.axway.iron.functional.Accessor;
 /**
  * A read write transaction can be use by a {@link Command#execute(ReadWriteTransaction)} method to modify the model.
  */
-public interface ReadWriteTransaction extends ReadOnlyTransaction {
+public interface ReadWriteTransaction extends ReadonlyTransaction {
     /**
      * Insert a new instance in the model.
      *
      * @param entityClass the entity class of the instance to be inserted
-     * @param <E> the type corresponding to the entity class (automatically inferred)
+     * @param <E>         the type corresponding to the entity class (automatically inferred)
      * @return a fluent interface to continue the call
      */
     <E> ObjectUpdater<E> insert(Class<E> entityClass);
@@ -20,8 +20,8 @@ public interface ReadWriteTransaction extends ReadOnlyTransaction {
     /**
      * Update an existing instance in the model.
      *
-     * @param object the object to be update. This has been retrieved by using the methods in {@link ReadOnlyTransaction}
-     * @param <E> the type corresponding to the entity class (automatically inferred)
+     * @param object the object to be update. This has been retrieved by using the methods in {@link ReadonlyTransaction}
+     * @param <E>    the type corresponding to the entity class (automatically inferred)
      * @return a fluent interface to continue the call
      */
     <E> ObjectUpdater<E> update(E object);
@@ -29,7 +29,7 @@ public interface ReadWriteTransaction extends ReadOnlyTransaction {
     /**
      * Delete an existing instance in the model.
      *
-     * @param object the object to be deleted. This has been retrieved by using the methods in {@link ReadOnlyTransaction}
+     * @param object the object to be deleted. This has been retrieved by using the methods in {@link ReadonlyTransaction}
      */
     void delete(Object object);
 

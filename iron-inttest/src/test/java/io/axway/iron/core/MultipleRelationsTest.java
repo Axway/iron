@@ -11,7 +11,7 @@ import org.joda.time.DateTime;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadonlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.sample.command.CreateCompany;
@@ -92,7 +92,7 @@ public class MultipleRelationsTest {
             tx2.addCommand(MultipleRelationsAddOneTestCommand.class).set(MultipleRelationsAddOneTestCommand::personId).to("22").submit();
             tx2.submit().get();
 
-            Function<ReadOnlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
+            Function<ReadonlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
             Person updatedPerson = store.query(retrieveUpdatedPerson);
 
             assertThat(updatedPerson.previousCompanies().size()).isEqualTo(3);
@@ -131,7 +131,7 @@ public class MultipleRelationsTest {
             tx2.addCommand(MultipleRelationsAddAllTestCommand.class).set(MultipleRelationsAddAllTestCommand::personId).to("22").submit();
             tx2.submit().get();
 
-            Function<ReadOnlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
+            Function<ReadonlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
             Person updatedPerson = store.query(retrieveUpdatedPerson);
 
             assertThat(updatedPerson.previousCompanies().size()).isEqualTo(5);
@@ -172,7 +172,7 @@ public class MultipleRelationsTest {
             tx2.addCommand(MultipleRelationsRemoveOneTestCommand.class).set(MultipleRelationsRemoveOneTestCommand::personId).to("22").submit();
             tx2.submit().get();
 
-            Function<ReadOnlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
+            Function<ReadonlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
             Person updatedPerson = store.query(retrieveUpdatedPerson);
 
             assertThat(updatedPerson.previousCompanies().size()).isEqualTo(1);
@@ -209,7 +209,7 @@ public class MultipleRelationsTest {
             tx2.addCommand(MultipleRelationsRemoveAllTestCommand.class).set(MultipleRelationsRemoveAllTestCommand::personId).to("22").submit();
             tx2.submit().get();
 
-            Function<ReadOnlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
+            Function<ReadonlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
             Person updatedPerson = store.query(retrieveUpdatedPerson);
 
             assertThat(updatedPerson.previousCompanies().size()).isEqualTo(1);
@@ -246,7 +246,7 @@ public class MultipleRelationsTest {
             tx2.addCommand(MultipleRelationsClearTestCommand.class).set(MultipleRelationsClearTestCommand::personId).to("22").submit();
             tx2.submit().get();
 
-            Function<ReadOnlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
+            Function<ReadonlyTransaction, Person> retrieveUpdatedPerson = (tx) -> tx.select(Person.class).where(Person::id).equalsToOrNull("22");
             Person updatedPerson = store.query(retrieveUpdatedPerson);
 
             assertThat(updatedPerson.previousCompanies().size()).isEqualTo(0);

@@ -24,7 +24,7 @@ import io.axway.iron.spi.jackson.JacksonSnapshotSerializerBuilder;
 import io.axway.iron.spi.jackson.JacksonTransactionSerializerBuilder;
 
 import static io.axway.iron.assertions.Assertions.assertThat;
-import static io.axway.iron.spi.kafka.Utils.*;
+import static io.axway.iron.spi.Utils.*;
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.UUID.*;
 import static java.util.concurrent.TimeUnit.*;

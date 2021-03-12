@@ -151,6 +151,15 @@ public class AwsKinesisTransactionStore implements TransactionStore {
         m_kinesis.shutdown();
     }
 
+    @Override
+    public void lockReadonly(boolean readonly) {
+    }
+
+    @Override
+    public boolean isReadonlyLockSet() {
+        return false;
+    }
+
     /**
      * Returns the single created shard (stream has a single shard).
      */

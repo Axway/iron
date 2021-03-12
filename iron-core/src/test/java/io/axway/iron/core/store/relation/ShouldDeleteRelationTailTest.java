@@ -1,6 +1,6 @@
 package io.axway.iron.core.store.relation;
 
-import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadonlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.core.store.SucceedingStoreTest;
 import io.axway.iron.core.store.relation.command.CarDeleteCommand;
@@ -16,7 +16,7 @@ class ShouldDeleteRelationTailTest extends AbstractRelationTest implements Succe
     }
 
     @Override
-    public void verify(ReadOnlyTransaction tx) {
+    public void verify(ReadonlyTransaction tx) {
         Person john = tx.select(Person.class).where(Person::name).equalsTo("john");
         assertThat(john).isNotNull();
 

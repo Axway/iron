@@ -11,7 +11,7 @@ import io.axway.iron.functional.Accessor;
 
 import static io.axway.alf.assertion.Assertion.checkState;
 
-public class ReadWriteTransactionImpl extends ReadOnlyTransactionImpl implements ReadWriteTransaction {
+public class ReadWriteTransactionImpl extends ReadonlyTransactionImpl implements ReadWriteTransaction {
     private final List<Runnable> m_rollbackActions = new ArrayList<>();
     private final AtomicInteger m_activeObjectUpdaterCount = new AtomicInteger();
 

@@ -3,18 +3,18 @@ package io.axway.iron.core.internal.transaction;
 import java.util.*;
 import java.util.stream.*;
 import javax.annotation.*;
-import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadonlyTransaction;
 import io.axway.iron.core.internal.entity.EntityStore;
 import io.axway.iron.core.internal.entity.EntityStores;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.error.ObjectNotFoundException;
 import io.axway.iron.functional.Accessor;
 
-public class ReadOnlyTransactionImpl implements ReadOnlyTransaction {
+public class ReadonlyTransactionImpl implements ReadonlyTransaction {
     final IntrospectionHelper m_introspectionHelper;
     final EntityStores m_entityStores;
 
-    public ReadOnlyTransactionImpl(IntrospectionHelper introspectionHelper, EntityStores entityStores) {
+    public ReadonlyTransactionImpl(IntrospectionHelper introspectionHelper, EntityStores entityStores) {
         m_introspectionHelper = introspectionHelper;
         m_entityStores = entityStores;
     }

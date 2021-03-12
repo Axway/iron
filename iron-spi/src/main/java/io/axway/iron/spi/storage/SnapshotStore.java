@@ -20,13 +20,12 @@ public interface SnapshotStore {
     SnapshotStoreWriter createSnapshotWriter(BigInteger transactionId);
 
     interface SnapshotStoreWriter {
-        OutputStream getOutputStream(String storeName);
 
+        OutputStream getOutputStream(String storeName);
         default void commit() {
 
         }
     }
-
     /**
      * Retrieve an existing snapshot in the store.
      *

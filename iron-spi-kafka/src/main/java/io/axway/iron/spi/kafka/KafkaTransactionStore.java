@@ -139,6 +139,16 @@ public class KafkaTransactionStore implements TransactionStore {
         m_producer.close();
     }
 
+    @Override
+    public void lockReadonly(boolean readonly) {
+        // Kafka don't support readonly lock
+    }
+
+    @Override
+    public boolean isReadonlyLockSet() {
+        return false;
+    }
+
     private void createKafkaTopic(Properties kafkaProperties, String topicName) {
         try (AdminClient adminClient = AdminClient.create(kafkaProperties)) {
             adminClient.createTopics(List.of(new NewTopic(topicName, 1, (short) 1)))//

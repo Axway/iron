@@ -1,7 +1,7 @@
 package io.axway.iron.core.store.datatype;
 
 import java.util.*;
-import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadonlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.core.StoreManagerBuilder;
 import io.axway.iron.core.store.SucceedingStoreTest;
@@ -32,7 +32,7 @@ class PrimitiveTypeInsertTest implements SucceedingStoreTest {
     }
 
     @Override
-    public void verify(ReadOnlyTransaction tx) {
+    public void verify(ReadonlyTransaction tx) {
         Collection<PrimitiveTypeEntity> list = tx.select(PrimitiveTypeEntity.class).all();
         assertThat(list.size()).isEqualTo(1);
         PrimitiveTypeEntity i = list.iterator().next();

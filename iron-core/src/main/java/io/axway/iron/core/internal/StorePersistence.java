@@ -10,6 +10,7 @@ import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import io.axway.iron.Command;
 import io.axway.iron.core.internal.command.CommandProxyFactory;
+import io.axway.iron.core.internal.command.management.ReadonlyCommand;
 import io.axway.iron.core.internal.definition.command.CommandDefinition;
 import io.axway.iron.core.internal.entity.EntityStore;
 import io.axway.iron.core.internal.entity.EntityStores;
@@ -115,7 +116,9 @@ class StorePersistence {
         if (latestSnapshotTxId.isEmpty()) {
             LOG.info("Store has no snapshot, store is empty, creating it's first snapshot");
         }
-
+        if (m_transactionStore.isReadonlyLockSet()) {
+            LOG.info("Transaction store is in readonly");
+        }
         return latestSnapshotTxId;
     }
 
@@ -155,6 +158,17 @@ class StorePersistence {
                                              .add("expectedVersion", TRANSACTION_MODEL_VERSION));
         }
 
+        if (transactionInput.storeName().equals(StoreManagerImpl.SYSTEM_STORE_NAME)) {
+            SerializableCommand firstCommand = serializableTransaction.getCommands().get(0);
+            if (firstCommand.getCommandName().equals(ReadonlyCommand.class.getName())) {
+                setReadonly((boolean) firstCommand.getParameters().get(ReadonlyCommand.READONLY_PARAMETER_NAME));
+            }
+        }
+
+        if (isReadonly()) {
+            return new TransactionToDiscard(transactionInput.storeName(), transactionInput.getTransactionId(), serializableTransaction.getSynchronizationId());
+        }
+
         List<Command<?>> commands = serializableTransaction.getCommands().stream().map(serializableCommand -> {
             String commandName = serializableCommand.getCommandName();
             CommandDefinition<? extends Command<?>> commandDefinition = m_commandDefinitions.get(commandName);
@@ -170,6 +184,20 @@ class StorePersistence {
 
     public SnapshotPersistence buildSnapshotPersistence(BigInteger transactionId) {
         return new SnapshotPersistence(m_applicationModelVersion, m_snapshotStore, m_snapshotSerializer, transactionId);
+    }
+
+    public boolean isReadonly() {
+        return m_transactionStore.isReadonlyLockSet();
+    }
+
+    public void setReadonly(boolean readonly) {
+        m_transactionStore.lockReadonly(readonly);
+    }
+
+    static class TransactionToDiscard extends TransactionToExecute {
+        private TransactionToDiscard(String storeName, BigInteger txId, String synchronizationId) {
+            super(storeName, txId, synchronizationId, List.of());
+        }
     }
 
     static class TransactionToExecute {

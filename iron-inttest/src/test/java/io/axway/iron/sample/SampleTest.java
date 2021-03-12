@@ -11,7 +11,7 @@ import java.util.function.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import io.axway.iron.ReadOnlyTransaction;
+import io.axway.iron.ReadonlyTransaction;
 import io.axway.iron.Store;
 import io.axway.iron.StoreManager;
 import io.axway.iron.core.StoreManagerBuilder;
@@ -84,7 +84,7 @@ public class SampleTest {
                 .withCommandClass(PersonRaiseSalary.class) //
                 .build()) {
 
-            Consumer<ReadOnlyTransaction> listInstances = tx -> {
+            Consumer<ReadonlyTransaction> listInstances = tx -> {
                 System.out.printf("Persons:%n");
                 tx.select(Person.class).all().forEach(person -> {
                     Company company = person.worksAt();
@@ -100,7 +100,7 @@ public class SampleTest {
                 });
             };
 
-            Consumer<ReadOnlyTransaction> checkData = tx -> {
+            Consumer<ReadonlyTransaction> checkData = tx -> {
                 Person bill = tx.select(Person.class).where(Person::id).equalsTo("123");
                 Company billCompany = bill.worksAt();
                 assertThat(billCompany).isNotNull();

@@ -15,6 +15,7 @@ import io.axway.iron.core.internal.definition.entity.EntityDefinition;
 import io.axway.iron.core.internal.definition.entity.EntityDefinitionBuilder;
 import io.axway.iron.core.internal.utils.IntrospectionHelper;
 import io.axway.iron.core.internal.utils.proxy.ProxyConstructorFactory;
+import io.axway.iron.core.internal.command.management.ReadonlyCommand;
 import io.axway.iron.spi.model.snapshot.SerializableSnapshot;
 import io.axway.iron.spi.serializer.SnapshotSerializer;
 import io.axway.iron.spi.serializer.TransactionSerializer;
@@ -101,6 +102,9 @@ public class StoreManagerBuilderImpl implements StoreManagerBuilder {
         CommandDefinitionBuilder commandDefinitionBuilder = new CommandDefinitionBuilder(proxyConstructorFactory, dataTypeManager, interfaceValidator);
         EntityDefinitionBuilder entityDefinitionBuilder = new EntityDefinitionBuilder(introspectionHelper, proxyConstructorFactory, dataTypeManager,
                                                                                       interfaceValidator);
+
+        // Adding readonly command
+        m_commandClasses.add(ReadonlyCommand.class);
 
         Collection<CommandDefinition<? extends Command<?>>> commandDefinitions = buildCommandDefinitions(commandDefinitionBuilder);
         Map<Class<?>, EntityDefinition<?>> entityDefinitions = entityDefinitionBuilder.analyzeEntities(Set.copyOf(m_entityClasses));
