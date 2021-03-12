@@ -19,7 +19,7 @@
         <guava.version>27.0.1-jre</guava.version>
         <alf.version>0.10.0</alf.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <jackson.version>2.10.1</jackson.version>
+        <jackson.version>2.12.1</jackson.version>
         <kafka.version>2.1.0</kafka.version>
         <aws-java-sdk.version>1.11.478</aws-java-sdk.version>
         <jmockit.version>1.44</jmockit.version>
