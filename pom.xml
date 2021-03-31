@@ -16,7 +16,7 @@
     <properties>
         <revision>0.21.0-SNAPSHOT</revision>
 
-        <guava.version>27.0.1-jre</guava.version>
+        <guava.version>29.0-jre</guava.version>
         <alf.version>0.10.0</alf.version>
         <slf4j.version>1.7.25</slf4j.version>
         <jackson.version>2.10.1</jackson.version>
