@@ -14,7 +14,7 @@
     <url>https://axway.github.io/iron</url>
 
     <properties>
-        <revision>0.21.0</revision>
+        <revision>0.22.0-SNAPSHOT</revision>
 
         <guava.version>30.1.1-jre</guava.version>
         <alf.version>0.10.0</alf.version>
