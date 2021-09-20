@@ -46,7 +46,7 @@ public class ManyTransactionsIntTest {
                 .withCommandClass(CreateSimpleEntity.class) //
                 .build()) {
 
-            for (long j = 0; j < 200_000; j++) {
+            for (long j = 0; j < 100_000; j++) {
                 Store store = storeManager.getStore(randomStoreName);
                 Long id = store.createCommand(CreateSimpleEntity.class).set(CreateSimpleEntity::name).to(UUID.randomUUID().toString()).submit()
                         .get(10, TimeUnit.SECONDS);

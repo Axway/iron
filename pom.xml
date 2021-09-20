@@ -16,10 +16,10 @@
     <properties>
         <revision>0.21.0-SNAPSHOT</revision>
 
-        <guava.version>27.0.1-jre</guava.version>
+        <guava.version>30.1.1-jre</guava.version>
         <alf.version>0.10.0</alf.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <jackson.version>2.10.1</jackson.version>
+        <jackson.version>2.12.5</jackson.version>
         <kafka.version>2.1.0</kafka.version>
         <aws-java-sdk.version>1.11.478</aws-java-sdk.version>
         <jmockit.version>1.44</jmockit.version>
@@ -84,8 +84,8 @@
     </issueManagement>
 
     <ciManagement>
-        <url>https://travis-ci.com/Axway/iron</url>
-        <system>Travis CI</system>
+        <url>https://github.com/Axway/iron/actions</url>
+        <system>GitHub Actions</system>
     </ciManagement>
 
     <distributionManagement>

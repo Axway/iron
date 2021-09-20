@@ -22,28 +22,6 @@ public final class Utils {
     private static final AtomicInteger PORT = new AtomicInteger(1024);
 
     /**
-     * Provides an available port
-     *
-     * @return available port
-     */
-    public static int providePort() {
-        while (true) {
-            // Pick a port
-            int port = PORT.incrementAndGet();
-            checkState(port <= 0xFFFF, "No more ports left to use in test");
-
-            // Check if the port is not already used by another process
-            try (ServerSocket ss = new ServerSocket(port); DatagramSocket ds = new DatagramSocket(port)) {
-                ss.setReuseAddress(true);
-                ds.setReuseAddress(true);
-                return port;
-            } catch (IOException ignored) {
-                // continue, try again
-            }
-        }
-    }
-
-    /**
      * Tries to recursively delete a folder, silently give up if it cannot be deleted.
      *
      * @param path path to delete

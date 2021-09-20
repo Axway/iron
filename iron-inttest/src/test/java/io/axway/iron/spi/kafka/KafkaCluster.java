@@ -1,27 +1,35 @@
 package io.axway.iron.spi.kafka;
 
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.*;
-import org.apache.kafka.common.utils.Time;
-import org.apache.zookeeper.server.ServerCnxnFactory;
-import org.apache.zookeeper.server.ZooKeeperServer;
-import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import io.axway.alf.log.Logger;
 import io.axway.alf.log.LoggerFactory;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import kafka.server.RunningAsBroker;
+import org.apache.kafka.common.utils.Time;
+import org.apache.zookeeper.server.ServerCnxnFactory;
+import org.apache.zookeeper.server.ZooKeeperServer;
+import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import scala.collection.mutable.ArraySeq;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import static io.axway.alf.assertion.Assertion.checkArgument;
+import static io.axway.iron.spi.PortManager.acquireAvailablePort;
 import static io.axway.iron.spi.Utils.*;
 import static java.lang.String.valueOf;
 import static java.lang.Thread.currentThread;
-import static java.util.concurrent.TimeUnit.*;
-import static java.util.stream.Collectors.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static scala.Option.empty;
 
 /**
@@ -70,7 +78,7 @@ final class KafkaCluster implements AutoCloseable {
 
         long duration = System.currentTimeMillis() - startup;
         LOG.info("Kafka cluster started",
-                 args -> args.add("clusterSize", clusterSize).add("startupMillis", duration).add("connectionString", m_connectionString));
+                args -> args.add("clusterSize", clusterSize).add("startupMillis", duration).add("connectionString", m_connectionString));
     }
 
     /**
@@ -100,16 +108,14 @@ final class KafkaCluster implements AutoCloseable {
     }
 
     private static final class EmbeddedZookeeper implements AutoCloseable {
-        private final Path m_snapshotDir;
-        private final Path m_logDir;
         private final String m_connectionString;
         private final ServerCnxnFactory m_factory;
 
         private EmbeddedZookeeper(Path rootPath) {
             try {
-                m_snapshotDir = createDirectories(rootPath.resolve("zookeeper-snapshot"));
-                m_logDir = createDirectories(rootPath.resolve("zookeeper-log"));
-                final int port = providePort();
+                Path m_snapshotDir = createDirectories(rootPath.resolve("zookeeper-snapshot"));
+                Path m_logDir = createDirectories(rootPath.resolve("zookeeper-log"));
+                final int port = acquireAvailablePort();
                 m_connectionString = "localhost:" + port;
                 LOG.info("ZK address " + m_connectionString);
 
@@ -142,7 +148,7 @@ final class KafkaCluster implements AutoCloseable {
         private final KafkaServer m_broker;
 
         private EmbeddedKafka(String zookeeperConnectionString, Path rootPath, int clusterSize) {
-            m_connectionString = "localhost:" + providePort();
+            m_connectionString = "localhost:" + acquireAvailablePort();
             LOG.info("Kafka address " + m_connectionString);
 
             Path logDir = createDirectories(rootPath.resolve("kafka-log"));
