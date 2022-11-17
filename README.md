@@ -10,6 +10,8 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/2b62f004dbb84af98f47360f964ea3a6)](https://www.codacy.com/app/xfournet/iron)
 [![BCH compliance](https://bettercodehub.com/edge/badge/Axway/iron?branch=master)](https://bettercodehub.com/results/Axway/iron)
 
+# NOT MAINTAINED
+
 # Iron
 
 Iron is a Java in-memory database based on CQRS and object prevalence architecture.
